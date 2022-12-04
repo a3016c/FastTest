@@ -8,5 +8,9 @@ class Strategy():
         self.exchange = exchange
         self.broker = broker
 
-    def next(self, filled_orders):
+    def reset(self):
+        self.exchange.reset()
+        self.broker.rest()
+
+    def next(self):
         return []

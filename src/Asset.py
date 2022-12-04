@@ -7,13 +7,20 @@ class Asset():
     def __init__(self, asset_name : str, source_type : str, **kwargs) -> None:
         self.asset_name = asset_name
         self.streaming = True
-
+        self.set_frequency(kwargs["frequency"])
         if source_type == "csv":
             self.load_from_csv(
                 csv_path = kwargs["csv_path"],
                 datetime_format = kwargs["datetime_format"],
                 datetime_column = kwargs["datetime_column"]
             )
+
+    def set_frequency(self, frequency):
+        if len(frequency) == 1: n = 1
+        else:                   n = frequency[0]
+        try: self.timedelta = np.timedelta64(n, frequency[-1])
+        except: raise ValueError("invalid frequency passed to asset")
+        
 
     def load_from_csv(self, csv_path : str, datetime_format : str, datetime_column : str):
         self.csv_path = csv_path

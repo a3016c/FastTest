@@ -1,4 +1,4 @@
-
+from numpy import timedelta64
 from Order import *
 from Exchange import Exchange
 from Position import Position
@@ -12,7 +12,13 @@ class Broker():
         self.margin_requirement = 1
         self.realized_pl = 0
         self.unrealized_pl = 0
-        
+        self.order_counter = 0
+
+        self.cheat_on_close = False
+
+        self.position_history = []
+        self.order_history = []
+
         logging.basicConfig(
             filename=r"tests\logs\log1.txt",
             format="%(asctime)s BROKER: %(message)s",
@@ -21,12 +27,42 @@ class Broker():
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
 
+    def build(self):
+        self.strategy_analysis = {
+            asset_name : {
+            "commision_paid" : 0,
+            "time_in_market" : timedelta64(0),
+            "total_units" : 0,
+            "pl" : 0,
+            "number_trades" : 0,
+            "wins" : 0,
+            "losses" : 0,
+            "win_rate" : 0,
+            "average_time_in_market" : 0,
+            "average_position_size" : 0,
+            "average_pl" : 0
+            }
+            for asset_name in list(self.exchange.market.keys())
+        }
+
+    def reset(self):
+        self.cash = 100000
+        self.portfolio = {}
+        self.realized_pl = 0
+        self.unrealized_pl = 0
+
     def evaluate_portfolio(self, market_price_column = "CLOSE"):
         #evaluate each asset in the portfolio using current market prices
         #portfolio evaluation is run at the end of each period
         for asset in self.portfolio.values():
             market_price = self.exchange.market_view[asset.asset_name][market_price_column]
             asset.evaluate(market_price)
+        self.get_net_liquidation_value()
+
+    def get_net_liquidation_value(self):
+        #net liquidation value is sum of cash, long position, and portfolio colateral
+        #minus short position values
+        self.net_liquidation_value = self.cash + sum([position.liquidation_value() for position in self.portfolio.values()])
 
     def evaluate_collateral(self, market_price_column = "OPEN"):
         #adjust collateral requirments for stocks sold short
@@ -39,20 +75,16 @@ class Broker():
         self.cash -= margin_adjustment
         if self.cash < 0: raise RuntimeError("margin call issued, collateral can not be posted from cash")
 
-    def net_liquidation_value(self):
-        #net liquidation value is sum of cash, long position, and portfolio colateral
-        #minus short position values
-        return self.cash + sum([position.liquidation_value() for position in self.portfolio.values()])
-    
     def clear_orders(self):
         self.logger.debug("clearing orders from the exchange")
-        del self.exchange.orders
+        self.exchange.orders = []
 
-    def clear_portfolio(self):
+    def clear_portfolio(self, on_open = False):
         self.logger.debug(f"datetime: {self.exchange.market_time}, clearing portfolio")
-        for asset in self.portfolio.values():
-            market_price = market_price = self.exchange.market_view[asset.asset_name]["CLOSE"]
-            self.close_position(asset.asset_name,market_price)
+        for asset_name in list(self.portfolio.keys()):
+            asset = self.portfolio[asset_name]
+            market_price = self.exchange.market_view[asset.asset_name]["CLOSE"]
+            self.close_position(asset.asset_name,market_price,on_open=on_open)
 
     def open_position(self, asset_name : str, market_price : float, units : float, **kwargs):
         self.logger.debug(
@@ -63,9 +95,10 @@ class Broker():
         collateral = market_price * abs(units) * self.margin_requirement
         new_position = Position(
             asset_name = asset_name,
+            average_price = market_price,
             units = units,
             position_open_time = self.exchange.market_time,
-            margin_requirement = kwargs.get("margin_rate"),
+            margin_requirement = self.margin_requirement,
             collateral = collateral
         )
         self.portfolio[asset_name] = new_position
@@ -73,7 +106,7 @@ class Broker():
         #for short sales we credit the account cash recieved from selling the borrowed shares
         if units < 0: self.cash += abs(units) * market_price
 
-    def close_position(self, asset_name : str, market_price : float, **kwargs):
+    def close_position(self, asset_name : str, market_price : float, on_open = True, **kwargs):
         self.logger.debug(
             f"datetime: {self.exchange.market_time},"
             f"closing existing position in {asset_name},"
@@ -91,6 +124,19 @@ class Broker():
             self.cash -= abs(existing_position.units) * market_price
             #release collateral held by position as well as gain from transaction
             self.cash += existing_position.collateral + self.realized_pl
+
+        #analyze position and add to history 
+        self.position_history.append(existing_position)
+        strategy_analysis_asset = self.strategy_analysis[existing_position.asset_name]
+        strategy_analysis_asset["pl"] += existing_position.realized_pl
+        strategy_analysis_asset["total_units"] += abs(existing_position.units)
+        strategy_analysis_asset["time_in_market"] += (existing_position.position_close_time - existing_position.position_open_time)
+
+        print(self.exchange.market[asset_name].timedelta)
+        if on_open: strategy_analysis_asset["time_in_market"] -= self.exchange.market[asset_name].timedelta
+        if not self.cheat_on_close: strategy_analysis_asset["time_in_market"] += self.exchange.market[asset_name].timedelta
+        if existing_position.realized_pl > 0: strategy_analysis_asset["wins"] += 1
+        else : strategy_analysis_asset["losses"] += 1
 
         del self.portfolio[asset_name]
 
@@ -135,6 +181,11 @@ class Broker():
             self.cash -= abs(units) * market_price
 
     def place_orders(self, orders):
+        if orders == None: return 
+        for i in range(len(orders)):
+            orders[i].set_order_id(self.order_counter)
+            self.order_counter += 1
+        self.order_history += orders
         self.exchange.place_orders(orders)
 
     def process_filled_orders(self, orders):

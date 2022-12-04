@@ -13,18 +13,32 @@ class Position():
         self.last_price = kwargs["average_price"]
         self.units = kwargs["units"]
         self.position_open_time = kwargs["position_open_time"]
-        self.margin_requirement = kwargs.get("margin_rate")
+        self.position_close_time = None
+        self.margin_requirement = kwargs.get("margin_requirement")
         self.collateral = kwargs.get("collateral")
         self.unrealized_pl = 0
         self.realized_pl = 0
         self.commision_paid = 0
+
+    def __repr__(self) -> str:
+        return (
+            f"asset_name: {self.asset_name}, "
+            f"average_price: {self.average_price}, "
+            f"close_price: {self.close_price}, "
+            f"units: {self.units}, "
+            f"position_open_time: {self.position_open_time}, "
+            f"position_close_time: {self.position_close_time}, "
+            f"unrealized_pl: {self.unrealized_pl}, "
+            f"realized_pl: {self.realized_pl}"
+        )
 
     def evaluate(self, market_price : float):
         self.last_price = market_price
         self.unrealized_pl = self.units * (market_price - self.average_price)
 
     def liquidation_value(self):
-        return self.units * self.last_price + self.collateral
+        if self.units > 0 and self.margin_requirement == 1: return self.units * self.last_price
+        else: raise NotImplemented("short position evaluation not implemented")
 
     def collateral_adjustment(self, market_price : float):
         if self.units > 0: return 0
