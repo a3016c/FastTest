@@ -45,8 +45,7 @@ class FastTest():
             asset_analysis["average_position_size"] = asset_analysis["total_units"] / number_trades
             asset_analysis["average_pl"] = asset_analysis["pl"] / number_trades
 
-    def run(self):
-        
+    def run(self):  
         #clear any previous testing information
         self.reset()
 

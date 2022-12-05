@@ -34,7 +34,6 @@ class TestSimple(unittest.TestCase):
                         frequency = "1D"
                     )
                 )
-
         self.fast_test = FastTest(
             exchange=self.exchange,
             broker=self.broker
@@ -255,6 +254,99 @@ class TestSimple(unittest.TestCase):
         assert(position_history[1].unrealized_pl == 0)
         assert(position_history[1].realized_pl == 300)
 
+    def test_ma_cross(self):
+        exchange = Exchange()
+        broker = Broker(exchange=exchange)
+
+        fast_ma = 20
+        slow_ma = 50
+
+        source_type = "csv"
+        datetime_format = "%Y-%m-%d"
+        datetime_column = "DATE"
+        exchange.register_asset(Asset(
+            "AAPL",
+            source_type = "csv",
+            csv_path = r"C:\Users\bktor\Desktop\Python\FastTest\tests\data\AAPL.csv",
+            datetime_format = datetime_format,
+            datetime_column = datetime_column,
+            warmup = slow_ma-1,
+            frequency = "1D"
+            )
+        )
+        class BasicMovingAverageStrategy(Strategy):
+            def __init__(self, exchange: Exchange, broker: Broker) -> None:
+                super().__init__(exchange, broker)
+
+            def next(self):
+                position = self.broker.portfolio.get("AAPL")
+                sma_fast = self.exchange.market_view["AAPL"][f"sma_{fast_ma}"]
+                sma_slow = self.exchange.market_view["AAPL"][f"sma_{slow_ma}"]
+
+                if position == None:
+                    if sma_fast > sma_slow:
+                        new_order = MarketOrder(
+                            order_create_time = self.exchange.market_time,
+                            asset_name = "AAPL",
+                            units = 100
+                        )
+                        return [new_order]
+                else:
+                    if sma_fast < sma_slow:
+                        new_order = MarketOrder(
+                            order_create_time = self.exchange.market_time,
+                            asset_name = "AAPL",
+                            units = -100
+                        )
+                        return [new_order]
+
+        strategy = BasicMovingAverageStrategy(
+                    exchange=exchange,
+                    broker=broker
+                )
+        fast_test = FastTest(
+            exchange=exchange,
+            broker=broker
+        )
+        fast_test.register_strategy(strategy)
+        fast_test.run()
+
+        strategy_analysis = broker.strategy_analysis
+        position_history = broker.position_history
+        portfolio_value_history = fast_test.portfolio_value_history
+
+        df_test = portfolio_value_history
+        df_test = pd.merge(df_test,fast_test.exchange.market["AAPL"].df, left_index=True,right_index=True)
+
+        def get_next_trading_day(x):
+            current_idx = df_test.index.get_loc(x)
+            if current_idx == len(df_test): return x
+            return df_test.index[current_idx+1]
+
+        df_test["fast_above_slow"] = df_test["sma_20"] > df_test["sma_50"]
+        df_test["previous_fast_above_slow"] = df_test["fast_above_slow"].shift(1)
+        df_test["previous_fast_above_slow"].loc[df_test.index[0]] = not df_test["fast_above_slow"].loc[df_test.index[0]]
+        df_test_buy = df_test[(df_test["fast_above_slow"] == True) & (df_test["previous_fast_above_slow"] == False)]
+        df_test_sell = df_test[(df_test["fast_above_slow"] == False) & (df_test["previous_fast_above_slow"] == True)]
+        df_test_sell.drop(df_test_sell.index[:1], inplace=True)
+
+        df_test_evaluation = pd.DataFrame(data=[df_test_buy.index,df_test_sell.index]).T
+        df_test_evaluation.columns = ["signal_date_buy","signal_date_sell"]
+        df_test_evaluation["purchase_date"], df_test_evaluation["sale_date"] = df_test_evaluation["signal_date_buy"].apply(get_next_trading_day), df_test_evaluation["signal_date_sell"].apply(get_next_trading_day)
+
+        for index, row in df_test_evaluation.iterrows():
+            position_check = position_history[index]
+            purchase_date = row["purchase_date"]
+            sale_date = row["sale_date"]
+            purchase_price = df_test.loc[purchase_date]["OPEN"]
+
+            if sale_date < df_test.index[-1]: sale_price = df_test.loc[sale_date]["OPEN"]
+            else: sale_price = df_test.loc[sale_date]["CLOSE"]
+            
+            assert(position_check.average_price == purchase_price)
+            assert(position_check.close_price == sale_price)
+            assert(position_check.position_open_time == purchase_date)
+            assert(position_check.position_close_time == sale_date)
 
 if __name__ == "__main__":
     unittest.main()
