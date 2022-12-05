@@ -27,7 +27,10 @@ class FastTest():
         self.portfolio_value_history.append(self.broker.net_liquidation_value)
 
     def analyze_strategy_on_finish(self):
-        min_warmup = min([asset.warmup for asset in self.exchange.market.values()])
+        try:
+            min_warmup = min([asset.warmup for asset in self.exchange.market.values()])
+        except:
+            min_warmup = 0
         self.portfolio_value_history = pd.DataFrame(
             data = self.portfolio_value_history,
             index = self.exchange.datetime_index[min_warmup:],

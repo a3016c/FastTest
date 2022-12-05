@@ -8,7 +8,7 @@ class Asset():
         self.asset_name = asset_name
         self.streaming = True
         self.set_frequency(kwargs["frequency"])
-        self.warmup = kwargs["warmup"]
+        self.warmup = kwargs.get("warmup")
         if self.warmup != None: self.counter = 0
         if source_type == "csv":
             self.load_from_csv(
