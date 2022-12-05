@@ -18,8 +18,6 @@ class Order():
         self.asset_name = kwargs["asset_name"]
         self.units = kwargs["units"]
 
-        if type(self.units) != int and type(self.units) != float: raise TypeError("invalid units passed to order")
-
     def set_order_id(self, order_id : int):
         self.order_id = order_id
 

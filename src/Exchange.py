@@ -48,47 +48,29 @@ class Exchange():
         datetime_index_list = [asset.df.index for asset in self.market.values()]
         self.datetime_index = pd.DatetimeIndex(np.unique(np.hstack(datetime_index_list)))
 
-    def handle_market_order(self, order : Order):
-        market_price = self.market_view[order.asset_name]["OPEN"]
+    def handle_market_order(self, order : Order, cheat_on_close = False):
+        if cheat_on_close: market_price = self.market_view[order.asset_name]["CLOSE"]
+        else: market_price = self.market_view[order.asset_name]["OPEN"]
         order.fill(self.market_time,market_price)
 
     def place_orders(self, orders):
         self.orders += orders
 
-    def process_orders(self):
+    def process_orders(self, strategy_id : str, cheat_on_close = False):
         orders_filled = []
         orders_open = []
         for order in self.orders:
+            if order.strategy_id != strategy_id: 
+                orders_open.append(order) 
+                continue
+
             if order.order_type.value == 1:
-                self.handle_market_order(order)
+                self.handle_market_order(order, cheat_on_close)
 
             if order.order_state == OrderState.FILLED:
                 orders_filled.append(order)
             elif order.order_state == OrderState.OPEN:
                 orders_open.append(order)
+    
         self.orders = orders_open
         return orders_filled
-
-if __name__ == "__main__":
-
-    exchange = Exchange()
-
-    source_type = "csv"
-    datetime_format = "%Y-%m-%d"
-    datetime_column = "DATE"
-
-    tickers = ["A","AAL","AAP","AAPL"]
-
-    for ticker in tickers:
-        csv_path = r"C:\Users\bktor\Desktop\Python\FastTest\data\{}.csv".format(ticker)
-        name = ticker
-        exchange.register_asset(Asset(
-                ticker,
-                source_type = source_type,
-                csv_path = csv_path,
-                datetime_format = datetime_format,
-                datetime_column = datetime_column
-            )
-        )
-    exchange.build()
-    exchange.run()

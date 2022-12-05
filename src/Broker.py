@@ -3,6 +3,7 @@ from Order import *
 from Exchange import Exchange
 from Position import Position
 import logging
+import os
 
 class Broker():
     def __init__(self, exchange : Exchange) -> None:
@@ -20,7 +21,9 @@ class Broker():
         self.order_history = []
 
         log_path = "log1.txt"
-        with open(log_path, 'w'):
+        try:
+            os.remove(log_path)
+        except OSError:
             pass
         logging.basicConfig(
             filename=log_path,
@@ -191,10 +194,11 @@ class Broker():
             #reduce cash required to buy back shares
             self.cash -= abs(units) * market_price
 
-    def place_orders(self, orders):
+    def place_orders(self, orders, strategy_id : str):
         if orders == None: return 
         for i in range(len(orders)):
             orders[i].set_order_id(self.order_counter)
+            orders[i].strategy_id = strategy_id
             self.order_counter += 1
         self.order_history += orders
         self.exchange.place_orders(orders)

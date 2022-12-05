@@ -14,17 +14,28 @@ class FastTest():
         self.strategy = kwargs.get("strategy")
         self.exchange.build()
         self.portfolio_value_history = []
+        self.benchmark_portfolio_value_history = []
+        self.benchmark = False
 
     def reset(self):
         self.exchange.reset()
         self.broker.reset()
         self.portfolio_value_history = []
+        self.benchmark_portfolio_value_history = []
 
     def register_strategy(self, strategy : Strategy):
         self.strategy = strategy
+        self.strategy.strategy_id = "user"
+
+    def register_benchmark(self, strategy : Strategy):
+        self.benchmark_strategy = strategy
+        self.benchmark_strategy.strategy_id = "benchmark"
+        self.benchmark_broker = strategy.broker
+        self.benchmark = True
 
     def analyze_strategy_on_next(self):
         self.portfolio_value_history.append(self.broker.net_liquidation_value)
+        if self.benchmark: self.benchmark_portfolio_value_history.append(self.benchmark_strategy.broker.net_liquidation_value)
 
     def analyze_strategy_on_finish(self):
         try:
@@ -36,6 +47,8 @@ class FastTest():
             index = self.exchange.datetime_index[min_warmup:],
             columns = ["net_liquidation_value"]
         )
+        if self.benchmark: self.portfolio_value_history["benchmark"] = self.benchmark_portfolio_value_history
+
         for asset_analysis in self.broker.strategy_analysis.values():
             number_trades = (asset_analysis["wins"] + asset_analysis["losses"])
             if number_trades == 0: continue
@@ -51,6 +64,7 @@ class FastTest():
 
         #intilze broker
         self.broker.build()
+        if self.benchmark: self.benchmark_strategy.broker.build()
 
         while self.exchange.next():
             
@@ -62,7 +76,7 @@ class FastTest():
             self.broker.evaluate_collateral()
 
             #allow exchange to process open orders from previous steps
-            filled_orders = self.exchange.process_orders()
+            filled_orders = self.exchange.process_orders(strategy_id = self.strategy.strategy_id)
 
             #allow broker to process orders that have been filled
             self.broker.process_filled_orders(filled_orders) 
@@ -71,10 +85,26 @@ class FastTest():
             orders = self.strategy.next()
 
             #place the orders to the broker who routes them to the exchange
-            self.broker.place_orders(orders)
-
+            self.broker.place_orders(orders,strategy_id = self.strategy.strategy_id)
+            
             #value the portfolio
             self.broker.evaluate_portfolio()
+            
+            if self.benchmark:
+                if self.benchmark_broker.cheat_on_close: 
+                    orders_benchmark = self.benchmark_strategy.next()
+                    self.benchmark_broker.place_orders(orders_benchmark,strategy_id = self.benchmark_strategy.strategy_id)
+                    filled_orders = self.exchange.process_orders(strategy_id = self.benchmark_strategy.strategy_id, cheat_on_close = True)
+                    self.benchmark_broker.process_filled_orders(filled_orders) 
+                else:
+                    filled_orders = self.exchange.process_orders(strategy_id = self.benchmark_strategy.strategy_id)
+                    self.benchmark_broker.process_filled_orders(filled_orders)
+                    orders_benchmark = self.benchmark_strategy.next()
+                    self.benchmark_broker.place_orders(orders_benchmark,strategy_id = self.benchmark_strategy.strategy_id)
+
+                orders_benchmark = self.benchmark_strategy.next()
+                
+                self.benchmark_strategy.broker.evaluate_portfolio()
 
             #analyze portfolio stats
             self.analyze_strategy_on_next()
@@ -85,10 +115,15 @@ class FastTest():
         self.broker.clear_orders()
         
         #close all open positions at last close price for each asst
-        self.broker.clear_portfolio(on_open = False)
-
+        self.broker.clear_portfolio()
+        
         #provide a final valuation of the portfolio
         self.broker.evaluate_portfolio()
+        
+        if self.benchmark:
+            self.benchmark_strategy.broker.clear_orders()
+            self.benchmark_strategy.broker.clear_portfolio()
+            self.benchmark_strategy.broker.evaluate_portfolio()
 
         #analyize strategy statistics
         self.analyze_strategy_on_finish()
