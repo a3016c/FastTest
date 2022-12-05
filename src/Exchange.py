@@ -15,7 +15,7 @@ class Exchange():
 
     def reset(self):
         self.datetime_idx = 0
-        del self.market_view
+        self.market_view = {}
         self.orders.clear()
 
     def register_asset(self, asset : Asset) -> None:

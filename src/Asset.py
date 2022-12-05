@@ -8,6 +8,8 @@ class Asset():
         self.asset_name = asset_name
         self.streaming = True
         self.set_frequency(kwargs["frequency"])
+        self.warmup = kwargs["warmup"]
+        if self.warmup != None: self.counter = 0
         if source_type == "csv":
             self.load_from_csv(
                 csv_path = kwargs["csv_path"],
@@ -15,9 +17,13 @@ class Asset():
                 datetime_column = kwargs["datetime_column"]
             )
 
+    def reset(self):
+        self.streaming = True
+        self.counter = 0
+
     def set_frequency(self, frequency):
         if len(frequency) == 1: n = 1
-        else:                   n = frequency[0]
+        else: n = frequency[0]
         try: self.timedelta = np.timedelta64(n, frequency[-1])
         except: raise ValueError("invalid frequency passed to asset")
         
@@ -36,11 +42,21 @@ class Asset():
             index_col = self.datetime_column
         )
         self.df.sort_index(inplace=True)
+        self.datetime_last = self.df.index[-1]
         self.columns = self.df.columns
 
+    def start_stream(self):
+        self.counter += 1
+        if self.counter <= self.warmup: return False
+        return True
+
     def get_asset_view(self, current_market_time):
+        if self.warmup != None:
+            if not self.start_stream():
+                return {}
         try:
             view = self.df.loc[current_market_time]
+            if current_market_time == self.datetime_last: self.streaming = False
             return dict(zip(self.columns, view.values))
         except KeyError:
             return {}

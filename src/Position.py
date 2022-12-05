@@ -14,6 +14,7 @@ class Position():
         self.units = kwargs["units"]
         self.position_open_time = kwargs["position_open_time"]
         self.position_close_time = None
+        self.bars_held = 0
         self.margin_requirement = kwargs.get("margin_requirement")
         self.collateral = kwargs.get("collateral")
         self.unrealized_pl = 0

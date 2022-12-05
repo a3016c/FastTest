@@ -15,6 +15,11 @@ class FastTest():
         self.exchange.build()
         self.portfolio_value_history = []
 
+    def reset(self):
+        self.exchange.reset()
+        self.broker.reset()
+        self.portfolio_value_history = []
+
     def register_strategy(self, strategy : Strategy):
         self.strategy = strategy
 
@@ -22,6 +27,12 @@ class FastTest():
         self.portfolio_value_history.append(self.broker.net_liquidation_value)
 
     def analyze_strategy_on_finish(self):
+        min_warmup = min([asset.warmup for asset in self.exchange.market.values()])
+        self.portfolio_value_history = pd.DataFrame(
+            data = self.portfolio_value_history,
+            index = self.exchange.datetime_index[min_warmup:],
+            columns = ["net_liquidation_value"]
+        )
         for asset_analysis in self.broker.strategy_analysis.values():
             number_trades = (asset_analysis["wins"] + asset_analysis["losses"])
             if number_trades == 0: continue
@@ -33,11 +44,18 @@ class FastTest():
 
     def run(self):
         
+        #clear any previous testing information
+        self.reset()
+
         #intilze broker
         self.broker.build()
 
         while self.exchange.next():
-
+            
+            #check to see if any assets are available (allows for warmup)
+            if len(self.exchange.market_view.keys()) == 1:
+                continue
+            
             #evaluate collateral held by broker
             self.broker.evaluate_collateral()
 

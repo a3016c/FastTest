@@ -19,8 +19,11 @@ class Broker():
         self.position_history = []
         self.order_history = []
 
+        log_path = "log1.txt"
+        with open(log_path, 'w'):
+            pass
         logging.basicConfig(
-            filename=r"tests\logs\log1.txt",
+            filename=log_path,
             format="%(asctime)s BROKER: %(message)s",
             filemode="w"
         )
@@ -54,9 +57,13 @@ class Broker():
     def evaluate_portfolio(self, market_price_column = "CLOSE"):
         #evaluate each asset in the portfolio using current market prices
         #portfolio evaluation is run at the end of each period
-        for asset in self.portfolio.values():
-            market_price = self.exchange.market_view[asset.asset_name][market_price_column]
-            asset.evaluate(market_price)
+        for keys in list(self.portfolio.keys()):
+            position = self.portfolio[keys]
+            market_price = self.exchange.market_view[position.asset_name][market_price_column]
+            position.evaluate(market_price)
+            #if asset runs out of data to stream we have to close the position at the last close pice
+            if self.exchange.market[position.asset_name].streaming == False: 
+                self.close_position(position.asset_name, market_price, on_open = False)
         self.get_net_liquidation_value()
 
     def get_net_liquidation_value(self):
@@ -88,9 +95,9 @@ class Broker():
 
     def open_position(self, asset_name : str, market_price : float, units : float, **kwargs):
         self.logger.debug(
-            f"datetime: {self.exchange.market_time},"
-            f"opening new position in {asset_name},"
-            f"market_price: {market_price}, units: {units}, "
+            f"datetime: {self.exchange.market_time}, "
+            f"opening new position in {asset_name}, "
+            f"market_price: {market_price}, units: {units}"
         )
         collateral = market_price * abs(units) * self.margin_requirement
         new_position = Position(
@@ -108,8 +115,8 @@ class Broker():
 
     def close_position(self, asset_name : str, market_price : float, on_open = True, **kwargs):
         self.logger.debug(
-            f"datetime: {self.exchange.market_time},"
-            f"closing existing position in {asset_name},"
+            f"datetime: {self.exchange.market_time}, "
+            f"closing existing position in {asset_name}, "
             f"market_price: {market_price} "
         )
         existing_position = self.portfolio.get(asset_name)
@@ -130,14 +137,18 @@ class Broker():
         strategy_analysis_asset = self.strategy_analysis[existing_position.asset_name]
         strategy_analysis_asset["pl"] += existing_position.realized_pl
         strategy_analysis_asset["total_units"] += abs(existing_position.units)
-        strategy_analysis_asset["time_in_market"] += (existing_position.position_close_time - existing_position.position_open_time)
+        
+        bars_index = self.exchange.market[asset_name].df.index
+        bars_held = bars_index.get_loc(existing_position.position_close_time) - bars_index.get_loc(existing_position.position_open_time)
+        strategy_analysis_asset["time_in_market"] += bars_held * self.exchange.market[asset_name].timedelta
 
-        print(self.exchange.market[asset_name].timedelta)
+        #if position was closed on open, subrtract one time period to reflect that in the time_in_market
         if on_open: strategy_analysis_asset["time_in_market"] -= self.exchange.market[asset_name].timedelta
+        #if we cheat and buy on close we have to add in one period to reflect that in the time_in_market
         if not self.cheat_on_close: strategy_analysis_asset["time_in_market"] += self.exchange.market[asset_name].timedelta
+
         if existing_position.realized_pl > 0: strategy_analysis_asset["wins"] += 1
         else : strategy_analysis_asset["losses"] += 1
-
         del self.portfolio[asset_name]
 
     def increase_position(self, asset_name : str, units : float, market_price : float,**kwargs):
