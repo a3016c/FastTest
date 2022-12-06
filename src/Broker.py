@@ -6,11 +6,12 @@ import logging
 import os
 
 class Broker():
-    def __init__(self, exchange : Exchange) -> None:
+    def __init__(self, exchange : Exchange, **kwargs) -> None:
         self.cash = 100000
         self.portfolio = {}
         self.exchange = exchange
         self.margin_requirement = 1
+        self.commision = 0 if kwargs.get("commision") == None else kwargs.get("commision")
         self.realized_pl = 0
         self.unrealized_pl = 0
         self.order_counter = 0
@@ -20,7 +21,9 @@ class Broker():
         self.position_history = []
         self.order_history = []
 
-        log_path = "log1.txt"
+        self.logging = False
+        """
+        log_path = "log2.txt"
         try:
             os.remove(log_path)
         except OSError:
@@ -32,6 +35,7 @@ class Broker():
         )
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
+        """
 
     def build(self):
         self.strategy_analysis = {
@@ -79,35 +83,44 @@ class Broker():
         #minus short position values
         self.net_liquidation_value = self.cash + sum([position.liquidation_value() for position in self.portfolio.values()])
 
-    def evaluate_collateral(self, market_price_column = "OPEN"):
+    def evaluate_collateral(self, on_open = True):
         #adjust collateral requirments for stocks sold short
         #adjustment evaluation is run at the beginning of each period
         margin_adjustment = 0
+
+        #we can evaluate collateral requirments at the open or close and set column name appropriately
+        evaluate_column = "OPEN" if on_open else "CLOSE"
+
         for asset in self.portfolio.values():
-            if asset.units > 0: continue 
-            market_price = self.exchange.market_view[asset.asset_name][market_price_column]
-            margin_adjustment += asset.collateral_adjustment(market_price)
+            if asset.units > 0: continue
+            #attempt to calculate colateral for short positions. In cases with assets of with different datetime index's we wont be
+            #able to value every position at every timestep so we rely on the last valuation
+            try:
+                market_price = self.exchange.market_view[asset.asset_name][evaluate_column]
+                margin_adjustment += asset.collateral_adjustment(market_price)
+            except KeyError:
+                pass
         self.cash -= margin_adjustment
         if self.cash < 0: raise RuntimeError("margin call issued, collateral can not be posted from cash")
 
     def clear_orders(self):
-        self.logger.debug("clearing orders from the exchange")
+        if self.logging: self.logger.debug("clearing orders from the exchange")
         self.exchange.orders = []
 
     def clear_portfolio(self, on_open = False):
-        self.logger.debug(f"datetime: {self.exchange.market_time}, clearing portfolio")
+        if self.logging: self.logger.debug(f"datetime: {self.exchange.market_time}, clearing portfolio")
         for asset_name in list(self.portfolio.keys()):
             asset = self.portfolio[asset_name]
             market_price = self.exchange.market_view[asset.asset_name]["CLOSE"]
             self.close_position(asset.asset_name,market_price,on_open=on_open)
 
     def open_position(self, asset_name : str, market_price : float, units : float, **kwargs):
-        self.logger.debug(
+        if self.logging: self.logger.debug(
             f"datetime: {self.exchange.market_time}, "
             f"opening new position in {asset_name}, "
             f"market_price: {market_price}, units: {units}"
         )
-        collateral = market_price * abs(units) * self.margin_requirement
+        collateral = market_price * abs(units) * self.margin_requirement if units < 0 else 0
         new_position = Position(
             asset_name = asset_name,
             average_price = market_price,
@@ -117,12 +130,16 @@ class Broker():
             collateral = collateral
         )
         self.portfolio[asset_name] = new_position
-        self.cash -= collateral
+
+        if units < 0 : self.cash -= collateral
+        else: self.cash -= market_price * units * self.margin_requirement
+
+        self.cash -= self.commision
         #for short sales we credit the account cash recieved from selling the borrowed shares
         if units < 0: self.cash += abs(units) * market_price
 
     def close_position(self, asset_name : str, market_price : float, on_open = True, **kwargs):
-        self.logger.debug(
+        if self.logging: self.logger.debug(
             f"datetime: {self.exchange.market_time}, "
             f"closing existing position in {asset_name}, "
             f"market_price: {market_price} "
@@ -139,6 +156,8 @@ class Broker():
             self.cash -= abs(existing_position.units) * market_price
             #release collateral held by position as well as gain from transaction
             self.cash += existing_position.collateral + self.realized_pl
+
+        self.cash -= self.commision
 
         #analyze position and add to history 
         self.position_history.append(existing_position)
@@ -160,7 +179,7 @@ class Broker():
         del self.portfolio[asset_name]
 
     def increase_position(self, asset_name : str, units : float, market_price : float,**kwargs):
-        self.logger.debug(
+        if self.logging: self.logger.debug(
             f"datetime: {self.exchange.market_time},"
             f"increasing existing position in {asset_name},"
             f"market_price: {market_price}, units: {units}"
@@ -180,7 +199,7 @@ class Broker():
             self.cash += abs(units) * market_price
 
     def reduce_position(self, asset_name : str, units : float, market_price : float):
-        self.logger.debug(
+        if self.logging: self.logger.debug(
             f"datetime: {self.exchange.market_time},"
             f"reducing existing position in {asset_name},"
             f"market_price: {market_price}, units: {units}"

@@ -13,6 +13,7 @@ class FastTest():
         self.broker = broker
         self.strategy = kwargs.get("strategy")
         self.exchange.build()
+        self.cash_history = []
         self.portfolio_value_history = []
         self.benchmark_portfolio_value_history = []
         self.benchmark = False
@@ -21,8 +22,8 @@ class FastTest():
         self.exchange.reset()
         self.broker.reset()
         self.portfolio_value_history = []
+        self.cash_history = []
         
-
         if self.benchmark:
             self.benchmark_broker.reset()
             self.benchmark_portfolio_value_history = []
@@ -39,19 +40,31 @@ class FastTest():
 
     def analyze_strategy_on_next(self):
         self.portfolio_value_history.append(self.broker.net_liquidation_value)
+        self.cash_history.append(self.broker.cash)
         if self.benchmark: self.benchmark_portfolio_value_history.append(self.benchmark_strategy.broker.net_liquidation_value)
+
+    def build_position_history(self):
+        if len(self.broker.position_history) == 0: return
+        columns = ["asset_name","average_price","close_price","units","position_open_time",
+            "position_close_time","unrealized_pl","realized_pl"
+        ]
+        self.position_history_df = pd.DataFrame([position.csv_rep() for position in self.broker.position_history])
+        self.position_history_df.columns = columns
 
     def analyze_strategy_on_finish(self):
         try:
             min_warmup = min([asset.warmup for asset in self.exchange.market.values()])
         except:
             min_warmup = 0
-        self.portfolio_value_history = pd.DataFrame(
+        self.portfolio_history = pd.DataFrame(
             data = self.portfolio_value_history,
             index = self.exchange.datetime_index[min_warmup:],
             columns = ["net_liquidation_value"]
         )
-        if self.benchmark: self.portfolio_value_history["benchmark"] = self.benchmark_portfolio_value_history
+        self.portfolio_history["cash"] = self.cash_history
+        if self.benchmark: self.portfolio_history["benchmark"] = self.benchmark_portfolio_value_history
+
+        self.build_position_history()
 
         for asset_analysis in self.broker.strategy_analysis.values():
             number_trades = (asset_analysis["wins"] + asset_analysis["losses"])
@@ -68,7 +81,7 @@ class FastTest():
 
         #intilze broker
         self.broker.build()
-        if self.benchmark: self.benchmark_strategy.broker.build()
+        if self.benchmark: self.benchmark_broker.build()
 
         while self.exchange.next():
             
@@ -77,7 +90,7 @@ class FastTest():
                 continue
             
             #evaluate collateral held by broker
-            self.broker.evaluate_collateral()
+            self.broker.evaluate_collateral(on_open = True)
 
             #allow exchange to process open orders from previous steps
             filled_orders = self.exchange.process_orders(strategy_id = self.strategy.strategy_id)
@@ -93,6 +106,9 @@ class FastTest():
             
             #value the portfolio
             self.broker.evaluate_portfolio()
+
+            #evaluate collateral held by broker at the end of the trading period
+            self.broker.evaluate_collateral(on_open = False)
             
             if self.benchmark:
                 if self.benchmark_broker.cheat_on_close: 

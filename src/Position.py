@@ -21,6 +21,17 @@ class Position():
         self.realized_pl = 0
         self.commision_paid = 0
 
+    def csv_rep(self)->str:
+        return [
+            self.asset_name,
+            self.average_price,
+            self.close_price,
+            self.units,
+            self.position_open_time,
+            self.position_close_time,
+            self.unrealized_pl,
+            self.realized_pl
+        ]
     def __repr__(self) -> str:
         return (
             f"asset_name: {self.asset_name}, "
@@ -38,13 +49,12 @@ class Position():
         self.unrealized_pl = self.units * (market_price - self.average_price)
 
     def liquidation_value(self):
-        if self.units > 0 and self.margin_requirement == 1: return self.units * self.last_price
-        else: raise NotImplemented("short position evaluation not implemented")
+        return self.units * self.last_price + self.collateral
 
     def collateral_adjustment(self, market_price : float):
         if self.units > 0: return 0
         margin_requirment = abs(self.units) * market_price * self.margin_requirement
-        adjustment = margin_requirment - self.collateral
+        adjustment = (margin_requirment - self.collateral)
         self.collateral += adjustment
         return adjustment 
 

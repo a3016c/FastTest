@@ -114,7 +114,7 @@ class TestSimple(unittest.TestCase):
         strategy_analysis = self.broker.strategy_analysis
         position_history = self.broker.position_history
 
-        assert(self.fast_test.portfolio_value_history["net_liquidation_value"].values.tolist() == [100000,100000,100100,100300,100400,100400])
+        assert(self.fast_test.portfolio_history["net_liquidation_value"].values.tolist() == [100000,100000,100100,100300,100400,100400])
         assert(strategy_analysis["test1"]["number_trades"] == 1)
         assert(strategy_analysis["test1"]["win_rate"] == 1.0)
         assert(strategy_analysis["test1"]["time_in_market"] == np.timedelta64(3,"D"))
@@ -170,7 +170,7 @@ class TestSimple(unittest.TestCase):
         strategy_analysis = self.broker.strategy_analysis
         position_history = self.broker.position_history
 
-        assert(self.fast_test.portfolio_value_history["net_liquidation_value"].values.tolist() == [100000, 100000, 100100, 100200, 100200, 100200])
+        assert(self.fast_test.portfolio_history["net_liquidation_value"].values.tolist() == [100000, 100000, 100100, 100200, 100200, 100200])
         assert(strategy_analysis["test1"]["number_trades"] == 1)
         assert(strategy_analysis["test1"]["win_rate"] == 1.0)
         assert(strategy_analysis["test1"]["time_in_market"] == np.timedelta64(1,"D"))
@@ -231,7 +231,7 @@ class TestSimple(unittest.TestCase):
         strategy_analysis = self.broker.strategy_analysis
         position_history = self.broker.position_history
 
-        assert(self.fast_test.portfolio_value_history["net_liquidation_value"].values.tolist() == [100000, 99900, 99700, 100250, 100350, 100500])
+        assert(self.fast_test.portfolio_history["net_liquidation_value"].values.tolist() == [100000, 99900, 99700, 100250, 100350, 100500])
         assert(strategy_analysis["test1"]["number_trades"] == 1)
         assert(strategy_analysis["test1"]["win_rate"] == 1.0)
         assert(strategy_analysis["test1"]["time_in_market"] == np.timedelta64(2,"D"))
@@ -313,9 +313,9 @@ class TestSimple(unittest.TestCase):
 
         strategy_analysis = broker.strategy_analysis
         position_history = broker.position_history
-        portfolio_value_history = fast_test.portfolio_value_history
+        portfolio_history = fast_test.portfolio_history
 
-        df_test = portfolio_value_history
+        df_test = portfolio_history
         df_test = pd.merge(df_test,fast_test.exchange.market["AAPL"].df, left_index=True,right_index=True)
 
         def get_next_trading_day(x):
@@ -397,14 +397,14 @@ class TestSimple(unittest.TestCase):
 
         strategy_analysis = self.broker.strategy_analysis
         position_history = self.broker.position_history
-        portfolio_value_history = self.fast_test.portfolio_value_history
+        portfolio_history = self.fast_test.portfolio_history
 
         assert(len(benchmark.broker.position_history) == 1)
         assert(benchmark.broker.position_history[0].average_price == 101.5)
         assert(benchmark.broker.position_history[0].close_price == 96)
         assert(benchmark.broker.net_liquidation_value==94581.28078817733)
 
-        assert(self.fast_test.portfolio_value_history["net_liquidation_value"].values.tolist() == [100000, 99900, 99700, 100250, 100350, 100500])
+        assert(self.fast_test.portfolio_history["net_liquidation_value"].values.tolist() == [100000, 99900, 99700, 100250, 100350, 100500])
         assert(strategy_analysis["test1"]["number_trades"] == 1)
         assert(strategy_analysis["test1"]["win_rate"] == 1.0)
         assert(strategy_analysis["test1"]["time_in_market"] == np.timedelta64(2,"D"))
