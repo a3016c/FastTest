@@ -25,6 +25,9 @@ class Order():
         self.order_state = OrderState.FILLED
         self.fill_price = fill_price
 
+    def cancel(self, order_cancel_time : datetime64):
+        self.order_state = OrderState.CANCLED
+
 class MarketOrder(Order):
     def __init__(self, **kwargs) -> None:
         super().__init__(OrderType.MARKET_ORDER,

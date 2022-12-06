@@ -62,8 +62,13 @@ class Broker():
         #portfolio evaluation is run at the end of each period
         for keys in list(self.portfolio.keys()):
             position = self.portfolio[keys]
-            market_price = self.exchange.market_view[position.asset_name][market_price_column]
-            position.evaluate(market_price)
+            #attempt to value position. In cases with assets of with different datetime index's we wont be
+            #able to value every position at every timestep so we rely on the last valuation
+            try:
+                market_price = self.exchange.market_view[position.asset_name][market_price_column]
+                position.evaluate(market_price)
+            except:
+                pass
             #if asset runs out of data to stream we have to close the position at the last close pice
             if self.exchange.market[position.asset_name].streaming == False: 
                 self.close_position(position.asset_name, market_price, on_open = False)

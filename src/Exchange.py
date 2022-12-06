@@ -49,9 +49,12 @@ class Exchange():
         self.datetime_index = pd.DatetimeIndex(np.unique(np.hstack(datetime_index_list)))
 
     def handle_market_order(self, order : Order, cheat_on_close = False):
-        if cheat_on_close: market_price = self.market_view[order.asset_name]["CLOSE"]
-        else: market_price = self.market_view[order.asset_name]["OPEN"]
-        order.fill(self.market_time,market_price)
+        try:
+            if cheat_on_close: market_price = self.market_view[order.asset_name]["CLOSE"]
+            else: market_price = self.market_view[order.asset_name]["OPEN"]
+            order.fill(self.market_time,market_price)
+        except:
+            order.cancel(self.market_time)
 
     def place_orders(self, orders):
         self.orders += orders

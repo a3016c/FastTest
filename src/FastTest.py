@@ -21,7 +21,11 @@ class FastTest():
         self.exchange.reset()
         self.broker.reset()
         self.portfolio_value_history = []
-        self.benchmark_portfolio_value_history = []
+        
+
+        if self.benchmark:
+            self.benchmark_broker.reset()
+            self.benchmark_portfolio_value_history = []
 
     def register_strategy(self, strategy : Strategy):
         self.strategy = strategy
@@ -127,7 +131,6 @@ class FastTest():
 
         #analyize strategy statistics
         self.analyze_strategy_on_finish()
-
 
 if __name__ == "__main__":
     exchange = Exchange()
