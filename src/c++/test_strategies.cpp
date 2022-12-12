@@ -11,19 +11,23 @@
 #include "Strategy.h"
 #include "utils_time.h"
 
-void test::TestStrategy::register_test_map(std::map<int, order_schedule> orders) {
+void test::TestStrategy::register_test_map(std::vector<order_schedule>orders) {
 	this->orders = orders;
 }
 
 std::vector<Order> test::TestStrategy::next() {
 	std::vector<Order> new_orders;
-	for (const auto& kvp : this->orders) {
-		if (kvp.first == i) {
+	for (auto it = this->orders.begin(); it != this->orders.end();) {
+		if (it->i == i) {
 			MarketOrder new_order(
-				kvp.second.asset_name,
-				kvp.second.units
+				it->asset_name,
+				it->units
 			);
 			new_orders.push_back(new_order);
+			it = this->orders.erase(it);
+		}
+		else {
+			it++;
 		}
 	}
 	i++;

@@ -21,6 +21,8 @@ public:
 	std::vector<float> cash_history;
 	std::vector<float> nlv_history;
 
+	void reset();
+
 	//main event lopp
 	void analyze_step();
 	void run();

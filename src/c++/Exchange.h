@@ -13,18 +13,26 @@
 class Exchange
 {
 public:
-	const int open_index = 0;
-	const int close_index = 1;
+	bool logging;
+
+	//containers and vars to manage columns of the assets
+	unsigned int idx;
+	std::map<std::string, unsigned int> open_map;
+	std::map<std::string, unsigned int> close_map;
 
 	timeval current_time;
 
 	std::map<std::string, Asset> market;
+	std::map<std::string, Asset> market_expired;
+
 	std::deque<Order> orders;
+
 	std::map<std::string, std::vector<float>> market_view;
 	std::vector<std::string> asset_remove;
 	unsigned int asset_counter = 0;
 
 	//functions used to manage assets on the market
+	void reset();
 	void register_asset(Asset new_asset);
 	void remove_asset(std::string asset_name);
 
@@ -33,7 +41,6 @@ public:
 	void process_market_order(Order &open_order);
 	void process_order(Order &open_order);
 	std::vector<Order> process_orders(bool on_close = false);
-
 	bool cancel_order(unsigned int order_id);
 	bool clear_orders();
 
@@ -44,7 +51,7 @@ public:
 	void get_market_view();
 	float get_market_price(std::string &asset_name, bool on_close = false);
 
-	Exchange() {};
+	Exchange(bool logging = false) { this->logging = logging; };
 	
 };
 #endif

@@ -26,6 +26,7 @@ public:
 	std::map<std::string, Position> portfolio;
 
 	void set_cash(float cash);
+	void reset();
 
 	//logging functions
 	bool logging;

@@ -8,9 +8,22 @@
 #include <assert.h>
 #include "utils_time.h"
 #include "Asset.h"
+#include "ta_libc.h"
 
+void Asset::get_column(std::vector<float> &col, unsigned int j) {
+	for (auto row : this->data) {
+		col.push_back(row[j]);
+	}
+}
+void Asset::reset() {
+	this->current_index = 0;
+	this->streaming = false;
+}
 bool Asset::is_last_view() {
 	return this->current_index == (this->N);
+}
+timeval Asset::asset_time() {
+	return this->datetime_index[this->current_index];
 }
 void Asset::load_from_csv(const char *file_name)
 {	
@@ -35,7 +48,6 @@ void Asset::load_from_csv(const char *file_name)
 		string_to_timeval(&tv, datetime_string, this->digit_datetime_format);
 		this->datetime_index.push_back(tv);
 
-		std::string token;
 		std::vector<float> row;
 		while(std::getline(ss, token, ',')){
 			row.push_back(std::stof(token));

@@ -1,12 +1,30 @@
 #include "pch.h"
 #include <Windows.h>
 #include <map>
+#include <utility>
 #include <string>
+#include <cmath>
 #include "Order.h"
 #include "Asset.h"
 #include "Exchange.h"
 #include "utils_time.h"
 
+void Exchange::register_asset(Asset new_asset) {
+	this->market.insert({ new_asset.asset_name, new_asset });
+	this->open_map.insert({ new_asset.asset_name, new_asset.open_col });
+	this->close_map.insert({ new_asset.asset_name, new_asset.close_col });
+	this->asset_counter++;
+}
+void Exchange::remove_asset(std::string asset_name) {
+	this->market.erase(asset_name);
+}
+void Exchange::reset() {
+	this->market.swap(this->market_expired);
+	for (auto& kvp : this->market) {
+		kvp.second.reset();
+	}
+	this->asset_counter = this->market.size();
+}
 bool Exchange::step() {
 	if (!this->get_next_time()) { return false; };
 	this->get_market_view();
@@ -20,17 +38,22 @@ bool Exchange::get_next_time() {
 		return false;
 	}
 	timeval next_time = MAX_TIME;
-	for (auto& _asset_pair : this->market) {
-		timeval asset_time = _asset_pair.second.datetime_index[_asset_pair.second.current_index];
+	//Get the next time available across all assets. This will be the next market time
+	for (auto& kvp : this->market) {
+		timeval asset_time = kvp.second.asset_time();
 		if (asset_time < next_time) {
 			next_time = asset_time;
-			_asset_pair.second.streaming = true;
 		}
-		else if (asset_time == next_time) {
-			_asset_pair.second.streaming = true;
+	}
+	//Any asset whose asset time is equal to the next market time  and not currently
+	//in warmup will be streaming this step
+	for (auto& kvp : this->market) {
+		if ((kvp.second.asset_time()  == next_time)
+		   &(kvp.second.current_index >= kvp.second.minimum_warmup)) {
+				kvp.second.streaming = true;
 		}
 		else {
-			_asset_pair.second.streaming = false;
+			kvp.second.streaming = false;
 		}
 	}
 	this->current_time = next_time;
@@ -55,6 +78,7 @@ void Exchange::clean_up_market() {
 	}
 	for (auto asset_name: this->asset_remove) {
 		//delete the asset from the market 
+		this->market_expired[asset_name] = std::move(this->market.at(asset_name));
 		this->market.erase(asset_name);
 		//remove open orders placed on this asset
 		std::deque<Order>::iterator order_itr = this->orders.begin();
@@ -75,30 +99,30 @@ float Exchange::get_market_price(std::string &asset_name, bool on_close){
 		return NAN;
 	}
 	if (on_close) {
-		return this->market_view[asset_name][this->close_index];
+		idx = this->close_map[asset_name];
+		return this->market_view[asset_name][idx];
 	}
 	else {
-		return this->market_view[asset_name][this->open_index];
+		idx = this->open_map[asset_name];
+		return this->market_view[asset_name][idx];
 	}
-}
-void Exchange::register_asset(Asset new_asset) {
-	this->market.insert({ new_asset.asset_name, new_asset });
-	this->asset_counter++;
-}
-void Exchange::remove_asset(std::string asset_name) {
-	this->market.erase(asset_name);
 }
 void Exchange::process_market_order(Order &open_order) {
 	float market_price = get_market_price(open_order.asset_name, open_order.cheat_on_close);
-	if (isnan(market_price)) {
+	if (std::isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
 	open_order.fill(market_price, this->current_time);
 }
 void Exchange::process_order(Order &open_order) {
-	switch (open_order.order_type) {
+	try {
+		switch (open_order.order_type) {
 		case MARKET_ORDER:
 			this->process_market_order(open_order);
+		}
+	}
+	catch (const std::exception& e) {
+		throw e;
 	}
 }
 std::vector<Order> Exchange::process_orders(bool on_close) {
@@ -108,7 +132,13 @@ std::vector<Order> Exchange::process_orders(bool on_close) {
 	while (!this->orders.empty()) {
 		Order order = this->orders[0];
 		if (order.cheat_on_close == on_close) {
-			this->process_order(order);
+			try {
+				this->process_order(order);
+			}
+			catch (const std::exception& e){
+				std::cerr << "INVALID ORDER CAUGHT: " << e.what() << std::endl;
+				throw;
+			}
 		}
 		if (order.is_open) {
 			orders_open.push_back(order);
@@ -121,7 +151,7 @@ std::vector<Order> Exchange::process_orders(bool on_close) {
 	this->orders = orders_open;
 	return orders_filled;
 }
-bool Exchange::place_order(Order new_order) {
+bool Exchange::place_order(Order new_order){
 	this->orders.push_back(new_order);
 	return true;
 }

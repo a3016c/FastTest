@@ -16,9 +16,12 @@
 using namespace std::chrono;
 
 const char* datetime_index[4] = { "2000-06-06 00:00:00.000000","2000-06-07 00:00:00.000000","2000-06-08 00:00:00.000000","2000-06-09 00:00:00.000000" };
+const char* datetime_index_multi[6] = { "2000-06-05 00:00:00.000000","2000-06-06 00:00:00.000000",
+		"2000-06-07 00:00:00.000000","2000-06-08 00:00:00.000000",
+		"2000-06-09 00:00:00.000000","2000-06-12 00:00:00.000000" };
 
 void test_strategy_construction() {
-	std::cout << "TESTING test_strategy_construction" << std::endl;
+	printf("TESTING test_strategy_construction\n");
 	Exchange exchange = test::build_simple_exchange();
 	Broker broker(exchange);
 	Strategy strategy(exchange, broker);
@@ -29,7 +32,7 @@ void test_strategy_construction() {
 	assert(&ft.exchange == &strategy.exchange);
 }
 void test_benchmark_strategy() {
-	std::cout << "TESTING test_benchmark_strategy" << std::endl;
+	printf("TESTING test_benchmark_strategy\n");
 	Exchange exchange = test::build_simple_exchange();
 	Broker broker(exchange, false);
 	BenchmarkStrategy strategy(exchange, broker);
@@ -52,14 +55,13 @@ void test_benchmark_strategy() {
 	assert(strcmp(buf_close, datetime_index[3]) == 0);
 }
 void test_increase_strategy() {
-	std::cout << "TESTING test_increase_strategy" << std::endl;
+	printf("TESTING test_increase_strategy\n");
 	Exchange exchange = test::build_simple_exchange();
 	Broker broker(exchange, false);
 
-	std::map<int, test::order_schedule> orders = { 
-		{0 , test::order_schedule {100,"test1"}},
-		{1 , test::order_schedule {100,"test1"}},
-	};
+	std::vector<test::order_schedule> orders = { 
+		test::order_schedule {0,100,"test1"},
+		test::order_schedule {1,100,"test1"}};
 	test::TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 	FastTest ft(exchange, broker, strategy, false);
@@ -81,16 +83,15 @@ void test_increase_strategy() {
 void test_reduce_strategy() {
 	std::cout << "TESTING test_reduce_strategy" << std::endl;
 	Exchange exchange = test::build_simple_exchange();
-	Broker broker(exchange, true);
+	Broker broker(exchange, false);
 	
-	std::map<int, test::order_schedule> orders = {
-	{0 , test::order_schedule {100,"test1"}},
-	{1 , test::order_schedule {-50,"test1"}},
-	};
+	std::vector<test::order_schedule> orders = {
+		test::order_schedule {0,100,"test1"},
+		test::order_schedule {1,-50,"test1"}};
 	test::TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 
-	FastTest ft(exchange, broker, strategy, true);
+	FastTest ft(exchange, broker, strategy, false);
 	ft.run();
 
 	assert(broker.order_history.size() == 2);
@@ -104,12 +105,39 @@ void test_reduce_strategy() {
 	assert(cash == ft.cash_history);
 	assert(nlv == ft.nlv_history);
 }
+void test_multi_asset_strategy() {
+	std::cout << "TESTING test_multi_asset_strategy" << std::endl;
+	Exchange exchange = test::build_simple_exchange_multi();
+	Broker broker(exchange, false);
+
+	std::vector<test::order_schedule> orders = {
+	test::order_schedule {0,100,"test2"},
+	test::order_schedule {2,100,"test1"},
+	test::order_schedule {4,-100,"test2"},};
+	test::TestStrategy strategy(exchange, broker);
+	strategy.register_test_map(orders);
+	FastTest ft(exchange, broker, strategy, false);
+	ft.run();
+
+	assert(broker.order_history.size() == 3);
+	assert(broker.position_history.size() == 2);
+	assert((int)broker.position_history[0].average_price == 104);
+	assert((int)broker.position_history[0].close_price == 106);
+	assert((int)broker.position_history[1].average_price == 100);
+	assert((int)broker.position_history[1].close_price == 103);
+	std::vector<float> cash = { 100000,90000,90000,79600,90200,100500};
+	std::vector<float> nlv = { 100000,99900,99700,100250,100350,100500};
+
+	assert(cash == ft.cash_history);
+	assert(nlv == ft.nlv_history);
+}
 bool test::test_strategy() {
 	std::cout << "=======TESTING STRATEGY====== \n";
 	test_strategy_construction();
 	test_benchmark_strategy();
 	test_increase_strategy();
 	test_reduce_strategy();
+	test_multi_asset_strategy();
 	std::cout << "============================== \n";
 
 	return true;

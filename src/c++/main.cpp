@@ -9,6 +9,8 @@
 #include <chrono>
 #include <string>
 #include <assert.h>
+#include <chrono>
+using namespace std::chrono;
 
 #include "utils_time.h"
 #include "Asset.h"
@@ -18,8 +20,15 @@
 
 int main()
 {
+	auto start = high_resolution_clock::now();
 	test::test_asset();
 	test::test_exchange();
 	test::test_ft();
 	test::test_strategy();
+	auto stop = high_resolution_clock::now();
+
+	auto duration = duration_cast<milliseconds>(stop - start);
+	std::cout << "TESTING COMPLETE IN : "
+		<< duration.count() << " milliseconds" << std::endl;
+	return 0;
 }

@@ -11,6 +11,10 @@ FastTest::FastTest(Exchange &exchangeObj, Broker &brokerObj, Strategy &StrategyO
 {
 	this->logging = logging;
 }
+void FastTest::reset() {
+	this->broker.reset();
+	this->exchange.reset();
+}
 void FastTest::analyze_step() {
 	this->cash_history.push_back(this->broker.cash);
 	this->nlv_history.push_back(this->broker.net_liquidation_value);
