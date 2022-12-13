@@ -20,6 +20,7 @@ void FastTest::analyze_step() {
 	this->nlv_history.push_back(this->broker.net_liquidation_value);
 }
 void FastTest::run() {
+	this->reset();
 	while (this->exchange.step()) {
 		//allow exchange to process open orders from previous steps
 		if (!this->exchange.orders.empty()) {

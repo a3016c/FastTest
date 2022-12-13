@@ -10,17 +10,12 @@
 #include "Asset.h"
 #include "ta_libc.h"
 
-void Asset::get_column(std::vector<float> &col, unsigned int j) {
-	for (auto row : this->data) {
-		col.push_back(row[j]);
-	}
-}
 void Asset::reset() {
 	this->current_index = 0;
 	this->streaming = false;
 }
 bool Asset::is_last_view() {
-	return this->current_index == (this->N);
+	return this->current_index == (this->AM.N);
 }
 timeval Asset::asset_time() {
 	return this->datetime_index[this->current_index];
@@ -34,10 +29,10 @@ void Asset::load_from_csv(const char *file_name)
 	std::getline(_file, line);
 	std::istringstream ss(line);
 	std::string token;
+	std::getline(ss, token, ','); //skip datetime header name
 	while (std::getline(ss, token, ',')) {
 		this->headers.push_back(token);
 	}
-
 	while (_file) {
 		if (!std::getline(_file, line)) break;
 		std::istringstream ss(line);
@@ -47,40 +42,37 @@ void Asset::load_from_csv(const char *file_name)
 		timeval tv;
 		string_to_timeval(&tv, datetime_string, this->digit_datetime_format);
 		this->datetime_index.push_back(tv);
-
-		std::vector<float> row;
 		while(std::getline(ss, token, ',')){
-			row.push_back(std::stof(token));
+			this->AM.data.push_back(std::stof(token));
 		}
-		this->data.push_back(row);
 	}
-	this->N = this->data.size();
-	this->M = this->headers.size() - 1;
+	this->AM.set_size(this->AM.data.size() / this->headers.size(), this->headers.size());
 }
 void Asset::print_data()
 {
-	for (size_t i = 0; i < M + 1; i++) {
+	for (size_t i = 0; i < AM.M + 1; i++) {
 		std::cout << this->headers[i];
-		if (i < M) {
+		if (i < AM.M) {
 			std::cout << ", ";
 		}
-		else if (i == M) {
+		else if (i == AM.M) {
 			std::cout << "\n";
 		}
 	}
-	for (size_t i = 0; i < this->N; i++) {
+	for (size_t i = 0; i < this->AM.N; i++) {
 		char buf[28]{};
 		timeval_to_char_array(&this->datetime_index[i], buf, sizeof(buf));
 		std::cout << buf << ", ";
-		std::vector<float> row = this->data[i];
-		for (int j = 0; j < M; j++){
-			std::cout << row[j];
-			if (j < M - 1) {
+		size_t idx = this->AM.row_start(i);
+		for (size_t j = 0; j < this->AM.M; j++){
+			std::cout << this->AM.data[idx];
+			if (j < this->AM.M - 1) {
 				std::cout << ", ";
 			}
-			else if (j == M - 1) {
+			else if (j == this->AM.M - 1) {
 				std::cout << "\n";
 			}
+			idx++;
 		}
 	}
 }

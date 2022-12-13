@@ -12,11 +12,7 @@
 #include <chrono>
 using namespace std::chrono;
 
-#include "utils_time.h"
-#include "Asset.h"
 #include "Test.h"
-#include "Order.h"
-#include "Exchange.h"
 
 int main()
 {

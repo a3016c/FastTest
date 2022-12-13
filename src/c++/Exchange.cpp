@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <Windows.h>
 #include <map>
+#include <unordered_map>
 #include <utility>
 #include <string>
 #include <cmath>
@@ -11,15 +12,13 @@
 
 void Exchange::register_asset(Asset new_asset) {
 	this->market.insert({ new_asset.asset_name, new_asset });
-	this->open_map.insert({ new_asset.asset_name, new_asset.open_col });
-	this->close_map.insert({ new_asset.asset_name, new_asset.close_col });
 	this->asset_counter++;
 }
 void Exchange::remove_asset(std::string asset_name) {
 	this->market.erase(asset_name);
 }
 void Exchange::reset() {
-	this->market.swap(this->market_expired);
+	if (this->market.size() == 0) { this->market.swap(this->market_expired); }
 	for (auto& kvp : this->market) {
 		kvp.second.reset();
 	}
@@ -61,13 +60,15 @@ bool Exchange::get_next_time() {
 }
 void Exchange::get_market_view() {
 	this->market_view.clear();
+
+	std::unordered_map<std::string, float> row_map;
 	for (auto& _asset_pair : this->market) {
 		Asset *_asset = &_asset_pair.second;
 		if (_asset->streaming) {
-			this->market_view[_asset->asset_name] = _asset->data[_asset->current_index];
+			this->market_view[_asset->asset_name] = _asset;
 			_asset->current_index++;
-			if (_asset->current_index == (_asset->N)) {
-				this->asset_remove.push_back(_asset->asset_name);
+			if (_asset->current_index == (_asset->AM.N)) {
+				this->asset_remove.emplace(_asset->asset_name);
 			}
 		}
 	}
@@ -95,16 +96,15 @@ void Exchange::clean_up_market() {
 	this->asset_counter--;
 }
 float Exchange::get_market_price(std::string &asset_name, bool on_close){
+	Asset* asset = this->market_view[asset_name];
 	if (this->market_view.count(asset_name) == 0) {
 		return NAN;
 	}
 	if (on_close) {
-		idx = this->close_map[asset_name];
-		return this->market_view[asset_name][idx];
+		return asset->get(asset->close_col);
 	}
 	else {
-		idx = this->open_map[asset_name];
-		return this->market_view[asset_name][idx];
+		return asset->get(asset->open_col);
 	}
 }
 void Exchange::process_market_order(Order &open_order) {

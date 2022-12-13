@@ -86,12 +86,12 @@ void test_exchange_setup_multi() {
 		char buf[28]{};
 		timeval_to_char_array(&exchange.current_time, buf, sizeof(buf));
 		assert(strcmp(buf, datetime_index[i]) == 0);
-		assert(exchange.market_view["test2"][0] == open2[i]);
-		assert(exchange.market_view["test2"][1] == close2[i]);
+		assert(exchange.market_view["test2"]->get(0) == open2[i]);
+		assert(exchange.market_view["test2"]->get(1) == close2[i]);
 		
 		if ((i >= 1) & (i < 5)) {
-			assert(exchange.market_view["test1"][0] == open1[i-1]);
-			assert(exchange.market_view["test1"][1] == close1[i - 1]);
+			assert(exchange.market_view["test1"]->get(0) == open1[i-1]);
+			assert(exchange.market_view["test1"]->get(1) == close1[i - 1]);
 		}
 		else {
 			assert(exchange.market_view.count("test1") == 0);

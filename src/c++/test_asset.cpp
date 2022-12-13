@@ -22,8 +22,8 @@ void test_asset_load_csv1(const char * file_name) {
 
 	char buf[28]{};
 	for (int i = 0; i < 4; i++) {
-		assert(new_asset.data[i][0] = open[i]);
-		assert(new_asset.data[i][1] = close[i]);
+		assert(new_asset.AM(i,0) = open[i]);
+		assert(new_asset.AM(i,1) = close[i]);
 
 		timeval_to_char_array(&new_asset.datetime_index[i], buf, sizeof(buf));
 		assert(strcmp(buf,datetime_index[i]) == 0);

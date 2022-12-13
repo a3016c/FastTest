@@ -5,6 +5,8 @@
 #include <deque>
 #include <string>
 #include <map>
+#include <unordered_map>
+#include <set>
 #include <limits>
 #include "Order.h"
 #include "Asset.h"
@@ -15,11 +17,6 @@ class Exchange
 public:
 	bool logging;
 
-	//containers and vars to manage columns of the assets
-	unsigned int idx;
-	std::map<std::string, unsigned int> open_map;
-	std::map<std::string, unsigned int> close_map;
-
 	timeval current_time;
 
 	std::map<std::string, Asset> market;
@@ -27,8 +24,8 @@ public:
 
 	std::deque<Order> orders;
 
-	std::map<std::string, std::vector<float>> market_view;
-	std::vector<std::string> asset_remove;
+	std::unordered_map<std::string,Asset*> market_view;
+	std::set<std::string> asset_remove;
 	unsigned int asset_counter = 0;
 
 	//functions used to manage assets on the market
