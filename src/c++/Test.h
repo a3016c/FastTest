@@ -16,9 +16,11 @@ namespace test
 	bool test_strategy();
 
 	struct order_schedule {
+		OrderType order_type = MARKET_ORDER;
+		std::string asset_name;
 		int i;
 		float units;
-		std::string asset_name;
+		float limit = 0;
 	};
 
 	class TestStrategy : public Strategy {
@@ -26,7 +28,7 @@ namespace test
 		int i = 0;
 		std::vector<order_schedule> orders;
 		void register_test_map(std::vector<order_schedule> orders);
-		std::vector<Order> next();
+		std::vector<Order*> next();
 		using Strategy::Strategy;
 	};
 }

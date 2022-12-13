@@ -5,6 +5,7 @@
 #include <utility>
 #include <string>
 #include <cmath>
+#include <assert.h>
 #include "Order.h"
 #include "Asset.h"
 #include "Exchange.h"
@@ -23,6 +24,7 @@ void Exchange::reset() {
 		kvp.second.reset();
 	}
 	this->asset_counter = this->market.size();
+	this->order_counter = 0;
 }
 bool Exchange::step() {
 	if (!this->get_next_time()) { return false; };
@@ -82,9 +84,9 @@ void Exchange::clean_up_market() {
 		this->market_expired[asset_name] = std::move(this->market.at(asset_name));
 		this->market.erase(asset_name);
 		//remove open orders placed on this asset
-		std::deque<Order>::iterator order_itr = this->orders.begin();
+		std::deque<Order*>::iterator order_itr = this->orders.begin();
 		while (order_itr != this->orders.end()) {
-			if (order_itr->asset_name == asset_name) {
+			if ((*order_itr)->asset_name == asset_name) {
 				order_itr = this->orders.erase(order_itr);
 			}
 			else {
@@ -107,40 +109,63 @@ float Exchange::get_market_price(std::string &asset_name, bool on_close){
 		return asset->get(asset->open_col);
 	}
 }
-void Exchange::process_market_order(Order &open_order) {
-	float market_price = get_market_price(open_order.asset_name, open_order.cheat_on_close);
+void Exchange::process_market_order(MarketOrder *open_order) {
+	float market_price = get_market_price(open_order->asset_name, open_order->cheat_on_close);
+	if (std::isnan(market_price)) {throw std::invalid_argument("recieved order for which asset has no market price");}
+	open_order->fill(market_price, this->current_time);
+}
+void Exchange::process_limit_order(LimitOrder *open_order, bool on_close) {
+	float market_price = get_market_price(open_order->asset_name, on_close);
 	if (std::isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
-	open_order.fill(market_price, this->current_time);
-}
-void Exchange::process_order(Order &open_order) {
+	if ((open_order->units > 0) & (market_price < open_order->limit)) {
+		open_order->fill(market_price, this->current_time);
+	}
+	else if ((open_order->units < 0) & (market_price > open_order->limit)) {
+		open_order->fill(market_price, this->current_time);
+	}
+}	
+void Exchange::process_order(Order *open_order, bool on_close) {
 	try {
-		switch (open_order.order_type) {
+		switch (open_order->order_type) {
 		case MARKET_ORDER:
-			this->process_market_order(open_order);
+			{
+				MarketOrder* order_market = static_cast <MarketOrder*>(open_order);
+				this->process_market_order(order_market);
+				break;
+			}
+			case LIMIT_ORDER: {
+				LimitOrder* order_limit = static_cast <LimitOrder*>(open_order);
+				this->process_limit_order(order_limit, on_close);
+				break;
+			}
 		}
 	}
 	catch (const std::exception& e) {
 		throw e;
 	}
 }
-std::vector<Order> Exchange::process_orders(bool on_close) {
-	std::vector<Order> orders_filled;
-	std::deque<Order> orders_open;
+std::vector<Order*> Exchange::process_orders(bool on_close) {
+	std::vector<Order*> orders_filled;
+	std::deque<Order*> orders_open;
 
 	while (!this->orders.empty()) {
-		Order order = this->orders[0];
-		if (order.cheat_on_close == on_close) {
+		Order* order = this->orders[0];
+		if (order->cheat_on_close == on_close || order->alive) {
 			try {
-				this->process_order(order);
+				this->process_order(order, on_close);
 			}
 			catch (const std::exception& e){
 				std::cerr << "INVALID ORDER CAUGHT: " << e.what() << std::endl;
 				throw;
 			}
 		}
-		if (order.is_open) {
+		else {
+			order->order_create_time = this->current_time;
+			order->alive = true;
+		}
+		if (order->is_open) {
 			orders_open.push_back(order);
 		}
 		else {
@@ -151,13 +176,17 @@ std::vector<Order> Exchange::process_orders(bool on_close) {
 	this->orders = orders_open;
 	return orders_filled;
 }
-bool Exchange::place_order(Order new_order){
-	this->orders.push_back(new_order);
+bool Exchange::place_orders(std::vector<Order*> new_orders){
+	for (auto order : new_orders) {
+		order->order_id = this->order_counter;
+		this->order_counter++;
+		this->orders.push_back(order);
+	}
 	return true;
 }
 bool Exchange::cancel_order(unsigned int order_id){
 	for (size_t i = 0; i < this->orders.size(); i++) {
-		if (this->orders[i].order_id == order_id) {
+		if ((*this->orders[i]).order_id == order_id) {
 			this->orders.erase(this->orders.begin() + i);
 			return true;
 		}

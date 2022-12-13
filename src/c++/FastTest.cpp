@@ -24,16 +24,16 @@ void FastTest::run() {
 	while (this->exchange.step()) {
 		//allow exchange to process open orders from previous steps
 		if (!this->exchange.orders.empty()) {
-			std::vector<Order> filled_orders = this->exchange.process_orders();
+			std::vector<Order*> filled_orders = this->exchange.process_orders();
 
 			//allow broker to process orders that have been filled to adjust position sizes
 			this->broker.process_filled_orders(filled_orders);
 		}
 		//allow strategy to place orders
-		std::vector<Order> new_orders = this->strategy.next();
+		std::vector<Order*> new_orders = this->strategy.next();
 
 		//pass orders to the broker which routes them to the exchange
-		if (new_orders.size() > 0) { this->broker.place_orders(new_orders); }
+		if (new_orders.size() > 0) { this->exchange.place_orders(new_orders); }
 
 		//evaluate the portfolio
 		this->broker.evaluate_portfolio();
@@ -46,7 +46,7 @@ void FastTest::run() {
 
 		//allow exchange to process orders that have cheat_on_close = true
 		if (!this->exchange.orders.empty()) {
-			std::vector<Order> filled_orders = this->exchange.process_orders(true);
+			std::vector<Order*> filled_orders = this->exchange.process_orders(true);
 			this->broker.process_filled_orders(filled_orders);
 		}
 

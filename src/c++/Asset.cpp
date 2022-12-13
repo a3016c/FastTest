@@ -64,7 +64,7 @@ void Asset::print_data()
 		timeval_to_char_array(&this->datetime_index[i], buf, sizeof(buf));
 		std::cout << buf << ", ";
 		size_t idx = this->AM.row_start(i);
-		for (size_t j = 0; j < this->AM.M; j++){
+		for (size_t j = 0; j < this->AM.M; j++) {
 			std::cout << this->AM.data[idx];
 			if (j < this->AM.M - 1) {
 				std::cout << ", ";

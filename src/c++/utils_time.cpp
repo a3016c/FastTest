@@ -76,7 +76,6 @@ void string_to_timeval(timeval *tv, std::string input_date, const char *digit_da
 	long tStart = (long)mktime(&datetime_tm);
 	tv->tv_sec = tStart;
 }
-
 size_t timeval_to_char_array(timeval *tv, char *buf, size_t sz) 
 {
 	size_t written = 0;
@@ -94,3 +93,4 @@ size_t timeval_to_char_array(timeval *tv, char *buf, size_t sz)
 	}
 	return written;
 }
+

@@ -22,11 +22,12 @@ public:
 	std::map<std::string, Asset> market;
 	std::map<std::string, Asset> market_expired;
 
-	std::deque<Order> orders;
+	std::deque<Order*> orders;
 
 	std::unordered_map<std::string,Asset*> market_view;
 	std::set<std::string> asset_remove;
 	unsigned int asset_counter = 0;
+	unsigned int order_counter = 1;
 
 	//functions used to manage assets on the market
 	void reset();
@@ -34,12 +35,15 @@ public:
 	void remove_asset(std::string asset_name);
 
 	//functions used to manage orders placed by broker
-	bool place_order(Order new_order);
-	void process_market_order(Order &open_order);
-	void process_order(Order &open_order);
-	std::vector<Order> process_orders(bool on_close = false);
+	bool place_orders(std::vector<Order*> new_orders);
+	void process_order(Order *open_order, bool on_close);
+	std::vector<Order*> process_orders(bool on_close = false);
 	bool cancel_order(unsigned int order_id);
 	bool clear_orders();
+
+	//functions used for processing different order types
+	void process_market_order(MarketOrder *open_order);
+	void process_limit_order(LimitOrder *open_order, bool on_close);
 
 	//functions used to manage market view
 	bool step();

@@ -60,8 +60,8 @@ void test_increase_strategy() {
 	Broker broker(exchange, false);
 
 	std::vector<test::order_schedule> orders = { 
-		test::order_schedule {0,100,"test1"},
-		test::order_schedule {1,100,"test1"}};
+		test::order_schedule {MARKET_ORDER,"test1",0,100,},
+		test::order_schedule {MARKET_ORDER,"test1",1,100,}};
 	test::TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 	FastTest ft(exchange, broker, strategy, false);
@@ -69,8 +69,8 @@ void test_increase_strategy() {
 	ft.run();
 
 	assert(broker.order_history.size() == 2);
-	assert((int)broker.order_history[0].fill_price == 102);
-	assert((int)broker.order_history[1].fill_price == 104);
+	assert((int)broker.order_history[0]->fill_price == 102);
+	assert((int)broker.order_history[1]->fill_price == 104);
 	assert(broker.position_history.size() == 1);
 	assert((int)broker.position_history[0].average_price == 103);
 	assert((int)broker.position_history[0].close_price == 106);
@@ -86,8 +86,8 @@ void test_reduce_strategy() {
 	Broker broker(exchange, false);
 	
 	std::vector<test::order_schedule> orders = {
-		test::order_schedule {0,100,"test1"},
-		test::order_schedule {1,-50,"test1"}};
+		test::order_schedule {MARKET_ORDER,"test1",0,100},
+		test::order_schedule {MARKET_ORDER,"test1",1,-50}};
 	test::TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 
@@ -95,8 +95,8 @@ void test_reduce_strategy() {
 	ft.run();
 
 	assert(broker.order_history.size() == 2);
-	assert((int)broker.order_history[0].units == 100);
-	assert((int)broker.order_history[1].units == -50);
+	assert((int)broker.order_history[0]->units == 100);
+	assert((int)broker.order_history[1]->units == -50);
 	assert(broker.position_history.size() == 1);
 	assert((int)broker.position_history[0].average_price == 102);
 	assert((int)broker.position_history[0].realized_pl == 300);
@@ -111,9 +111,9 @@ void test_multi_asset_strategy() {
 	Broker broker(exchange, false);
 
 	std::vector<test::order_schedule> orders = {
-	test::order_schedule {0,100,"test2"},
-	test::order_schedule {2,100,"test1"},
-	test::order_schedule {4,-100,"test2"},};
+	test::order_schedule {MARKET_ORDER,"test2",0,100},
+	test::order_schedule {MARKET_ORDER,"test1",2,100},
+	test::order_schedule {MARKET_ORDER,"test2",4,-100},};
 	test::TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 	FastTest ft(exchange, broker, strategy, false);
@@ -131,6 +131,35 @@ void test_multi_asset_strategy() {
 	assert(cash == ft.cash_history);
 	assert(nlv == ft.nlv_history);
 }
+void test_limit_order() {
+	std::cout << "TESTING test_limit_order" << std::endl;
+	const char * test1_file_name = "test3_A_US.csv";
+	AssetDataFormat format("%d-%d-%d",0,3);
+	Asset new_asset("A",format);
+	new_asset.load_from_csv(test1_file_name);
+
+	Exchange exchange;
+	exchange.register_asset(new_asset);
+	Broker broker(exchange, true);
+
+	std::vector<test::order_schedule> orders = {
+	test::order_schedule {LIMIT_ORDER,"A",20,100,39.99}
+	};
+	test::TestStrategy strategy(exchange, broker);
+	strategy.register_test_map(orders);
+	FastTest ft(exchange, broker, strategy, true);
+	ft.run();
+
+	char buf_open[28]{};
+	char buf_close[28]{};
+	const char* datetime_index[4] = { "2000-05-23 00:00:00.000000","2001-01-31 00:00:00.000000"};
+	timeval_to_char_array(&broker.position_history[0].position_create_time, buf_open, sizeof(buf_open));
+	timeval_to_char_array(&broker.position_history[0].position_close_time, buf_close, sizeof(buf_close));
+	assert(strcmp(buf_open, datetime_index[0]) == 0);
+	assert(strcmp(buf_close, datetime_index[1]) == 0);
+	assert(broker.position_history[0].average_price - 37.7471 < .001);
+}
+
 bool test::test_strategy() {
 	std::cout << "=======TESTING STRATEGY====== \n";
 	test_strategy_construction();
@@ -138,6 +167,7 @@ bool test::test_strategy() {
 	test_increase_strategy();
 	test_reduce_strategy();
 	test_multi_asset_strategy();
+	test_limit_order();
 	std::cout << "============================== \n";
 
 	return true;
