@@ -33,7 +33,7 @@ struct order_schedule {
 class TestStrategy : public Strategy {
 public:
 	int i = 0;
-	std::vector<order_schedule> orders;
+	std::vector<order_schedule> order_scheduler;
 	void register_test_map(std::vector<order_schedule> orders);
 	void next();
 	using Strategy::Strategy;

@@ -16,6 +16,7 @@ class Exchange
 {
 public:
 	bool logging;
+	char time[28]{};
 
 	timeval current_time;
 	unsigned int current_index = 0;
@@ -41,7 +42,7 @@ public:
 	void process_order(std::unique_ptr<Order> &open_order, bool on_close);
 	std::vector<std::unique_ptr<Order>> process_orders(bool on_close = false);
 	std::unique_ptr<Order> cancel_order(std::unique_ptr<Order>& order_cancel);
-	std::vector<std::unique_ptr<Order>> clear_orders(std::string asset_name);
+	std::vector<std::unique_ptr<Order>> cancel_orders(std::string asset_name);
 
 	//functions used for processing different order types
 	void process_market_order(MarketOrder *open_order);
@@ -49,10 +50,13 @@ public:
 
 	//functions used to manage market view
 	bool step();
-	void clean_up_market();
+	std::vector<std::unique_ptr<Order>> clean_up_market();
 	bool get_next_time();
 	void get_market_view();
 	float get_market_price(std::string &asset_name, bool on_close = false);
+
+	//logging functions
+	void log_order_placed(std::unique_ptr<Order>& order);
 
 	Exchange(bool logging = false) { this->logging = logging; };
 	

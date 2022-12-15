@@ -2,8 +2,6 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <iostream>
-#include <ctime>
-#include <chrono>
 #include <string>
 #include <assert.h>
 
@@ -18,15 +16,14 @@ void test_asset_load_csv1(const char * file_name) {
 	
 	float open[4] = { 100,102,104,105 };
 	float close[4] = { 101,103,105,106 };
-	const char* datetime_index[4] = { "2000-06-06 00:00:00.000000","2000-06-07 00:00:00.000000","2000-06-08 00:00:00.000000","2000-06-09 00:00:00.000000" };
-
+	
 	char buf[28]{};
 	for (int i = 0; i < 4; i++) {
 		assert(new_asset.AM(i,0) = open[i]);
 		assert(new_asset.AM(i,1) = close[i]);
 
 		timeval_to_char_array(&new_asset.datetime_index[i], buf, sizeof(buf));
-		assert(strcmp(buf,datetime_index[i]) == 0);
+		assert(strcmp(buf,test::datetime_index_simple[i]) == 0);
 		memset(buf, 0, sizeof buf);
 	}
 }
@@ -38,15 +35,15 @@ void test_asset_load_csv2(const char * file_name) {
 	Asset new_asset("A");
 	new_asset.load_from_csv(file_name);
 
-	const char* datetime_index[2] = { "2000-01-04 00:00:00.000000","2001-01-31 00:00:00.000000" };
+	const char* datetime_index_real[2] = { "2000-01-04 00:00:00.000000","2001-01-31 00:00:00.000000" };
 	char buf[28]{};
 
 	timeval_to_char_array(&new_asset.datetime_index[0], buf, sizeof(buf));
-	assert(strcmp(buf, datetime_index[0]) == 0);
+	assert(strcmp(buf, datetime_index_real[0]) == 0);
 	memset(buf, 0, sizeof buf);
 
 	timeval_to_char_array(&new_asset.datetime_index[new_asset.datetime_index.size() - 1], buf, sizeof(buf));
-	assert(strcmp(buf, datetime_index[1]) == 0);
+	assert(strcmp(buf, datetime_index_real[1]) == 0);
 }
 bool test::test_asset(){
 	std::cout << "=======TESTING ASSET====== \n";

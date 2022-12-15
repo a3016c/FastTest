@@ -80,8 +80,14 @@ bool Broker::cancel_order(std::unique_ptr<Order>& order_cancel) {
 	this->order_history.push_back(std::move(canceled_order));
 	return true;
 }
-bool Broker::clear_orders() {
+void Broker::log_canceled_orders(std::vector<std::unique_ptr<Order>> cleared_orders) {
+	for (auto& order : cleared_orders) {
+		this->order_history.push_back(std::move(order));
+	}
+}
+bool Broker::cancel_orders(std::string asset_name) {
 	for (auto& order : this->exchange.orders) {
+		if (order->asset_name != asset_name) { continue; }
 		if (!this->cancel_order(order)) {
 			return false;
 		}
@@ -99,12 +105,15 @@ void Broker::clear_child_orders(Position& existing_position) {
 	}
 }
 ORDER_CHECK Broker::check_order(const std::unique_ptr<Order>& new_order) {
+	ORDER_CHECK order_code;
 	switch (new_order->order_type) {
 		case MARKET_ORDER: {
-			return VALID_ORDER;
+			order_code = VALID_ORDER;
+			break;
 		}
 		case LIMIT_ORDER: {
-			return VALID_ORDER;
+			order_code =  VALID_ORDER;
+			break;
 		}
 		case STOP_LOSS_ORDER: {
 			StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(new_order.get());
@@ -128,6 +137,14 @@ ORDER_CHECK Broker::check_order(const std::unique_ptr<Order>& new_order) {
 	}
 	return VALID_ORDER;
 }
+OrderState Broker::send_order(std::unique_ptr<Order> new_order) {
+	new_order->order_state = ACCEPETED;
+	new_order->order_create_time = this->exchange.current_time;
+	new_order->order_id = this->order_counter;
+	this->exchange.place_order(std::move(new_order));
+	this->order_counter++;
+	return ACCEPETED;
+}
 OrderState Broker::place_market_order(std::string asset_name, float units, bool cheat_on_close) {
 	std::unique_ptr<Order> order(new MarketOrder(
 		asset_name,
@@ -138,13 +155,10 @@ OrderState Broker::place_market_order(std::string asset_name, float units, bool 
 	if(check_order(order) != VALID_ORDER){
 		order->order_state = BROKER_REJECTED;
 		this->order_history.push_back(std::move(order));
-		throw std::runtime_error("INVALID ORDER RECIEVED");
+		return BROKER_REJECTED;
 	}
 	#endif
-	order->order_state = OPEN;
-	this->exchange.place_order(std::move(order));
-	this->order_counter++;
-	return ACCEPETED;
+	return this->send_order(std::move(order));
 }
 OrderState Broker::place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close) {
 	std::unique_ptr<Order> order(new LimitOrder(
@@ -160,10 +174,7 @@ OrderState Broker::place_limit_order(std::string asset_name, float units, float 
 		return BROKER_REJECTED;
 	}
 #endif
-	order->order_state = OPEN;
-	this->exchange.place_order(std::move(order));
-	this->order_counter++;
-	return ACCEPETED;
+	return this->send_order(std::move(order));
 }
 template <class T>
 OrderState Broker::place_stoploss_order(T* parent, float units, float stop_loss, bool cheat_on_close) {
@@ -180,10 +191,7 @@ OrderState Broker::place_stoploss_order(T* parent, float units, float stop_loss,
 		return BROKER_REJECTED;
 	}
 #endif
-	order->order_state = OPEN;
-	this->exchange.place_order(std::move(order));
-	this->order_counter++;
-	return ACCEPETED;
+	return this->send_order(std::move(order));
 }
 void Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled) {
 	for (auto& order : orders_filled) {
@@ -221,15 +229,6 @@ bool Broker::position_exists(std::string asset_name) {
 void Broker::set_cash(float cash) {
 	assert(cash > 0);
 	this->cash = cash;
-}
-void Broker::log_order_placed(std::unique_ptr<Order>& order) {
-	memset(this->time, 0, sizeof this->time);
-	timeval_to_char_array(&order->order_fill_time, this->time, sizeof(this->time));
-	printf("%s: ORDER PLACED: asset_name: %s, units: %f\n",
-		this->time,
-		order->asset_name.c_str(),
-		order->units
-	);
 }
 void Broker::log_order_filled(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);

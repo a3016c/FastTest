@@ -38,18 +38,20 @@ public:
 
 	void set_cash(float cash);
 	void reset();
+	void clean_up();
 
 	//logging functions
 	char time[28]{};
 	bool logging;
-	void log_order_placed(std::unique_ptr<Order>& order);
 	void log_order_filled(std::unique_ptr<Order>& order);
 	void log_open_position(Position &position);
 	void log_close_position(Position &position);
 
 	//functions for managing orders on the exchange
+	OrderState send_order(std::unique_ptr<Order> new_order);
 	bool cancel_order(std::unique_ptr<Order>& order_cancel);
-	bool clear_orders();
+	void log_canceled_orders(std::vector<std::unique_ptr<Order>> cleared_orders);
+	bool cancel_orders(std::string asset_name = "");
 	void clear_child_orders(Position& existing_position);
 	ORDER_CHECK check_order(const std::unique_ptr<Order>& new_order);
 	std::deque<std::unique_ptr<Order>>& open_orders();

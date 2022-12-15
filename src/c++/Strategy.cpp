@@ -22,11 +22,11 @@ void BenchmarkStrategy::next() {
 	}
 }
 void TestStrategy::register_test_map(std::vector<order_schedule>orders) {
-	this->orders = orders;
+	this->order_scheduler = orders;
 }
 
 void TestStrategy::next() {
-	for (auto it = this->orders.begin(); it != this->orders.end();) {
+	for (auto it = this->order_scheduler.begin(); it != this->order_scheduler.end();) {
 		if (it->i == i) {
 			switch (it->order_type) {
 				case MARKET_ORDER: {
@@ -38,7 +38,7 @@ void TestStrategy::next() {
 					break;
 				}
 			}
-			it = this->orders.erase(it);
+			it = this->order_scheduler.erase(it);
 		}
 		else {
 			it++;

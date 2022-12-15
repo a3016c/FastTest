@@ -17,10 +17,7 @@ using namespace std::chrono;
 int main()
 {
 	auto start = high_resolution_clock::now();
-	test::test_asset();
-	test::test_exchange();
-	test::test_ft();
-	test::test_strategy();
+	test::test_all();
 	auto stop = high_resolution_clock::now();
 
 	auto duration = duration_cast<milliseconds>(stop - start);

@@ -24,6 +24,7 @@ void Exchange::reset() {
 		kvp.second.reset();
 	}
 	this->asset_counter = this->market.size();
+	this->orders.clear();
 	this->build();
 }
 void Exchange::build() {
@@ -95,18 +96,20 @@ void Exchange::get_market_view() {
 		}
 	}
 }
-void Exchange::clean_up_market() {
+std::vector<std::unique_ptr<Order>> Exchange::clean_up_market() {
+	std::vector<std::unique_ptr<Order>> cleared_orders;
 	if (this->asset_remove.size() == 0) {
-		return;
+		return cleared_orders;
 	}
 	for (auto asset_name: this->asset_remove) {
 		//delete the asset from the market 
 		this->market_expired[asset_name] = std::move(this->market.at(asset_name));
-		this->clear_orders(asset_name);
+		cleared_orders = this->cancel_orders(asset_name);
 		this->market.erase(asset_name);
 	}
 	this->asset_remove.clear();
 	this->asset_counter--;
+	return std::move(cleared_orders);
 }
 float Exchange::get_market_price(std::string &asset_name, bool on_close){
 	Asset* asset = this->market_view[asset_name];
@@ -130,10 +133,10 @@ void Exchange::process_limit_order(LimitOrder *const open_order, bool on_close) 
 	if (std::isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
-	if ((open_order->units > 0) & (market_price < open_order->limit)) {
+	if ((open_order->units > 0) & (market_price <= open_order->limit)) {
 		open_order->fill(market_price, this->current_time);
 	}
-	else if ((open_order->units < 0) & (market_price > open_order->limit)) {
+	else if ((open_order->units < 0) & (market_price >= open_order->limit)) {
 		open_order->fill(market_price, this->current_time);
 	}
 }	
@@ -200,6 +203,7 @@ std::vector<std::unique_ptr<Order>> Exchange::process_orders(bool on_close) {
 	return orders_filled;
 }
 bool Exchange::place_order(std::unique_ptr<Order> new_order){
+	if (this->logging) { (this->log_order_placed(new_order)); }
 	this->orders.push_back(std::move(new_order));
 	return true;
 }
@@ -207,21 +211,27 @@ std::unique_ptr<Order> Exchange::cancel_order(std::unique_ptr<Order>& order_canc
 	for (size_t i = 0; i < this->orders.size(); i++) {
 		if ((*this->orders[i]) == *order_cancel) {
 			std::unique_ptr<Order> order = std::move(*(this->orders.begin() + i));
-			return order;
-		}
+			this->orders.erase(this->orders.begin() + i);
+			return std::move(order);
+		} 
 	}
 	return false;
 }
-std::vector<std::unique_ptr<Order>> Exchange::clear_orders(std::string asset_name) {
-	if (this->market.count(asset_name) == 0) {
-		throw std::invalid_argument("invalid asset name: " + asset_name + " passed to clear_orders");
-	}
-	std::vector<std::unique_ptr<Order>> cleared_orders;
+std::vector<std::unique_ptr<Order>> Exchange::cancel_orders(std::string asset_name) {
+	std::vector<std::unique_ptr<Order>> canceled_orders;
 	for (auto& order : this->orders) {
-		if (order->asset_name == asset_name) {
-			cleared_orders.push_back(std::move(order));
-		}
+		if (order->asset_name != asset_name) { continue; }
+		canceled_orders.push_back(std::move(this->cancel_order(order)));
 	}
-	return cleared_orders;
+	return canceled_orders;
+}
+void Exchange::log_order_placed(std::unique_ptr<Order>& order) {
+	memset(this->time, 0, sizeof this->time);
+	timeval_to_char_array(&order->order_create_time, this->time, sizeof(this->time));
+	printf("%s: ORDER PLACED: asset_name: %s, units: %f\n",
+		this->time,
+		order->asset_name.c_str(),
+		order->units
+	);
 }
 

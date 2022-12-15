@@ -11,14 +11,8 @@
 #include "Strategy.h"
 #include "utils_time.h"
 
-
 #include <chrono>
 using namespace std::chrono;
-
-const char* datetime_index[4] = { "2000-06-06 00:00:00.000000","2000-06-07 00:00:00.000000","2000-06-08 00:00:00.000000","2000-06-09 00:00:00.000000" };
-const char* datetime_index_multi[6] = { "2000-06-05 00:00:00.000000","2000-06-06 00:00:00.000000",
-		"2000-06-07 00:00:00.000000","2000-06-08 00:00:00.000000",
-		"2000-06-09 00:00:00.000000","2000-06-12 00:00:00.000000" };
 
 void test_strategy_construction() {
 	printf("TESTING test_strategy_construction\n");
@@ -51,8 +45,8 @@ void test_benchmark_strategy() {
 	char buf_close[28]{};
 	timeval_to_char_array(&broker.position_history[0].position_create_time, buf_open, sizeof(buf_open));
 	timeval_to_char_array(&broker.position_history[0].position_close_time, buf_close, sizeof(buf_close));
-	assert(strcmp(buf_open, datetime_index[0]) == 0);
-	assert(strcmp(buf_close, datetime_index[3]) == 0);
+	assert(strcmp(buf_open, test::datetime_index_simple[0]) == 0);
+	assert(strcmp(buf_close, test::datetime_index_simple[3]) == 0);
 }
 void test_increase_strategy() {
 	printf("TESTING test_increase_strategy\n");
@@ -152,11 +146,11 @@ void test_limit_order() {
 
 	char buf_open[28]{};
 	char buf_close[28]{};
-	const char* datetime_index[4] = { "2000-05-23 00:00:00.000000","2001-01-31 00:00:00.000000"};
+	const char* datetime_index_real[2] = { "2000-05-23 00:00:00.000000","2001-01-31 00:00:00.000000"};
 	timeval_to_char_array(&broker.position_history[0].position_create_time, buf_open, sizeof(buf_open));
 	timeval_to_char_array(&broker.position_history[0].position_close_time, buf_close, sizeof(buf_close));
-	assert(strcmp(buf_open, datetime_index[0]) == 0);
-	assert(strcmp(buf_close, datetime_index[1]) == 0);
+	assert(strcmp(buf_open, datetime_index_real[0]) == 0);
+	assert(strcmp(buf_close, datetime_index_real[1]) == 0);
 	assert(broker.position_history[0].average_price - 37.7471 < .001);
 }
 
