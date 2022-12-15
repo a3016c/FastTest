@@ -24,10 +24,37 @@ void Exchange::reset() {
 		kvp.second.reset();
 	}
 	this->asset_counter = this->market.size();
-	this->order_counter = 0;
+	this->build();
+}
+void Exchange::build() {
+	while (true) {
+		timeval next_time = MAX_TIME;
+		bool update = false;
+		if (this->market.size() == 0) { break; }
+		//Get the next time available across all assets. This will be the next market time
+		for (auto& kvp : this->market) {
+			if (kvp.second.current_index < (kvp.second.AM.N)) {
+				timeval asset_time = kvp.second.asset_time();
+				if (asset_time < next_time) {
+					next_time = asset_time;
+					update = true;
+				}
+			}
+		}
+		for (auto& kvp : this->market) {
+			if (kvp.second.current_index >= (kvp.second.AM.N)) { continue; }
+			if ((kvp.second.asset_time() == next_time)
+				&(kvp.second.current_index >= kvp.second.minimum_warmup)) {
+				kvp.second.current_index++;
+			}
+		}
+		if (!update) { break; };
+		this->datetime_index.push_back(next_time);
+	}
+	for (auto& kvp : this->market) { kvp.second.current_index = 0; }
 }
 bool Exchange::step() {
-	if (!this->get_next_time()) { return false; };
+	this->get_next_time();
 	this->get_market_view();
 	if (this->market_view.size() == 0) {
 		return false;
@@ -38,26 +65,19 @@ bool Exchange::get_next_time() {
 	if (this->market.size() == 0) {
 		return false;
 	}
-	timeval next_time = MAX_TIME;
+	timeval next_time = this->datetime_index[this->current_index];
 	//Get the next time available across all assets. This will be the next market time
 	for (auto& kvp : this->market) {
-		timeval asset_time = kvp.second.asset_time();
-		if (asset_time < next_time) {
-			next_time = asset_time;
-		}
-	}
-	//Any asset whose asset time is equal to the next market time  and not currently
-	//in warmup will be streaming this step
-	for (auto& kvp : this->market) {
-		if ((kvp.second.asset_time()  == next_time)
-		   &(kvp.second.current_index >= kvp.second.minimum_warmup)) {
-				kvp.second.streaming = true;
+		if ((kvp.second.asset_time() == next_time)
+			&(kvp.second.current_index >= kvp.second.minimum_warmup)) {
+			kvp.second.streaming = true;
 		}
 		else {
 			kvp.second.streaming = false;
 		}
 	}
 	this->current_time = next_time;
+	this->current_index++;
 	return true;
 }
 void Exchange::get_market_view() {
@@ -82,17 +102,8 @@ void Exchange::clean_up_market() {
 	for (auto asset_name: this->asset_remove) {
 		//delete the asset from the market 
 		this->market_expired[asset_name] = std::move(this->market.at(asset_name));
+		this->clear_orders(asset_name);
 		this->market.erase(asset_name);
-		//remove open orders placed on this asset
-		std::deque<Order*>::iterator order_itr = this->orders.begin();
-		while (order_itr != this->orders.end()) {
-			if ((*order_itr)->asset_name == asset_name) {
-				order_itr = this->orders.erase(order_itr);
-			}
-			else {
-				order_itr++;
-			}
-		}
 	}
 	this->asset_remove.clear();
 	this->asset_counter--;
@@ -149,44 +160,54 @@ void Exchange::process_order(Order *open_order, bool on_close) {
 std::vector<Order*> Exchange::process_orders(bool on_close) {
 	std::vector<Order*> orders_filled;
 	std::deque<Order*> orders_open;
-
 	while (!this->orders.empty()) {
 		Order* order = this->orders[0];
+		/*
+		Orders are executed at the open and close of every time step. Order member alive is 
+		false the first time then true after. But the first time an order is evaulated use cheat on close 
+		to determine wether we can process the order.
+		*/
 		if (order->cheat_on_close == on_close || order->alive) {
 			try {
 				this->process_order(order, on_close);
 			}
 			catch (const std::exception& e){
 				std::cerr << "INVALID ORDER CAUGHT: " << e.what() << std::endl;
-				throw;
 			}
 		}
+		
 		else {
 			order->order_create_time = this->current_time;
 			order->alive = true;
 		}
-		if (order->is_open) {
+		//order was not filled so add to open order container
+		if (order->order_state != FILLED) {
 			orders_open.push_back(order);
 		}
+		//order was filled
 		else {
+			//push filled order into filled orders container to send fill info back to broker
 			orders_filled.push_back(order);
+
+			//if the order has child orders push them into the open order container
+			if (order->orders_on_fill.size() > 0) {
+				for (auto child_order : order->orders_on_fill) {
+					orders_open.push_back(child_order);
+				}
+			}
 		}
 		this->orders.pop_front();
 	}
 	this->orders = orders_open;
 	return orders_filled;
 }
-bool Exchange::place_orders(std::vector<Order*> new_orders){
-	for (auto order : new_orders) {
-		order->order_id = this->order_counter;
-		this->order_counter++;
-		this->orders.push_back(order);
-	}
+bool Exchange::place_order(Order* new_order){
+	this->orders.push_back(new_order);
 	return true;
 }
-bool Exchange::cancel_order(unsigned int order_id){
+bool Exchange::cancel_order(Order* order_cancel){
 	for (size_t i = 0; i < this->orders.size(); i++) {
-		if ((*this->orders[i]).order_id == order_id) {
+		if ((*this->orders[i]) == *order_cancel) {
 			this->orders.erase(this->orders.begin() + i);
 			return true;
 		}
@@ -197,3 +218,19 @@ bool Exchange::clear_orders() {
 	this->orders.clear();
 	return true;
 }
+bool Exchange::clear_orders(std::string asset_name) {
+	if (this->market.count(asset_name) == 0) {
+		throw std::invalid_argument("invalid asset name: " + asset_name + " passed to clear_orders");
+	}
+	std::deque<Order*>::iterator order_itr = this->orders.begin();
+	while (order_itr != this->orders.end()) {
+		if ((*order_itr)->asset_name == asset_name) {
+			order_itr = this->orders.erase(order_itr);
+		}
+		else {
+			order_itr++;
+		}
+	}
+	return true;
+}
+

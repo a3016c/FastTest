@@ -80,10 +80,6 @@ public:
 	//function to reset the asset after a test is run
 	void reset();
 
-	//function to get the current asset time. Can be different that the market time
-	//this time is the the time for the next available view for the asset
-	timeval asset_time();
-
 	//function to check if we have reached the end if the data for this asset.
 	bool is_last_view();
 
@@ -102,6 +98,9 @@ public:
 	inline float get(std::string column) {
 		size_t i = this->format.column_map[column];
 		return AM(current_index - 1, i);
+	}
+	inline const timeval & asset_time() {
+		return this->datetime_index[this->current_index];
 	}
 	Asset(std::string asset_name, AssetDataFormat format = AssetDataFormat(), unsigned int minimum_warmup = 0) {
 		this->asset_name = asset_name;

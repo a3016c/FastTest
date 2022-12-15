@@ -17,9 +17,6 @@ void Asset::reset() {
 bool Asset::is_last_view() {
 	return this->current_index == (this->AM.N);
 }
-timeval Asset::asset_time() {
-	return this->datetime_index[this->current_index];
-}
 void Asset::load_from_csv(const char *file_name)
 {	
 	std::ifstream _file(file_name);

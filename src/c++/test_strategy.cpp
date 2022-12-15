@@ -59,10 +59,10 @@ void test_increase_strategy() {
 	Exchange exchange = test::build_simple_exchange();
 	Broker broker(exchange, false);
 
-	std::vector<test::order_schedule> orders = { 
-		test::order_schedule {MARKET_ORDER,"test1",0,100,},
-		test::order_schedule {MARKET_ORDER,"test1",1,100,}};
-	test::TestStrategy strategy(exchange, broker);
+	std::vector<order_schedule> orders = { 
+		order_schedule {MARKET_ORDER,"test1",0,100,},
+		order_schedule {MARKET_ORDER,"test1",1,100,}};
+	TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 	FastTest ft(exchange, broker, strategy, false);
 
@@ -85,10 +85,10 @@ void test_reduce_strategy() {
 	Exchange exchange = test::build_simple_exchange();
 	Broker broker(exchange, false);
 	
-	std::vector<test::order_schedule> orders = {
-		test::order_schedule {MARKET_ORDER,"test1",0,100},
-		test::order_schedule {MARKET_ORDER,"test1",1,-50}};
-	test::TestStrategy strategy(exchange, broker);
+	std::vector<order_schedule> orders = {
+		order_schedule {MARKET_ORDER,"test1",0,100},
+		order_schedule {MARKET_ORDER,"test1",1,-50}};
+	TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 
 	FastTest ft(exchange, broker, strategy, false);
@@ -110,11 +110,11 @@ void test_multi_asset_strategy() {
 	Exchange exchange = test::build_simple_exchange_multi();
 	Broker broker(exchange, false);
 
-	std::vector<test::order_schedule> orders = {
-	test::order_schedule {MARKET_ORDER,"test2",0,100},
-	test::order_schedule {MARKET_ORDER,"test1",2,100},
-	test::order_schedule {MARKET_ORDER,"test2",4,-100},};
-	test::TestStrategy strategy(exchange, broker);
+	std::vector<order_schedule> orders = {
+	order_schedule {MARKET_ORDER,"test2",0,100},
+	order_schedule {MARKET_ORDER,"test1",2,100},
+	order_schedule {MARKET_ORDER,"test2",4,-100},};
+	TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 	FastTest ft(exchange, broker, strategy, false);
 	ft.run();
@@ -140,14 +140,14 @@ void test_limit_order() {
 
 	Exchange exchange;
 	exchange.register_asset(new_asset);
-	Broker broker(exchange, true);
+	Broker broker(exchange, false);
 
-	std::vector<test::order_schedule> orders = {
-	test::order_schedule {LIMIT_ORDER,"A",20,100,39.99}
+	std::vector<order_schedule> orders = {
+	order_schedule {LIMIT_ORDER,"A",20,100,39.99}
 	};
-	test::TestStrategy strategy(exchange, broker);
+	TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
-	FastTest ft(exchange, broker, strategy, true);
+	FastTest ft(exchange, broker, strategy, false);
 	ft.run();
 
 	char buf_open[28]{};

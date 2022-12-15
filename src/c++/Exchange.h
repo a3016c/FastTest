@@ -18,7 +18,9 @@ public:
 	bool logging;
 
 	timeval current_time;
+	unsigned int current_index = 0;
 
+	std::vector<timeval> datetime_index;
 	std::map<std::string, Asset> market;
 	std::map<std::string, Asset> market_expired;
 
@@ -27,19 +29,20 @@ public:
 	std::unordered_map<std::string,Asset*> market_view;
 	std::set<std::string> asset_remove;
 	unsigned int asset_counter = 0;
-	unsigned int order_counter = 1;
 
 	//functions used to manage assets on the market
+	void build();
 	void reset();
 	void register_asset(Asset new_asset);
 	void remove_asset(std::string asset_name);
 
 	//functions used to manage orders placed by broker
-	bool place_orders(std::vector<Order*> new_orders);
+	bool place_order(Order* new_orders);
 	void process_order(Order *open_order, bool on_close);
 	std::vector<Order*> process_orders(bool on_close = false);
-	bool cancel_order(unsigned int order_id);
+	bool cancel_order(Order* order_cancel);
 	bool clear_orders();
+	bool clear_orders(std::string asset_name);
 
 	//functions used for processing different order types
 	void process_market_order(MarketOrder *open_order);

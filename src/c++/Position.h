@@ -8,6 +8,7 @@
 class Position
 {
 public:
+
 	bool is_open;
 	float units;
 
@@ -32,6 +33,10 @@ public:
 	Position(unsigned int position_id, std::string asset_name, float units, float average_price, timeval position_create_time);
 	Position() = default;
 
+	friend bool operator==(const Position& lhs, const Position& rhs)
+	{
+		return &lhs == &rhs;
+	}
 };
 
 #endif

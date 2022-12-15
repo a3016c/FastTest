@@ -33,7 +33,7 @@ void FastTest::run() {
 		std::vector<Order*> new_orders = this->strategy.next();
 
 		//pass orders to the broker which routes them to the exchange
-		if (new_orders.size() > 0) { this->exchange.place_orders(new_orders); }
+		if (new_orders.size() > 0) { this->broker.place_orders(new_orders); }
 
 		//evaluate the portfolio
 		this->broker.evaluate_portfolio();

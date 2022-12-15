@@ -39,6 +39,7 @@ void test_exchange_get_next_time() {
 	std::cout << "TESTING test_exchange_get_next_time" << std::endl;
 
 	Exchange exchange = test::build_simple_exchange();
+	exchange.build();
 	assert(exchange.asset_counter == 1);
 	exchange.get_next_time();
 
@@ -51,6 +52,7 @@ void test_exchange_step() {
 	std::cout << "TESTING test_exchange_step" << std::endl;
 
 	Exchange exchange = test::build_simple_exchange();
+	exchange.build();
 	assert(exchange.asset_counter == 1);
 
 	std::string asset_name = "test1";
@@ -71,6 +73,7 @@ void test_exchange_setup_multi() {
 	std::cout << "TESTING test_exchange_setup_multi" << std::endl;
 
 	Exchange exchange = test::build_simple_exchange_multi();
+	exchange.build();
 	assert(exchange.asset_counter == 2);
 
 	const char* datetime_index[6] = { "2000-06-05 00:00:00.000000","2000-06-06 00:00:00.000000",

@@ -12,6 +12,7 @@ void Broker::reset() {
 	this->order_history.clear();
 	this->position_history.clear();
 	this->position_counter = 0;
+	this->order_counter = 0;
 	this->unrealized_pl = 0;
 	this->realized_pl = 0;
 	this->net_liquidation_value = 0;
@@ -73,15 +74,80 @@ void Broker::evaluate_portfolio(bool on_close) {
 	}
 	this->net_liquidation_value = nlv + this->cash;
 }
-bool Broker::cancel_order(unsigned int order_id) {
-	return this->exchange.cancel_order(order_id);
+bool Broker::cancel_order(Order* order_cancel) {
+	order_cancel->order_state = CANCELED;
+	this->order_history.push_back(order_cancel);
+	return this->exchange.cancel_order(order_cancel);
 }
 bool Broker::clear_orders() {
-	return this->exchange.clear_orders();
+	for (auto order : this->exchange.orders) {
+		if (!this->cancel_order(order)) {
+			return false;
+		}
+	}
+	return true;
+}
+void Broker::clear_child_orders(Position& existing_position) {
+	for (auto order : this->exchange.orders) {
+		if (order->order_type == STOP_LOSS_ORDER || order->order_type == TAKE_PROFIT_ORDER) {
+			StopLossOrder* stop_loss = static_cast <StopLossOrder*>(order);
+			if (*stop_loss->order_parent.member.parent_position == existing_position) {
+				this->exchange.cancel_order(order);
+			}
+		}
+	}
+}
+bool Broker::check_order(Order* new_order) {
+	switch (new_order->order_type) {
+		case MARKET_ORDER: {
+			return true;
+		}
+		case LIMIT_ORDER: {
+			return true;
+		}
+		case STOP_LOSS_ORDER: {
+			StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(new_order);
+			OrderParent parent = stop_loss_order->order_parent;
+			if (parent.type == ORDER) {
+				Order* parent_order = parent.member.parent_order;
+				if (parent_order->asset_name != stop_loss_order->asset_name) { throw std::invalid_argument("StopLossOrder has different asset name then parent"); }
+				if (parent_order->order_type > 1) { throw std::invalid_argument("StopLossOrder has invalid parent order type"); }
+				if (parent_order->units*stop_loss_order->units > 0) { throw std::invalid_argument("StopLossOrder has invalid units"); }
+			}
+			else {
+				Position* parent_position = parent.member.parent_position;
+				if (parent_position->asset_name != stop_loss_order->asset_name) { throw std::invalid_argument("StopLossOrder has different asset name then parent"); }
+				if (parent_position->units*stop_loss_order->units > 0) { throw std::invalid_argument("StopLossOrder has invalid units"); }
+			}
+		}
+	}
+	for (auto order_on_fill : new_order->orders_on_fill) {
+		this->check_order(order_on_fill);
+	}
+	return false;
+}
+bool Broker::place_orders(std::vector<Order*> new_orders) {
+	for (auto order : new_orders) {
+		#ifdef CHECK_ORDER
+		try {
+			check_order(order);
+		}
+		catch (const std::exception& e) {
+			order->order_state = BROKER_REJECTED;
+			std::cerr << "BROKER CAUGHT INVALID ORDER CAUGHT: " << e.what() << std::endl;
+		}
+		#endif
+		order->order_state = OPEN;
+		order->order_id = this->order_counter;
+		this->order_counter++;
+		this->exchange.place_order(order);
+	}
+	return true;
 }
 void Broker::process_filled_orders(std::vector<Order*> orders_filled) {
 	for (auto order : orders_filled) {
 		if (this->logging) { (this->log_order_filled(order)); }
+		order->order_state = FILLED;
 		this->order_history.push_back(order);
 		//no position exists, create new open position
 		if (!this->position_exists(order->asset_name)) {
