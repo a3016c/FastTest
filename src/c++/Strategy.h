@@ -12,14 +12,14 @@ public:
 	Exchange &exchange;
 	Broker &broker;
 
-	virtual std::vector<Order*> next();
+	virtual std::vector<std::unique_ptr<Order>> next();
 
 	Strategy(Exchange &exchange, Broker &broker);
 };
 class BenchmarkStrategy : public Strategy {
 public:
 	bool is_invested = false;
-	std::vector<Order*> next();
+	std::vector<std::unique_ptr<Order>> next();
 
 	using Strategy::Strategy;
 };
@@ -35,7 +35,7 @@ public:
 	int i = 0;
 	std::vector<order_schedule> orders;
 	void register_test_map(std::vector<order_schedule> orders);
-	std::vector<Order*> next();
+	std::vector<std::unique_ptr<Order>> next();
 	using Strategy::Strategy;
 };
 

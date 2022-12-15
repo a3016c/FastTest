@@ -25,7 +25,7 @@ float Broker::get_net_liquidation_value() {
 	}
 	return nlv;
 }
-void Broker::open_position(Order *order) {
+void Broker::open_position(std::unique_ptr<Order> &order) {
 	Position new_position = Position{
 		this->position_counter,
 		order->asset_name,
@@ -45,11 +45,11 @@ void Broker::close_position(Position &existing_position, float fill_price, timev
 	this->position_history.push_back(existing_position);
 	this->cash += existing_position.units * fill_price;
 }
-void Broker::reduce_position(Position &existing_position, Order *order) {
+void Broker::reduce_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.reduce(order->fill_price, order->units);
 	this->cash += abs(order->units) * order->fill_price;
 }
-void Broker::increase_position(Position &existing_position, Order *order) {
+void Broker::increase_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.increase(order->fill_price, order->units);
 	this->cash -= order->units * order->fill_price;
 }
@@ -74,13 +74,14 @@ void Broker::evaluate_portfolio(bool on_close) {
 	}
 	this->net_liquidation_value = nlv + this->cash;
 }
-bool Broker::cancel_order(Order* order_cancel) {
-	order_cancel->order_state = CANCELED;
-	this->order_history.push_back(order_cancel);
-	return this->exchange.cancel_order(order_cancel);
+bool Broker::cancel_order(std::unique_ptr<Order>& order_cancel) {
+	std::unique_ptr<Order> canceled_order = this->exchange.cancel_order(order_cancel);
+	canceled_order->order_state = CANCELED;
+	this->order_history.push_back(std::move(canceled_order));
+	return true;
 }
 bool Broker::clear_orders() {
-	for (auto order : this->exchange.orders) {
+	for (auto& order : this->exchange.orders) {
 		if (!this->cancel_order(order)) {
 			return false;
 		}
@@ -88,16 +89,16 @@ bool Broker::clear_orders() {
 	return true;
 }
 void Broker::clear_child_orders(Position& existing_position) {
-	for (auto order : this->exchange.orders) {
+	for (auto& order : this->exchange.orders) {
 		if (order->order_type == STOP_LOSS_ORDER || order->order_type == TAKE_PROFIT_ORDER) {
-			StopLossOrder* stop_loss = static_cast <StopLossOrder*>(order);
+			StopLossOrder* stop_loss = static_cast <StopLossOrder*>(order.get());
 			if (*stop_loss->order_parent.member.parent_position == existing_position) {
 				this->exchange.cancel_order(order);
 			}
 		}
 	}
 }
-bool Broker::check_order(Order* new_order) {
+bool Broker::check_order(const std::unique_ptr<Order>& new_order) {
 	switch (new_order->order_type) {
 		case MARKET_ORDER: {
 			return true;
@@ -106,7 +107,7 @@ bool Broker::check_order(Order* new_order) {
 			return true;
 		}
 		case STOP_LOSS_ORDER: {
-			StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(new_order);
+			StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(new_order.get());
 			OrderParent parent = stop_loss_order->order_parent;
 			if (parent.type == ORDER) {
 				Order* parent_order = parent.member.parent_order;
@@ -121,13 +122,13 @@ bool Broker::check_order(Order* new_order) {
 			}
 		}
 	}
-	for (auto order_on_fill : new_order->orders_on_fill) {
+	for (auto& order_on_fill : new_order->orders_on_fill) {
 		this->check_order(order_on_fill);
 	}
 	return false;
 }
-bool Broker::place_orders(std::vector<Order*> new_orders) {
-	for (auto order : new_orders) {
+bool Broker::place_orders(std::vector<std::unique_ptr<Order>> new_orders) {
+	for (auto& order : new_orders) {
 		#ifdef CHECK_ORDER
 		try {
 			check_order(order);
@@ -140,15 +141,13 @@ bool Broker::place_orders(std::vector<Order*> new_orders) {
 		order->order_state = OPEN;
 		order->order_id = this->order_counter;
 		this->order_counter++;
-		this->exchange.place_order(order);
+		this->exchange.place_order(std::move(order));
 	}
 	return true;
 }
-void Broker::process_filled_orders(std::vector<Order*> orders_filled) {
-	for (auto order : orders_filled) {
+void Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled) {
+	for (auto& order : orders_filled) {
 		if (this->logging) { (this->log_order_filled(order)); }
-		order->order_state = FILLED;
-		this->order_history.push_back(order);
 		//no position exists, create new open position
 		if (!this->position_exists(order->asset_name)) {
 			this->open_position(order);
@@ -169,9 +168,11 @@ void Broker::process_filled_orders(std::vector<Order*> orders_filled) {
 				this->reduce_position(existing_position, order);
 			}
 		}
+		order->order_state = FILLED;
+		this->order_history.push_back(std::move(order));
 	}
 }
-std::deque<Order*> Broker::open_orders() {
+std::deque<std::unique_ptr<Order>>& Broker::open_orders() {
 	return this->exchange.orders;
 }
 bool Broker::position_exists(std::string asset_name) {
@@ -181,7 +182,7 @@ void Broker::set_cash(float cash) {
 	assert(cash > 0);
 	this->cash = cash;
 }
-void Broker::log_order_placed(Order *order) {
+void Broker::log_order_placed(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_fill_time, this->time, sizeof(this->time));
 	printf("%s: ORDER PLACED: asset_name: %s, units: %f\n",
@@ -190,7 +191,7 @@ void Broker::log_order_placed(Order *order) {
 		order->units
 	);
 }
-void Broker::log_order_filled(Order *order) {
+void Broker::log_order_filled(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_fill_time, this->time, sizeof(this->time));
 	printf("%s: ORDER FILLED: asset_name: %s, units: %f, fill_price: %f\n",

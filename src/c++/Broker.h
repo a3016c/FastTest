@@ -13,7 +13,7 @@
 class Broker
 {
 public: 
-	std::vector<Order*> order_history;
+	std::vector<std::unique_ptr<Order>> order_history;
 	std::vector<Position> position_history;
 
 	Exchange &exchange;
@@ -33,19 +33,19 @@ public:
 	//logging functions
 	char time[28]{};
 	bool logging;
-	void log_order_placed(Order *order);
-	void log_order_filled(Order *order);
+	void log_order_placed(std::unique_ptr<Order>& order);
+	void log_order_filled(std::unique_ptr<Order>& order);
 	void log_open_position(Position &position);
 	void log_close_position(Position &position);
 
 	//functions for managing orders on the exchange
-	bool cancel_order(Order* order_cancel);
+	bool cancel_order(std::unique_ptr<Order>& order_cancel);
 	bool clear_orders();
 	void clear_child_orders(Position& existing_position);
-	bool check_order(Order* new_order);
-	bool place_orders(std::vector<Order*> new_orders);
-	std::deque<Order*> open_orders();
-	void process_filled_orders(std::vector<Order*> orders_filled);
+	bool check_order(const std::unique_ptr<Order>& new_order);
+	bool place_orders(std::vector<std::unique_ptr<Order>> new_orders);
+	std::deque<std::unique_ptr<Order>>& open_orders();
+	void process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
@@ -55,11 +55,10 @@ public:
 	Broker(Exchange &exchangeObj, bool logging = false) : exchange(exchangeObj) {
 		this->logging = logging;
 	};
-	~Broker() { for (auto order : order_history) { delete order; } }
 private:
-	void increase_position(Position &existing_position, Order *order);
-	void reduce_position(Position &existing_position, Order *order);
-	void open_position(Order *order_filled);
+	void increase_position(Position &existing_position, std::unique_ptr<Order>& order);
+	void reduce_position(Position &existing_position, std::unique_ptr<Order>& order);
+	void open_position(std::unique_ptr<Order>& order_filled);
 	void close_position(Position &existing_position, float fill_price, timeval order_fill_time);
 };
 

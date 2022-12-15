@@ -14,10 +14,10 @@ void Order::add_stop_loss(float stop_loss, float units) {
 	if (std::isnan(units)) {
 		units = this->units;
 	}
-	Order* order = new StopLossOrder(
+	std::unique_ptr<Order> order (new StopLossOrder(
 		this,
 		units,
 		stop_loss
-	);
-	this->orders_on_fill.push_back(order);
+	));
+	this->orders_on_fill.push_back(std::move(order));
 }

@@ -50,7 +50,7 @@ public:
 	struct timeval order_create_time; //the time the order was placed on the exchange
 	struct timeval order_fill_time;   //the time that the order was filled by the exchange
 
-	std::vector<Order*> orders_on_fill; //container for orders to execute once the parent order as filled
+	std::vector<std::unique_ptr<Order>> orders_on_fill; //container for orders to execute once the parent order as filled
 
 	void create(timeval order_create_time);
 	void fill(float market_price, timeval fill_time);
@@ -64,6 +64,8 @@ public:
 	}
 	Order() = default;
 	virtual ~Order() {}
+	Order(const Order&) = delete;
+	Order& operator =(const Order&) = delete;
 
 	friend bool operator==(const Order& lhs, const Order& rhs)
 	{

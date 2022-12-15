@@ -85,7 +85,7 @@ void Exchange::get_market_view() {
 
 	std::unordered_map<std::string, float> row_map;
 	for (auto& _asset_pair : this->market) {
-		Asset *_asset = &_asset_pair.second;
+		Asset * const _asset = &_asset_pair.second;
 		if (_asset->streaming) {
 			this->market_view[_asset->asset_name] = _asset;
 			_asset->current_index++;
@@ -120,12 +120,12 @@ float Exchange::get_market_price(std::string &asset_name, bool on_close){
 		return asset->get(asset->open_col);
 	}
 }
-void Exchange::process_market_order(MarketOrder *open_order) {
+void Exchange::process_market_order(MarketOrder * const open_order) {
 	float market_price = get_market_price(open_order->asset_name, open_order->cheat_on_close);
 	if (std::isnan(market_price)) {throw std::invalid_argument("recieved order for which asset has no market price");}
 	open_order->fill(market_price, this->current_time);
 }
-void Exchange::process_limit_order(LimitOrder *open_order, bool on_close) {
+void Exchange::process_limit_order(LimitOrder *const open_order, bool on_close) {
 	float market_price = get_market_price(open_order->asset_name, on_close);
 	if (std::isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
@@ -137,17 +137,17 @@ void Exchange::process_limit_order(LimitOrder *open_order, bool on_close) {
 		open_order->fill(market_price, this->current_time);
 	}
 }	
-void Exchange::process_order(Order *open_order, bool on_close) {
+void Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close) {
 	try {
 		switch (open_order->order_type) {
 		case MARKET_ORDER:
 			{
-				MarketOrder* order_market = static_cast <MarketOrder*>(open_order);
+				MarketOrder* order_market = static_cast <MarketOrder*>(open_order.get());
 				this->process_market_order(order_market);
 				break;
 			}
 			case LIMIT_ORDER: {
-				LimitOrder* order_limit = static_cast <LimitOrder*>(open_order);
+				LimitOrder* order_limit = static_cast <LimitOrder*>(open_order.get());
 				this->process_limit_order(order_limit, on_close);
 				break;
 			}
@@ -157,11 +157,11 @@ void Exchange::process_order(Order *open_order, bool on_close) {
 		throw e;
 	}
 }
-std::vector<Order*> Exchange::process_orders(bool on_close) {
-	std::vector<Order*> orders_filled;
-	std::deque<Order*> orders_open;
+std::vector<std::unique_ptr<Order>> Exchange::process_orders(bool on_close) {
+	std::vector<std::unique_ptr<Order>> orders_filled;
+	std::deque<std::unique_ptr<Order>> orders_open;
 	while (!this->orders.empty()) {
-		Order* order = this->orders[0];
+		std::unique_ptr<Order>& order = this->orders[0];
 		/*
 		Orders are executed at the open and close of every time step. Order member alive is 
 		false the first time then true after. But the first time an order is evaulated use cheat on close 
@@ -175,62 +175,53 @@ std::vector<Order*> Exchange::process_orders(bool on_close) {
 				std::cerr << "INVALID ORDER CAUGHT: " << e.what() << std::endl;
 			}
 		}
-		
 		else {
 			order->order_create_time = this->current_time;
 			order->alive = true;
 		}
 		//order was not filled so add to open order container
 		if (order->order_state != FILLED) {
-			orders_open.push_back(order);
+			orders_open.push_back(std::move(order));
 		}
 		//order was filled
 		else {
-			//push filled order into filled orders container to send fill info back to broker
-			orders_filled.push_back(order);
-
 			//if the order has child orders push them into the open order container
 			if (order->orders_on_fill.size() > 0) {
-				for (auto child_order : order->orders_on_fill) {
-					orders_open.push_back(child_order);
+				for (auto& child_order : order->orders_on_fill) {
+					orders_open.push_back(std::move(child_order));
 				}
 			}
+			//push filled order into filled orders container to send fill info back to broker
+			orders_filled.push_back(std::move(order));	
 		}
 		this->orders.pop_front();
 	}
-	this->orders = orders_open;
+	this->orders = std::move(orders_open);
 	return orders_filled;
 }
-bool Exchange::place_order(Order* new_order){
-	this->orders.push_back(new_order);
+bool Exchange::place_order(std::unique_ptr<Order> new_order){
+	this->orders.push_back(std::move(new_order));
 	return true;
 }
-bool Exchange::cancel_order(Order* order_cancel){
+std::unique_ptr<Order> Exchange::cancel_order(std::unique_ptr<Order>& order_cancel){
 	for (size_t i = 0; i < this->orders.size(); i++) {
 		if ((*this->orders[i]) == *order_cancel) {
-			this->orders.erase(this->orders.begin() + i);
-			return true;
+			std::unique_ptr<Order> order = std::move(*(this->orders.begin() + i));
+			return order;
 		}
 	}
 	return false;
 }
-bool Exchange::clear_orders() {
-	this->orders.clear();
-	return true;
-}
-bool Exchange::clear_orders(std::string asset_name) {
+std::vector<std::unique_ptr<Order>> Exchange::clear_orders(std::string asset_name) {
 	if (this->market.count(asset_name) == 0) {
 		throw std::invalid_argument("invalid asset name: " + asset_name + " passed to clear_orders");
 	}
-	std::deque<Order*>::iterator order_itr = this->orders.begin();
-	while (order_itr != this->orders.end()) {
-		if ((*order_itr)->asset_name == asset_name) {
-			order_itr = this->orders.erase(order_itr);
-		}
-		else {
-			order_itr++;
+	std::vector<std::unique_ptr<Order>> cleared_orders;
+	for (auto& order : this->orders) {
+		if (order->asset_name == asset_name) {
+			cleared_orders.push_back(std::move(order));
 		}
 	}
-	return true;
+	return cleared_orders;
 }
 
