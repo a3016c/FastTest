@@ -8,51 +8,41 @@ Strategy::Strategy(Exchange &exchangeObj, Broker &brokerObj) :
 	exchange(exchangeObj), broker(brokerObj)
 {
 }
-std::vector<std::unique_ptr<Order>> Strategy::next(){
-	std::vector<std::unique_ptr<Order>> new_orders;
-	return new_orders;
+void Strategy::next(){
 }
-std::vector<std::unique_ptr<Order>> BenchmarkStrategy::next() {
-	std::vector<std::unique_ptr<Order>> new_orders;
+void BenchmarkStrategy::next() {
 	if (!this->is_invested) {
 		std::string asset_name = "test1";
-		std::unique_ptr<Order> order (new MarketOrder(
+		this->broker.place_market_order(
 			asset_name,
 			this->broker.cash / this->exchange.get_market_price(asset_name, true),
 			true
-		));
-		new_orders.push_back(std::move(order));
+		);
 		this->is_invested = true;
 	}
-	return new_orders;
 }
 void TestStrategy::register_test_map(std::vector<order_schedule>orders) {
 	this->orders = orders;
 }
 
-std::vector<std::unique_ptr<Order>> TestStrategy::next() {
-	std::vector<std::unique_ptr<Order>> new_orders;
+void TestStrategy::next() {
 	for (auto it = this->orders.begin(); it != this->orders.end();) {
 		if (it->i == i) {
 			switch (it->order_type) {
-			case MARKET_ORDER: {
-				std::unique_ptr<Order> order (new MarketOrder(it->asset_name, it->units));
-				new_orders.push_back(std::move(order));
-				it = this->orders.erase(it);
-				break;
+				case MARKET_ORDER: {
+					this->broker.place_market_order(it->asset_name, it->units);
+					break;
+				}
+				case LIMIT_ORDER: {
+					this->broker.place_limit_order(it->asset_name, it->units, it->limit);
+					break;
+				}
 			}
-			case LIMIT_ORDER: {
-				std::unique_ptr<Order> order (new LimitOrder(it->asset_name, it->units, it->limit));
-				new_orders.push_back(std::move(order));
-				it = this->orders.erase(it);
-				break;
-			}
-			}
+			it = this->orders.erase(it);
 		}
 		else {
 			it++;
 		}
 	}
 	i++;
-	return new_orders;
 }

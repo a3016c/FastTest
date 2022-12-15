@@ -10,6 +10,15 @@
 
 #define CHECK_ORDER
 
+#ifdef CHECK_ORDER
+enum ORDER_CHECK {
+	VALID_ORDER,
+	INVALID_ASSET,
+	INVALID_ORDER_SIDE,
+	INVALID_PARENT_ORDER,
+};
+#endif
+
 class Broker
 {
 public: 
@@ -42,10 +51,15 @@ public:
 	bool cancel_order(std::unique_ptr<Order>& order_cancel);
 	bool clear_orders();
 	void clear_child_orders(Position& existing_position);
-	bool check_order(const std::unique_ptr<Order>& new_order);
-	bool place_orders(std::vector<std::unique_ptr<Order>> new_orders);
+	ORDER_CHECK check_order(const std::unique_ptr<Order>& new_order);
 	std::deque<std::unique_ptr<Order>>& open_orders();
 	void process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled);
+
+	//order wrapers exposed to strategy
+	OrderState place_market_order(std::string asset_name, float units, bool cheat_on_close = false);
+	OrderState place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close = false);
+	template <class T>
+	OrderState place_stoploss_order(T* parent_order, float units, float stop_loss, bool cheat_on_close = false);
 
 	//functions for managing positions
 	float get_net_liquidation_value();

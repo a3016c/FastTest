@@ -8,6 +8,7 @@
 #include <vector>
 
 enum OrderState {
+	ACCEPETED,
 	OPEN,
 	FILLED,
 	CANCELED,

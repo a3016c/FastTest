@@ -98,52 +98,92 @@ void Broker::clear_child_orders(Position& existing_position) {
 		}
 	}
 }
-bool Broker::check_order(const std::unique_ptr<Order>& new_order) {
+ORDER_CHECK Broker::check_order(const std::unique_ptr<Order>& new_order) {
 	switch (new_order->order_type) {
 		case MARKET_ORDER: {
-			return true;
+			return VALID_ORDER;
 		}
 		case LIMIT_ORDER: {
-			return true;
+			return VALID_ORDER;
 		}
 		case STOP_LOSS_ORDER: {
 			StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(new_order.get());
 			OrderParent parent = stop_loss_order->order_parent;
 			if (parent.type == ORDER) {
 				Order* parent_order = parent.member.parent_order;
-				if (parent_order->asset_name != stop_loss_order->asset_name) { throw std::invalid_argument("StopLossOrder has different asset name then parent"); }
-				if (parent_order->order_type > 1) { throw std::invalid_argument("StopLossOrder has invalid parent order type"); }
-				if (parent_order->units*stop_loss_order->units > 0) { throw std::invalid_argument("StopLossOrder has invalid units"); }
+				if (parent_order->asset_name != stop_loss_order->asset_name) {return INVALID_ASSET; }
+				if (parent_order->order_type > 1) { return INVALID_PARENT_ORDER; }
+				if (parent_order->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE;  }
 			}
 			else {
 				Position* parent_position = parent.member.parent_position;
-				if (parent_position->asset_name != stop_loss_order->asset_name) { throw std::invalid_argument("StopLossOrder has different asset name then parent"); }
-				if (parent_position->units*stop_loss_order->units > 0) { throw std::invalid_argument("StopLossOrder has invalid units"); }
+				if (parent_position->asset_name != stop_loss_order->asset_name) { return INVALID_ASSET; }
+				if (parent_position->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE; }
 			}
+			break;
 		}
 	}
 	for (auto& order_on_fill : new_order->orders_on_fill) {
 		this->check_order(order_on_fill);
 	}
-	return false;
+	return VALID_ORDER;
 }
-bool Broker::place_orders(std::vector<std::unique_ptr<Order>> new_orders) {
-	for (auto& order : new_orders) {
-		#ifdef CHECK_ORDER
-		try {
-			check_order(order);
-		}
-		catch (const std::exception& e) {
-			order->order_state = BROKER_REJECTED;
-			std::cerr << "BROKER CAUGHT INVALID ORDER CAUGHT: " << e.what() << std::endl;
-		}
-		#endif
-		order->order_state = OPEN;
-		order->order_id = this->order_counter;
-		this->order_counter++;
-		this->exchange.place_order(std::move(order));
+OrderState Broker::place_market_order(std::string asset_name, float units, bool cheat_on_close) {
+	std::unique_ptr<Order> order(new MarketOrder(
+		asset_name,
+		units,
+		cheat_on_close
+	));
+	#ifdef CHECK_ORDER
+	if(check_order(order) != VALID_ORDER){
+		order->order_state = BROKER_REJECTED;
+		this->order_history.push_back(std::move(order));
+		throw std::runtime_error("INVALID ORDER RECIEVED");
 	}
-	return true;
+	#endif
+	order->order_state = OPEN;
+	this->exchange.place_order(std::move(order));
+	this->order_counter++;
+	return ACCEPETED;
+}
+OrderState Broker::place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close) {
+	std::unique_ptr<Order> order(new LimitOrder(
+		asset_name,
+		units,
+		limit,
+		cheat_on_close
+	));
+#ifdef CHECK_ORDER
+	if (check_order(order) != VALID_ORDER) {
+		order->order_state = BROKER_REJECTED;
+		this->order_history.push_back(std::move(order));
+		return BROKER_REJECTED;
+	}
+#endif
+	order->order_state = OPEN;
+	this->exchange.place_order(std::move(order));
+	this->order_counter++;
+	return ACCEPETED;
+}
+template <class T>
+OrderState Broker::place_stoploss_order(T* parent, float units, float stop_loss, bool cheat_on_close) {
+	std::unique_ptr<Order> order(new StopLossOrder(
+		parent,
+		units,
+		stop_loss,
+		cheat_on_close
+	));
+#ifdef CHECK_ORDER
+	if (check_order(order) != VALID_ORDER) {
+		order->order_state = BROKER_REJECTED;
+		this->order_history.push_back(std::move(order));
+		return BROKER_REJECTED;
+	}
+#endif
+	order->order_state = OPEN;
+	this->exchange.place_order(std::move(order));
+	this->order_counter++;
+	return ACCEPETED;
 }
 void Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled) {
 	for (auto& order : orders_filled) {
