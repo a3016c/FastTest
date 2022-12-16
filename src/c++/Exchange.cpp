@@ -1,11 +1,8 @@
 #include "pch.h"
 #include <Windows.h>
-#include <map>
-#include <unordered_map>
-#include <utility>
 #include <string>
-#include <cmath>
 #include <assert.h>
+#include <memory>
 #include "Order.h"
 #include "Asset.h"
 #include "Exchange.h"
@@ -55,15 +52,12 @@ void Exchange::build() {
 	for (auto& kvp : this->market) { kvp.second.current_index = 0; }
 }
 bool Exchange::step() {
-	this->get_next_time();
+	if (!this->get_next_time()) { return false; };
 	this->get_market_view();
-	if (this->market_view.size() == 0) {
-		return false;
-	}
 	return true;
 }
 bool Exchange::get_next_time() {
-	if (this->market.size() == 0) {
+	if (this->market.empty()) {
 		return false;
 	}
 	timeval next_time = this->datetime_index[this->current_index];
@@ -82,14 +76,12 @@ bool Exchange::get_next_time() {
 	return true;
 }
 void Exchange::get_market_view() {
-
 	for (auto& _asset_pair : this->market) {
 		Asset * const _asset = &_asset_pair.second;
 		if (_asset->streaming) {
 			_asset->current_index++;
-
 			if (this->market_view.count(_asset->asset_name) == 0){
-				this->market_view[_asset->asset_name] = _asset;
+				this->market_view[_asset->asset_name] = std::move(_asset);
 			}
 		}
 		else if (!_asset->streaming) {
@@ -102,7 +94,7 @@ void Exchange::get_market_view() {
 }
 std::vector<std::unique_ptr<Order>> Exchange::clean_up_market() {
 	std::vector<std::unique_ptr<Order>> cleared_orders;
-	if (this->asset_remove.size() == 0) {
+	if (this->asset_remove.empty()) {
 		return cleared_orders;
 	}
 	for (auto asset_name: this->asset_remove) {

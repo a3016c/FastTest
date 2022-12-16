@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <deque>
+#include <memory>
 #include <assert.h>
 #include "Order.h"
 #include "Position.h"

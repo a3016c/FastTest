@@ -21,30 +21,37 @@ using namespace std::chrono;
 
 void aa(FastTest& ft) {
 	auto start = high_resolution_clock::now();
-	int n = 500;
+	int n = 100;
 	for (int i = 0; i < n; i++) {
 		ft.run();
 	}
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<milliseconds>(stop - start);
-	std::cout << "FastTest AVERAGE COMPLETE IN : "
-		<< duration.count() / n << " milliseconds" << std::endl;
+
+	int total_rows = 250000 * 10 * n;
+	auto seconds = duration.count() / 1000;
+	std::cout << "FastTest Rows Per Second : "
+		<< total_rows/seconds << std::endl;
 }
 int main()
 {
 	test::test_all();
-	
+
+	Exchange exchange;
+	Broker broker(exchange, false);
+
 	const char * dformat = "%d-%d-%d %d:%d:%d.d";
 	AssetDataFormat format(dformat);
 	const char * test1_file_name = "C:/Users/bktor/test_large.csv";
-	Asset new_asset("test1",format);
-	new_asset.load_from_csv(test1_file_name);
-
-	Exchange exchange;
-	exchange.register_asset(new_asset);
+	
+	int asset_count = 10;
+	for (int i = 0; i < asset_count; i++) {
+		std::string asset_name = "test" + std::to_string(i);
+		Asset new_asset(asset_name, format);
+		new_asset.load_from_csv(test1_file_name);
+		exchange.register_asset(new_asset);
+	}
 	exchange.build();
-
-	Broker broker(exchange, false);
 
 	std::vector<order_schedule> orders = {
 	order_schedule{ LIMIT_ORDER,"test1",20,100,.01}
@@ -55,6 +62,6 @@ int main()
 	FastTest ft(exchange, broker, strategy, false);
 
 	aa(ft);
-	
+
 	return 0;
 }
