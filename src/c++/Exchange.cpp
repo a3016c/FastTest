@@ -82,17 +82,21 @@ bool Exchange::get_next_time() {
 	return true;
 }
 void Exchange::get_market_view() {
-	this->market_view.clear();
 
-	std::unordered_map<std::string, float> row_map;
 	for (auto& _asset_pair : this->market) {
 		Asset * const _asset = &_asset_pair.second;
 		if (_asset->streaming) {
-			this->market_view[_asset->asset_name] = _asset;
 			_asset->current_index++;
-			if (_asset->current_index == (_asset->AM.N)) {
-				this->asset_remove.emplace(_asset->asset_name);
+
+			if (this->market_view.count(_asset->asset_name) == 0){
+				this->market_view[_asset->asset_name] = _asset;
 			}
+		}
+		else if (!_asset->streaming) {
+			this->market_view.erase(_asset->asset_name);
+		}
+		if (_asset->current_index == (_asset->AM.N)) {
+			this->asset_remove.emplace(_asset->asset_name);
 		}
 	}
 }
@@ -106,13 +110,14 @@ std::vector<std::unique_ptr<Order>> Exchange::clean_up_market() {
 		this->market_expired[asset_name] = std::move(this->market.at(asset_name));
 		cleared_orders = this->cancel_orders(asset_name);
 		this->market.erase(asset_name);
+		this->market_view.erase(asset_name);
 	}
 	this->asset_remove.clear();
 	this->asset_counter--;
 	return std::move(cleared_orders);
 }
 float Exchange::get_market_price(std::string &asset_name, bool on_close){
-	Asset* asset = this->market_view[asset_name];
+	this->asset = this->market_view[asset_name];
 	if (this->market_view.count(asset_name) == 0) {
 		return NAN;
 	}

@@ -19,10 +19,21 @@ using namespace std::chrono;
 #include "FastTest.h"
 #include "Test.h"
 
+void aa(FastTest& ft) {
+	auto start = high_resolution_clock::now();
+	int n = 500;
+	for (int i = 0; i < n; i++) {
+		ft.run();
+	}
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<milliseconds>(stop - start);
+	std::cout << "FastTest AVERAGE COMPLETE IN : "
+		<< duration.count() / n << " milliseconds" << std::endl;
+}
 int main()
 {
 	test::test_all();
-	/*
+	
 	const char * dformat = "%d-%d-%d %d:%d:%d.d";
 	AssetDataFormat format(dformat);
 	const char * test1_file_name = "C:/Users/bktor/test_large.csv";
@@ -42,15 +53,8 @@ int main()
 	TestStrategy strategy(exchange, broker);
 	strategy.register_test_map(orders);
 	FastTest ft(exchange, broker, strategy, false);
-	auto start = high_resolution_clock::now();
-	int n = 2;
-	for (int i = 0; i < n; i++) {
-		ft.run();
-	}
-	auto stop = high_resolution_clock::now();
-	auto duration = duration_cast<milliseconds>(stop - start);
-	std::cout << "FastTest AVERAGE COMPLETE IN : "
-		<< duration.count()/n << " milliseconds" << std::endl;
+
+	aa(ft);
+	
 	return 0;
-	*/
 }

@@ -27,7 +27,7 @@ public:
 
 	std::deque<std::unique_ptr<Order>> orders;
 
-	std::unordered_map<std::string,Asset*> market_view;
+	std::map<std::string,Asset*> market_view;
 	std::set<std::string> asset_remove;
 	unsigned int asset_counter = 0;
 
@@ -49,6 +49,7 @@ public:
 	void process_limit_order(LimitOrder *open_order, bool on_close);
 
 	//functions used to manage market view
+	Asset* asset;
 	bool step();
 	std::vector<std::unique_ptr<Order>> clean_up_market();
 	bool get_next_time();
