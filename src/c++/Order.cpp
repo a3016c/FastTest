@@ -10,6 +10,14 @@ void Order::fill(float market_price, timeval fill_time) {
 	this->fill_price = market_price;
 	this->order_state = FILLED;
 }
+const char* Order::get_order_type() {
+	switch (this->order_type) {
+		case MARKET_ORDER: return "MARKET_ORDER";
+		case LIMIT_ORDER: return "LIMIT_ORDER";
+		case STOP_LOSS_ORDER: return "STOP_LOSS_ORDER";
+		case TAKE_PROFIT_ORDER: return "TAKE_PROFIT_ORDER";
+	}
+}
 void Order::add_stop_loss(float stop_loss, float units) {
 	if (std::isnan(units)) {
 		units = this->units;

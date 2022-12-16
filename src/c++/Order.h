@@ -53,6 +53,7 @@ public:
 
 	std::vector<std::unique_ptr<Order>> orders_on_fill; //container for orders to execute once the parent order as filled
 
+	const char* get_order_type();
 	void create(timeval order_create_time);
 	void fill(float market_price, timeval fill_time);
 	void add_stop_loss(float price, float units = NAN);
@@ -103,13 +104,13 @@ public:
 	OrderParent order_parent;
 	float stop_loss;
 	StopLossOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false)
-		: Order(STOP_LOSS_ORDER, asset_name, units, cheat_on_close) {
+		: Order(STOP_LOSS_ORDER, parent_order->asset_name, units, cheat_on_close) {
 		this->order_parent.member.parent_order = parent_order;
 		this->order_parent.type = ORDER;
 		this->stop_loss = stop_loss;
 	}
 	StopLossOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false)
-		: Order(STOP_LOSS_ORDER, asset_name, units, cheat_on_close) {
+		: Order(STOP_LOSS_ORDER, parent_position->asset_name, units, cheat_on_close) {
 		this->order_parent.member.parent_position = parent_position;
 		this->order_parent.type = POSITION;
 		this->stop_loss = stop_loss;

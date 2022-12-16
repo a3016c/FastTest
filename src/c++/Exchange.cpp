@@ -24,8 +24,8 @@ void Exchange::reset() {
 		kvp.second.reset();
 	}
 	this->asset_counter = this->market.size();
+	this->current_index = 0;
 	this->orders.clear();
-	this->build();
 }
 void Exchange::build() {
 	while (true) {
@@ -149,11 +149,14 @@ void Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close) 
 				this->process_market_order(order_market);
 				break;
 			}
-			case LIMIT_ORDER: {
+		case LIMIT_ORDER: {
 				LimitOrder* order_limit = static_cast <LimitOrder*>(open_order.get());
 				this->process_limit_order(order_limit, on_close);
 				break;
 			}
+		/*
+		PROCESS SL ORDER;
+		*/
 		}
 	}
 	catch (const std::exception& e) {
@@ -188,6 +191,7 @@ std::vector<std::unique_ptr<Order>> Exchange::process_orders(bool on_close) {
 		}
 		//order was filled
 		else {
+			if (this->logging) { this->log_order_filled(order); }
 			//if the order has child orders push them into the open order container
 			if (order->orders_on_fill.size() > 0) {
 				for (auto& child_order : order->orders_on_fill) {
@@ -228,10 +232,22 @@ std::vector<std::unique_ptr<Order>> Exchange::cancel_orders(std::string asset_na
 void Exchange::log_order_placed(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_create_time, this->time, sizeof(this->time));
-	printf("%s: ORDER PLACED: asset_name: %s, units: %f\n",
+	printf("%s: %s PLACED: asset_name: %s, units: %f\n",
 		this->time,
+		order->get_order_type(),
 		order->asset_name.c_str(),
 		order->units
+	);
+}
+void Exchange::log_order_filled(std::unique_ptr<Order>& order) {
+	memset(this->time, 0, sizeof this->time);
+	timeval_to_char_array(&order->order_fill_time, this->time, sizeof(this->time));
+	printf("%s: %s FILLED: asset_name: %s, units: %f, fill_price: %f\n",
+		this->time,
+		order->get_order_type(),
+		order->asset_name.c_str(),
+		order->units,
+		order->fill_price
 	);
 }
 

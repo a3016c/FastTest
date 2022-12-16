@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <ctime>
 #include <string>
+#include <assert.h>
 
 static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
 const char *_datetime_format = "%Y-%m-%d %H:%M:%S";

@@ -37,6 +37,10 @@ void TestStrategy::next() {
 					this->broker.place_limit_order(it->asset_name, it->units, it->limit);
 					break;
 				}
+				case STOP_LOSS_ORDER: {
+					Position* existing_position = &this->broker.portfolio[it->asset_name];
+					this->broker.place_stoploss_order(existing_position, it->units, it->limit);
+				}
 			}
 			it = this->order_scheduler.erase(it);
 		}

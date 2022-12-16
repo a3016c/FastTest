@@ -57,6 +57,7 @@ public:
 
 	//logging functions
 	void log_order_placed(std::unique_ptr<Order>& order);
+	void log_order_filled(std::unique_ptr<Order>& order);
 
 	Exchange(bool logging = false) { this->logging = logging; };
 	

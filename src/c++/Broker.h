@@ -38,12 +38,10 @@ public:
 
 	void set_cash(float cash);
 	void reset();
-	void clean_up();
 
 	//logging functions
 	char time[28]{};
 	bool logging;
-	void log_order_filled(std::unique_ptr<Order>& order);
 	void log_open_position(Position &position);
 	void log_close_position(Position &position);
 
@@ -53,15 +51,16 @@ public:
 	void log_canceled_orders(std::vector<std::unique_ptr<Order>> cleared_orders);
 	bool cancel_orders(std::string asset_name = "");
 	void clear_child_orders(Position& existing_position);
-	ORDER_CHECK check_order(const std::unique_ptr<Order>& new_order);
 	std::deque<std::unique_ptr<Order>>& open_orders();
 	void process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled);
+
+	//functions for order management
+	ORDER_CHECK check_order(const std::unique_ptr<Order>& new_order);
+	ORDER_CHECK check_stop_loss_order(const StopLossOrder* new_order);
 
 	//order wrapers exposed to strategy
 	OrderState place_market_order(std::string asset_name, float units, bool cheat_on_close = false);
 	OrderState place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close = false);
-	template <class T>
-	OrderState place_stoploss_order(T* parent_order, float units, float stop_loss, bool cheat_on_close = false);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
@@ -71,6 +70,25 @@ public:
 	Broker(Exchange &exchangeObj, bool logging = false) : exchange(exchangeObj) {
 		this->logging = logging;
 	};
+
+	template <class T>
+	OrderState place_stoploss_order(T* parent, float units, float stop_loss, bool cheat_on_close = false) {
+		std::unique_ptr<Order> order(new StopLossOrder(
+			parent,
+			units,
+			stop_loss,
+			cheat_on_close
+		));
+	#ifdef CHECK_ORDER
+		if (check_order(order) != VALID_ORDER) {
+			order->order_state = BROKER_REJECTED;
+			this->order_history.push_back(std::move(order));
+			return BROKER_REJECTED;
+		}
+	#endif
+		return this->send_order(std::move(order));
+	}
+
 private:
 	void increase_position(Position &existing_position, std::unique_ptr<Order>& order);
 	void reduce_position(Position &existing_position, std::unique_ptr<Order>& order);

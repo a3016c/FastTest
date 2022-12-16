@@ -10,13 +10,13 @@
 void Broker::reset() {
 	this->cash = 100000;
 	this->order_history.clear();
+	this->portfolio.clear();
 	this->position_history.clear();
 	this->position_counter = 0;
 	this->order_counter = 0;
 	this->unrealized_pl = 0;
 	this->realized_pl = 0;
 	this->net_liquidation_value = 0;
-	this->portfolio.clear();
 }
 float Broker::get_net_liquidation_value() {
 	float nlv = 0;
@@ -104,7 +104,24 @@ void Broker::clear_child_orders(Position& existing_position) {
 		}
 	}
 }
+ORDER_CHECK Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order) {
+	OrderParent parent = stop_loss_order->order_parent;
+	if (parent.type == ORDER) {
+		Order* parent_order = parent.member.parent_order;
+		if (parent_order->asset_name != stop_loss_order->asset_name) { return INVALID_ASSET; }
+		if (parent_order->order_type > 1) { return INVALID_PARENT_ORDER; }
+		if (parent_order->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE; }
+	}
+	else {
+		Position* parent_position = parent.member.parent_position;
+		if (parent_position->asset_name != stop_loss_order->asset_name) { return INVALID_ASSET; }
+		if (parent_position->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE; }
+	}
+	return VALID_ORDER;
+};
 ORDER_CHECK Broker::check_order(const std::unique_ptr<Order>& new_order) {
+	if (this->exchange.market.count(new_order->asset_name) == 0) { return INVALID_ASSET; }
+
 	ORDER_CHECK order_code;
 	switch (new_order->order_type) {
 		case MARKET_ORDER: {
@@ -117,21 +134,11 @@ ORDER_CHECK Broker::check_order(const std::unique_ptr<Order>& new_order) {
 		}
 		case STOP_LOSS_ORDER: {
 			StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(new_order.get());
-			OrderParent parent = stop_loss_order->order_parent;
-			if (parent.type == ORDER) {
-				Order* parent_order = parent.member.parent_order;
-				if (parent_order->asset_name != stop_loss_order->asset_name) {return INVALID_ASSET; }
-				if (parent_order->order_type > 1) { return INVALID_PARENT_ORDER; }
-				if (parent_order->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE;  }
-			}
-			else {
-				Position* parent_position = parent.member.parent_position;
-				if (parent_position->asset_name != stop_loss_order->asset_name) { return INVALID_ASSET; }
-				if (parent_position->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE; }
-			}
+			order_code = check_stop_loss_order(stop_loss_order);
 			break;
 		}
 	}
+	if (order_code != VALID_ORDER) { return order_code; }
 	for (auto& order_on_fill : new_order->orders_on_fill) {
 		this->check_order(order_on_fill);
 	}
@@ -176,26 +183,8 @@ OrderState Broker::place_limit_order(std::string asset_name, float units, float 
 #endif
 	return this->send_order(std::move(order));
 }
-template <class T>
-OrderState Broker::place_stoploss_order(T* parent, float units, float stop_loss, bool cheat_on_close) {
-	std::unique_ptr<Order> order(new StopLossOrder(
-		parent,
-		units,
-		stop_loss,
-		cheat_on_close
-	));
-#ifdef CHECK_ORDER
-	if (check_order(order) != VALID_ORDER) {
-		order->order_state = BROKER_REJECTED;
-		this->order_history.push_back(std::move(order));
-		return BROKER_REJECTED;
-	}
-#endif
-	return this->send_order(std::move(order));
-}
 void Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled) {
 	for (auto& order : orders_filled) {
-		if (this->logging) { (this->log_order_filled(order)); }
 		//no position exists, create new open position
 		if (!this->position_exists(order->asset_name)) {
 			this->open_position(order);
@@ -216,7 +205,6 @@ void Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_fi
 				this->reduce_position(existing_position, order);
 			}
 		}
-		order->order_state = FILLED;
 		this->order_history.push_back(std::move(order));
 	}
 }
@@ -230,20 +218,10 @@ void Broker::set_cash(float cash) {
 	assert(cash > 0);
 	this->cash = cash;
 }
-void Broker::log_order_filled(std::unique_ptr<Order>& order) {
-	memset(this->time, 0, sizeof this->time);
-	timeval_to_char_array(&order->order_fill_time, this->time, sizeof(this->time));
-	printf("%s: ORDER FILLED: asset_name: %s, units: %f, fill_price: %f\n",
-		this->time,
-		order->asset_name.c_str(),
-		order->units,
-		order->fill_price
-	);
-}
 void Broker::log_open_position(Position &position) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&position.position_create_time, this->time, sizeof(this->time));
-	printf("%s OPENING POSITION: asset_name: %s, units: %f, avg_price: %f\n",
+	printf("%s: OPENING POSITION: asset_name: %s, units: %f, avg_price: %f\n",
 		this->time,
 		position.asset_name.c_str(),
 		position.units,

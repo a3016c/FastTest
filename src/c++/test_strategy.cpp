@@ -134,6 +134,7 @@ void test_limit_order() {
 
 	Exchange exchange;
 	exchange.register_asset(new_asset);
+	exchange.build();
 	Broker broker(exchange, false);
 
 	std::vector<order_schedule> orders = {

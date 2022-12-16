@@ -25,8 +25,8 @@ enum Frequency {
 	US_E1D,D1
 };
 
-
-#define MAX_TIME timeval { (long)10000000000,0 }
+#define MAX_TIME_LONG 2147483647
+constexpr timeval MAX_TIME = { MAX_TIME_LONG,0 };
 
 //function get the current system time 
 void gettimeofday(timeval * tp);

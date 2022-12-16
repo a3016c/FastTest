@@ -16,7 +16,7 @@ public:
 
 	bool logging;
 
-	unsigned int step_count;
+	unsigned int step_count = 0;
 
 	std::vector<float> cash_history;
 	std::vector<float> nlv_history;
@@ -26,6 +26,7 @@ public:
 	//main event lopp
 	void analyze_step();
 	void run();
+	void build();
 
 	FastTest(Exchange &exchange, Broker &broker, Strategy &Strategy, bool logging = false);
 };

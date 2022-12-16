@@ -14,12 +14,19 @@ FastTest::FastTest(Exchange &exchangeObj, Broker &brokerObj, Strategy &StrategyO
 void FastTest::reset() {
 	this->broker.reset();
 	this->exchange.reset();
+	this->cash_history.clear();
+	this->nlv_history.clear();
 }
 void FastTest::analyze_step() {
 	this->cash_history.push_back(this->broker.cash);
 	this->nlv_history.push_back(this->broker.net_liquidation_value);
 }
+void FastTest::build() {
+	this->cash_history.reserve(this->exchange.datetime_index.size());
+	this->nlv_history.reserve(this->exchange.datetime_index.size());
+}
 void FastTest::run() {
+	if (this->cash_history.size() != this->exchange.datetime_index.size()) { this->build(); }
 	if (this->logging) { printf("RUNNING FASTEST\n"); }
 	this->exchange.logging = this->logging;
 	this->broker.logging = this->logging;
@@ -50,5 +57,6 @@ void FastTest::run() {
 			std::vector<std::unique_ptr<Order>> filled_orders = this->exchange.process_orders(true);
 			this->broker.process_filled_orders(std::move(filled_orders));
 		}
+		this->step_count++;
 	}
 }
