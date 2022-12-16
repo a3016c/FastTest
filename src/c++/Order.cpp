@@ -1,5 +1,9 @@
 #include "pch.h"
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <sys/time.h>
+#endif 
 #include "Order.h"
 
 void Order::create(timeval order_create_time) {

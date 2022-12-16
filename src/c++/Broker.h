@@ -3,6 +3,7 @@
 #define BROKER_H
 #include <deque>
 #include <map>
+#include <memory>
 #include "Order.h"
 #include "Position.h"
 #include "Asset.h"

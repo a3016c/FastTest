@@ -1,5 +1,9 @@
 #include "pch.h"
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <sys/time.h>
+#endif 
 #include <iostream>
 #include <string>
 #include "Position.h"

@@ -1,7 +1,11 @@
 #pragma once
 #ifndef EXHCANGE_H // include guard
 #define EXCHANGE_H
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <sys/time.h>
+#endif 
 #include <deque>
 #include <string>
 #include <map>

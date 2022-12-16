@@ -2,7 +2,11 @@
 //
 
 #include "pch.h"
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <sys/time.h>
+#endif 
 #include <stdio.h>
 #include <iostream>
 #include <ctime>
@@ -21,7 +25,7 @@ using namespace std::chrono;
 
 void aa(FastTest& ft) {
 	auto start = high_resolution_clock::now();
-	int n = 100;
+	int n = 2;
 	for (int i = 0; i < n; i++) {
 		ft.run();
 	}
@@ -37,8 +41,7 @@ void aa(FastTest& ft) {
 }
 int main()
 {
-	test::test_all();
-
+	bool test_passed = test::test_all();
 	Exchange exchange;
 	Broker broker(exchange, false);
 

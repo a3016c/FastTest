@@ -1,7 +1,12 @@
 #pragma once
 #ifndef UTILS_TIME_H // include guard
 #define UTILS_TIME_H
+
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <sys/time.h>
+#endif 
 #include <string>
 
 //frequency definitions 
@@ -29,7 +34,7 @@ enum Frequency {
 constexpr timeval MAX_TIME = { MAX_TIME_LONG,0 };
 
 //function get the current system time 
-void gettimeofday(timeval * tp);
+//void gettimeofday(timeval * tp);
 
 //function to parse a string to a timeval
 void string_to_timeval(timeval *tv, std::string input_date, const char *digit_datetime_format, bool datetime = false);

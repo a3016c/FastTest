@@ -4,7 +4,10 @@
 #include "pch.h"
 #include <iostream>
 #include <Windows.h>
+#include <math.h>
+#include <memory>
 #include "Position.h"
+#include "utils_time.h"
 #include <vector>
 
 enum OrderState {
@@ -48,8 +51,8 @@ public:
 	std::string asset_name; //underlying asset for the order
 
 	
-	struct timeval order_create_time; //the time the order was placed on the exchange
-	struct timeval order_fill_time;   //the time that the order was filled by the exchange
+	timeval order_create_time; //the time the order was placed on the exchange
+	timeval order_fill_time;   //the time that the order was filled by the exchange
 
 	std::vector<std::unique_ptr<Order>> orders_on_fill; //container for orders to execute once the parent order as filled
 
@@ -65,7 +68,7 @@ public:
 		this->cheat_on_close = cheat_on_close;
 	}
 	Order() = default;
-	virtual ~Order() {}
+	virtual ~Order() {};
 	Order(const Order&) = delete;
 	Order& operator =(const Order&) = delete;
 

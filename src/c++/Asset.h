@@ -3,10 +3,13 @@
 #define ASSET_H
 #ifdef _WIN32
 #include <Windows.h>
-#endif
+#else
+#include <sys/time.h>
+#endif 
 #include <string>
 #include <vector>
 #include <map>
+#include "utils_time.h"
 #define RANGE_CHECK true
 
 template <typename T>

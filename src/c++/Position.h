@@ -2,8 +2,8 @@
 #ifndef POSITION_H // include guard
 #define POSITION_H
 #include "pch.h"
-#include <iostream>
-#include <Windows.h>
+#include <ctime>
+#include "utils_time.h"
 
 class Position
 {
@@ -18,8 +18,8 @@ public:
 
 	unsigned int position_id;
 	std::string asset_name;
-	struct timeval position_create_time;
-	struct timeval position_close_time;
+	timeval position_create_time;
+	timeval position_close_time;
 
 	float unrealized_pl = 0;
 	float realized_pl = 0;

@@ -1,7 +1,6 @@
 #include "pch.h"
 #include <deque>
 #include <memory>
-#include <assert.h>
 #include "Order.h"
 #include "Position.h"
 #include "Asset.h"
@@ -216,7 +215,6 @@ bool Broker::position_exists(std::string asset_name) {
 	return this->portfolio.count(asset_name) > 0;
 }
 void Broker::set_cash(float cash) {
-	assert(cash > 0);
 	this->cash = cash;
 }
 void Broker::log_open_position(Position &position) {

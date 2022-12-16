@@ -3,6 +3,7 @@
 #include <string>
 #include <assert.h>
 #include <memory>
+#include <math.h>
 #include "Order.h"
 #include "Asset.h"
 #include "Exchange.h"
@@ -106,12 +107,12 @@ float Exchange::get_market_price(std::string &asset_name, bool on_close){
 }
 void Exchange::process_market_order(MarketOrder * const open_order) {
 	float market_price = get_market_price(open_order->asset_name, open_order->cheat_on_close);
-	if (std::isnan(market_price)) {throw std::invalid_argument("recieved order for which asset has no market price");}
+	if (isnan(market_price)) {throw std::invalid_argument("recieved order for which asset has no market price");}
 	open_order->fill(market_price, this->current_time);
 }
 void Exchange::process_limit_order(LimitOrder *const open_order, bool on_close) {
 	float market_price = get_market_price(open_order->asset_name, on_close);
-	if (std::isnan(market_price)) {
+	if (isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
 	if ((open_order->units > 0) & (market_price <= open_order->limit)) {
@@ -193,14 +194,15 @@ bool Exchange::place_order(std::unique_ptr<Order> new_order){
 	return true;
 }
 std::unique_ptr<Order> Exchange::cancel_order(std::unique_ptr<Order>& order_cancel){
+	std::unique_ptr<Order> order;
 	for (size_t i = 0; i < this->orders.size(); i++) {
 		if ((*this->orders[i]) == *order_cancel) {
-			std::unique_ptr<Order> order = std::move(*(this->orders.begin() + i));
+			order = std::move(*(this->orders.begin() + i));
 			this->orders.erase(this->orders.begin() + i);
 			return std::move(order);
 		} 
 	}
-	return false;
+	return order;
 }
 std::vector<std::unique_ptr<Order>> Exchange::cancel_orders(std::string asset_name) {
 	std::vector<std::unique_ptr<Order>> canceled_orders;

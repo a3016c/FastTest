@@ -1,5 +1,10 @@
 #include "pch.h"
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <sys/time.h>
+#include <cstring>
+#endif 
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,32 +13,6 @@
 #include <assert.h>
 #include "utils_time.h"
 #include "Asset.h"
-#include "ta_libc.h"
-
-/*
-std::ifstream _file(file_name);
-assert(!_file.fail());
-std::string line;
-
-std::getline(_file, line);
-std::istringstream ss(line);
-std::string token;
-std::getline(ss, token, ','); //skip datetime header name
-while (std::getline(ss, token, ',')) {
-	this->headers.push_back(token);
-}
-	/*
-	if (!std::getline(_file, line)) break;
-	std::istringstream ss(line);
-
-	std::string datetime_string;
-	std::getline(ss, datetime_string, ',');
-	timeval tv;
-	string_to_timeval(&tv, datetime_string, this->digit_datetime_format);
-	this->datetime_index.push_back(tv);
-	while(std::getline(ss, token, ',')){
-		this->AM.data.emplace_back(std::stof(token));
-	}*/
 
 void Asset::reset() {
 	this->current_index = 0;
