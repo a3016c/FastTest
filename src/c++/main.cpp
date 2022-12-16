@@ -27,11 +27,13 @@ void aa(FastTest& ft) {
 	}
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<milliseconds>(stop - start);
+	auto f_secs = duration_cast<std::chrono::duration<float>>(duration);
 
 	int total_rows = 250000 * 10 * n;
-	auto seconds = duration.count() / 1000;
 	std::cout << "FastTest Rows Per Second : "
-		<< total_rows/seconds << std::endl;
+		<< total_rows / f_secs.count() << std::endl;
+	std::cout << "FastTest Average time: "
+		<< duration.count() / n << " milliseconds" << std::endl;
 }
 int main()
 {

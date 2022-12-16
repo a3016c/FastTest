@@ -29,7 +29,7 @@ void FastTest::run() {
 
 	std::vector<std::unique_ptr<Order>> filled_orders;
 	std::vector<std::unique_ptr<Order>> canceled_orders;
-	while (this->exchange.step()) {
+	while (this->exchange.get_market_view()) {
 		//allow exchange to process open orders from previous steps
 		if (!this->exchange.orders.empty()) {
 			filled_orders = this->exchange.process_orders();
@@ -56,5 +56,6 @@ void FastTest::run() {
 			this->broker.process_filled_orders(std::move(filled_orders));
 		}
 		this->step_count++;
+		if (this->logging) { printf("%i\n", step_count); }
 	}
 }

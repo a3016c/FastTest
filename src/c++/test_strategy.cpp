@@ -148,6 +148,8 @@ void test_limit_order() {
 	char buf_open[28]{};
 	char buf_close[28]{};
 	const char* datetime_index_real[2] = { "2000-05-23 00:00:00.000000","2001-01-31 00:00:00.000000"};
+	assert(broker.position_history.size() == 1);
+	
 	timeval_to_char_array(&broker.position_history[0].position_create_time, buf_open, sizeof(buf_open));
 	timeval_to_char_array(&broker.position_history[0].position_close_time, buf_close, sizeof(buf_close));
 	assert(strcmp(buf_open, datetime_index_real[0]) == 0);

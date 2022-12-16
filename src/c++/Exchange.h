@@ -38,7 +38,7 @@ public:
 		\When the FastTest is run, the market view is populated based on which assets are currently
 		\in the market and currently streaming.
 	*/
-	std::map<std::string, Asset> market;
+	std::unordered_map<std::string, Asset> market;
 
 	//!FastTest container for all assets registered that have expired 
 	/*!
@@ -46,7 +46,7 @@ public:
 		\attempts to access out of bounds data. Instead of deleteing it, we move it from the market to this
 		\container. This way if we run multiple FastTests we can simply move it back to the market instead of reloading.
 	*/
-	std::map<std::string, Asset> market_expired;
+	std::unordered_map<std::string, Asset> market_expired;
 
 	//!FastTest container for all orders that have been placed on the exchange
 	/*!
@@ -57,7 +57,7 @@ public:
 	std::deque<std::unique_ptr<Order>> orders;
 
 	
-	std::set<std::string> asset_remove;  /**<FastTest container for asset names corresponding to those that just expired*/
+	std::vector<std::string> asset_remove;  /**<FastTest container for asset names corresponding to those that just expired*/
 	unsigned int asset_counter = 0; /**<Counter for the number of assets currently in the market*/
 
 	/**
@@ -122,31 +122,16 @@ public:
 	std::vector<std::unique_ptr<Order>> cancel_orders(std::string asset_name);
 
 	/**
-	 *Function called after every step to move the FastTest forward through time. Once it is called,
-	 *the market time is updated to the next value and the market view is built.
-	 *@brief Function to step forward in time in the datetime index. 
-	 *@return Wether or not we are at the end of the datetime index.
-	*/
-	bool step();
-
-	/**
 	 *@brief Function to clearn up assets that have reached the end of their data.
 	 *@return A vector of unique pointers to orders that have been canceled by removing expired Assets.
 	*/
 	std::vector<std::unique_ptr<Order>> clean_up_market();
 
 	/**
-	 *Function to set the current time in the FastTest and check to see if each asset in the market is streaming.
-	 *If an asset's underlying time is equal to the market time then the asset is streaming during the current market time.
-	 *@return Wether or not the current market is empty.
-	 */
-	bool get_next_time();
-
-	/**
 	 *Function to get the market view for the current market time. Consists of pointers to Asset's that 
 	 *are currently streaming. Also updates asset_remove with assets that have reached their last row and have expired.
 	*/
-	void get_market_view();
+	bool get_market_view();
 
 	/**
 	 *Function to get the current market price of an asset.

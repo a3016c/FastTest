@@ -51,46 +51,30 @@ void Exchange::build() {
 	}
 	for (auto& kvp : this->market) { kvp.second.current_index = 0; }
 }
-bool Exchange::step() {
-	if (!this->get_next_time()) { return false; };
-	this->get_market_view();
-	return true;
-}
-bool Exchange::get_next_time() {
-	if (this->market.empty()) {
+bool Exchange::get_market_view() {
+	if (this->current_index == this->datetime_index.size()) {
 		return false;
 	}
 	timeval next_time = this->datetime_index[this->current_index];
-	//Get the next time available across all assets. This will be the next market time
-	for (auto& kvp : this->market) {
-		if ((kvp.second.asset_time() == next_time)
-			&(kvp.second.current_index >= kvp.second.minimum_warmup)) {
-			kvp.second.streaming = true;
-		}
-		else {
-			kvp.second.streaming = false;
-		}
-	}
-	this->current_time = next_time;
-	this->current_index++;
-	return true;
-}
-void Exchange::get_market_view() {
 	for (auto& _asset_pair : this->market) {
 		Asset * const _asset = &_asset_pair.second;
-		if (_asset->streaming) {
+		if((_asset_pair.second.asset_time() == next_time)
+			&(_asset_pair.second.current_index >= _asset_pair.second.minimum_warmup)) {
 			_asset->current_index++;
 			if (this->market_view.count(_asset->asset_name) == 0){
 				this->market_view[_asset->asset_name] = std::move(_asset);
 			}
 		}
-		else if (!_asset->streaming) {
+		else{
 			this->market_view.erase(_asset->asset_name);
 		}
 		if (_asset->current_index == (_asset->AM.N)) {
-			this->asset_remove.emplace(_asset->asset_name);
+			this->asset_remove.push_back(_asset->asset_name);
 		}
 	}
+	this->current_time = next_time;
+	this->current_index++;
+	return true;
 }
 std::vector<std::unique_ptr<Order>> Exchange::clean_up_market() {
 	std::vector<std::unique_ptr<Order>> cleared_orders;

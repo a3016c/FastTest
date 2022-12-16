@@ -42,7 +42,7 @@ void test_exchange_get_next_time() {
 
 	Exchange exchange = test::build_simple_exchange();
 	assert(exchange.asset_counter == 1);
-	exchange.get_next_time();
+	exchange.get_market_view();
 
 	char buf[28]{};
 	timeval_to_char_array(&exchange.current_time, buf, sizeof(buf));
@@ -61,7 +61,7 @@ void test_exchange_step() {
 	const char* datetime_index[4] = { "2000-06-06 00:00:00.000000","2000-06-07 00:00:00.000000","2000-06-08 00:00:00.000000","2000-06-09 00:00:00.000000" };
 
 	for (int i = 0; i < 4; i++) {
-		exchange.step();
+		exchange.get_market_view();
 		char buf[28]{};
 		timeval_to_char_array(&exchange.current_time, buf, sizeof(buf));
 		assert(strcmp(buf, datetime_index[i]) == 0);
@@ -84,7 +84,7 @@ void test_exchange_setup_multi() {
 	float close2[6] = { 101.5,99,97,101.5,101.5,96};
 
 	for (int i = 0; i < 6; i++) {
-		exchange.step();
+		exchange.get_market_view();
 		char buf[28]{};
 		timeval_to_char_array(&exchange.current_time, buf, sizeof(buf));
 		assert(strcmp(buf, datetime_index[i]) == 0);
