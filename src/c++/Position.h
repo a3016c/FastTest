@@ -14,7 +14,7 @@ public:
 
 	float average_price;
 	float close_price;
-	float last_price; 
+	float last_price;
 
 	unsigned int position_id;
 	std::string asset_name;

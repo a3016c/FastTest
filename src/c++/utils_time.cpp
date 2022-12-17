@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <iostream>
 #ifdef _WIN32
-#include <Windows.h>
+#include <WinSock2.h>
 #else
 #include <sys/time.h>
 #endif 
@@ -14,9 +14,9 @@ static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
 const char *_datetime_format = "%Y-%m-%d %H:%M:%S";
 
 bool operator > (const timeval &tv1, const timeval &tv2) {
-	if (tv1.tv_sec > tv2.tv_sec) { return true;  }
+	if (tv1.tv_sec > tv2.tv_sec) { return true; }
 	if (tv1.tv_sec < tv2.tv_sec) { return false; }
-	if (tv1.tv_usec > tv2.tv_usec) { return true;}
+	if (tv1.tv_usec > tv2.tv_usec) { return true; }
 	return false;
 }
 bool operator < (const timeval &tv1, const timeval &tv2) {
@@ -35,17 +35,14 @@ void gettimeofday(timeval *tp)
 {
 	// Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
 	// This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
-	// until 00:00:00 January 1, 1970 
-
+	// until 00:00:00 January 1, 1970
 	SYSTEMTIME  system_time;
 	FILETIME    file_time;
 	uint64_t    time;
-
 	GetSystemTime(&system_time);
 	SystemTimeToFileTime(&system_time, &file_time);
 	time = ((uint64_t)file_time.dwLowDateTime);
 	time += ((uint64_t)file_time.dwHighDateTime) << 32;
-
 	tp->tv_sec = (long)((time - EPOCH) / 10000000L);
 	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
 }
@@ -56,7 +53,7 @@ void string_to_timeval(timeval *tv, std::string input_date, const char *digit_da
 	int hh = 0; int mm = hh; int ss = hh;
 	struct tm datetime_tm;
 	int decimal_location = input_date.find(".");
-	
+
 	if (decimal_location == -1) {
 		if (!datetime) {
 			sscanf(input_date.c_str(), digit_datetime_format, &yy, &month, &dd);
@@ -82,18 +79,18 @@ void string_to_timeval(timeval *tv, std::string input_date, const char *digit_da
 	long tStart = (long)mktime(&datetime_tm);
 	tv->tv_sec = tStart;
 }
-size_t timeval_to_char_array(timeval *tv, char *buf, size_t sz) 
+size_t timeval_to_char_array(timeval *tv, char *buf, size_t sz)
 {
 	size_t written = 0;
 	const time_t time = *&tv->tv_sec;
 	tm bt;
-	#ifdef __GNUC__
+#ifdef __GNUC__
 	localtime_r(&time, &bt);
-	#elif _MSC_VER
+#elif _MSC_VER
 	localtime_s(&bt, &time);
-	#endif 
+#endif 
 	if (time)
-	{	
+	{
 		written = (size_t)strftime(buf, sz, _datetime_format, &bt);
 		if ((written > 0) && ((size_t)written < sz))
 		{
@@ -103,4 +100,3 @@ size_t timeval_to_char_array(timeval *tv, char *buf, size_t sz)
 	}
 	return written;
 }
-

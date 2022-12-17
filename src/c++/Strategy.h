@@ -6,15 +6,15 @@
 #include <vector>
 #include "Order.h"
 
-class Strategy 
+class Strategy
 {
 public:
-	Exchange &exchange;
+	__Exchange &__exchange;
 	Broker &broker;
 
 	virtual void next();
 
-	Strategy(Exchange &exchange, Broker &broker);
+	Strategy(__Exchange &__exchange, Broker &broker);
 };
 class BenchmarkStrategy : public Strategy {
 public:

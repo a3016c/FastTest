@@ -10,7 +10,7 @@
 
 class FastTest {
 public:
-	Exchange &exchange;
+	__Exchange &__exchange;
 	Broker &broker;
 	Strategy &strategy;
 
@@ -28,7 +28,7 @@ public:
 	void run();
 	void build();
 
-	FastTest(Exchange &exchange, Broker &broker, Strategy &Strategy, bool logging = false);
+	FastTest(__Exchange &exchange, Broker &broker, Strategy &Strategy, bool logging = false);
 };
 
 #endif

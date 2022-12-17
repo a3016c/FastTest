@@ -14,20 +14,20 @@
 #include "utils_time.h"
 #include "Asset.h"
 
-void Asset::reset() {
+void __Asset::reset() {
 	this->current_index = 0;
 	this->streaming = false;
 }
-bool Asset::is_last_view() {
+bool __Asset::is_last_view() {
 	return this->current_index == (this->AM.N);
 }
-void Asset::load_from_csv(const char *file_name)
+void __Asset::__load_from_csv(const char *file_name)
 {
 	FILE* fp;
 	char line_buffer[1024];
 	fp = fopen(file_name, "r");
 	if (fp == NULL) {
-		std::cerr << "ERROR Opening " << file_name << std::endl;
+		perror("Error");
 		exit(1);
 	}
 	char *token;
@@ -54,9 +54,9 @@ void Asset::load_from_csv(const char *file_name)
 		i++;
 	}
 	fclose(fp);
-	this->AM.set_size(this->AM.data.size()/(this->headers.size()-1), this->headers.size()-1);
+	this->AM.set_size(this->AM.data.size() / (this->headers.size() - 1), this->headers.size() - 1);
 }
-void Asset::print_data()
+void __Asset::print_data()
 {
 	for (size_t i = 0; i < AM.M + 1; i++) {
 		std::cout << this->headers[i];
@@ -83,4 +83,40 @@ void Asset::print_data()
 			idx++;
 		}
 	}
+}
+void * CreateAssetPtr(void)
+{
+	return new __Asset;
+}
+void DeleteAssetPtr(void *ptr)
+{
+	delete ptr;
+}
+int TestAssetPtr(void *ptr){
+	__Asset *__ref = reinterpret_cast<__Asset *>(ptr);
+	return __ref->current_index + 4;
+}
+void load_from_csv(void *ptr, const char* file_name) {
+	__Asset *__ref = reinterpret_cast<__Asset *>(ptr);
+	__ref->__load_from_csv(file_name);
+}
+float* get_data(void *ptr) {
+	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
+	return &__ref->AM.data[0];
+}
+size_t rows(void *ptr) {
+	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
+	return __ref->AM.N;
+}
+size_t columns(void *ptr) {
+	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
+	return __ref->AM.M;
+}
+void set_format(void *ptr, const char * dformat, size_t open_col, size_t close_col) {
+	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
+	__AssetDataFormat format(dformat, open_col, close_col);
+	__ref->digit_datetime_format = format.digit_datetime_format;
+	__ref->open_col = format.open_col;
+	__ref->close_col = format.close_col;
+	__ref->format = format;
 }

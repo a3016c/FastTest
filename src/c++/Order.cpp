@@ -1,6 +1,6 @@
 #include "pch.h"
 #ifdef _WIN32
-#include <Windows.h>
+#include <WinSock2.h>
 #else
 #include <sys/time.h>
 #endif 
@@ -16,17 +16,17 @@ void Order::fill(float market_price, timeval fill_time) {
 }
 const char* Order::get_order_type() {
 	switch (this->order_type) {
-		case MARKET_ORDER: return "MARKET_ORDER";
-		case LIMIT_ORDER: return "LIMIT_ORDER";
-		case STOP_LOSS_ORDER: return "STOP_LOSS_ORDER";
-		case TAKE_PROFIT_ORDER: return "TAKE_PROFIT_ORDER";
+	case MARKET_ORDER: return "MARKET_ORDER";
+	case LIMIT_ORDER: return "LIMIT_ORDER";
+	case STOP_LOSS_ORDER: return "STOP_LOSS_ORDER";
+	case TAKE_PROFIT_ORDER: return "TAKE_PROFIT_ORDER";
 	}
 }
 void Order::add_stop_loss(float stop_loss, float units) {
 	if (std::isnan(units)) {
 		units = this->units;
 	}
-	std::unique_ptr<Order> order (new StopLossOrder(
+	std::unique_ptr<Order> order(new StopLossOrder(
 		this,
 		units,
 		stop_loss

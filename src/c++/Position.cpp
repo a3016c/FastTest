@@ -1,6 +1,6 @@
 #include "pch.h"
 #ifdef _WIN32
-#include <Windows.h>
+#include <WinSock2.h>
 #else
 #include <sys/time.h>
 #endif 
@@ -17,7 +17,7 @@ Position::Position(unsigned int position_id, std::string asset_name, float units
 }
 void Position::increase(float market_price, float _units) {
 	float new_units = abs(this->units) + abs(_units);
-	this->average_price = ((abs(this->units)*this->average_price) + (abs(_units)*market_price))/new_units;
+	this->average_price = ((abs(this->units)*this->average_price) + (abs(_units)*market_price)) / new_units;
 	this->units += _units;
 }
 void Position::reduce(float market_price, float _units) {

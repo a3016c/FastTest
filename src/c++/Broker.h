@@ -10,7 +10,6 @@
 #include "Exchange.h"
 
 #define CHECK_ORDER
-
 #ifdef CHECK_ORDER
 enum ORDER_CHECK {
 	VALID_ORDER,
@@ -22,11 +21,11 @@ enum ORDER_CHECK {
 
 class Broker
 {
-public: 
+public:
 	std::vector<std::unique_ptr<Order>> order_history;
 	std::vector<Position> position_history;
 
-	Exchange &exchange;
+	__Exchange &__exchange;
 
 	unsigned int position_counter = 1;
 	unsigned int order_counter = 1;
@@ -68,7 +67,7 @@ public:
 	bool position_exists(std::string asset_name);
 	void evaluate_portfolio(bool on_close = true);
 
-	Broker(Exchange &exchangeObj, bool logging = false) : exchange(exchangeObj) {
+	Broker(__Exchange &exchangeObj, bool logging = false) : __exchange(exchangeObj) {
 		this->logging = logging;
 	};
 
@@ -80,13 +79,13 @@ public:
 			stop_loss,
 			cheat_on_close
 		));
-	#ifdef CHECK_ORDER
+#ifdef CHECK_ORDER
 		if (check_order(order) != VALID_ORDER) {
 			order->order_state = BROKER_REJECTED;
 			this->order_history.push_back(std::move(order));
 			return BROKER_REJECTED;
 		}
-	#endif
+#endif
 		return this->send_order(std::move(order));
 	}
 
