@@ -21,6 +21,13 @@ void __Asset::reset() {
 bool __Asset::is_last_view() {
 	return this->current_index == (this->AM.N);
 }
+void __Asset::set_header_map() {
+	unsigned int i = 0;
+	for (auto header : this->headers) {
+		this->header_map[header] = i;
+		i++;
+	}
+}
 void __Asset::__load_from_csv(const char *file_name)
 {
 	FILE* fp;
@@ -55,6 +62,7 @@ void __Asset::__load_from_csv(const char *file_name)
 	}
 	fclose(fp);
 	this->AM.set_size(this->AM.data.size() / (this->headers.size() - 1), this->headers.size() - 1);
+	this->set_header_map();
 }
 void __Asset::print_data()
 {

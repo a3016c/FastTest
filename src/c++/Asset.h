@@ -4,9 +4,14 @@
 #else
 #define ASSET_API __declspec(dllimport)
 #endif
+#ifdef _WIN32
 #include <WinSock2.h>
+#else
+#include <sys/time.h>
+#endif 
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 struct __AssetDataFormat {
 	const char * digit_datetime_format;
@@ -69,6 +74,7 @@ public:
 	size_t close_col;
 
 	std::vector<std::string> headers;
+	std::unordered_map<std::string, unsigned int> header_map;
 	std::vector<timeval> datetime_index;
 	__AssetMatrix<float> AM;
 	unsigned int current_index = 0;
@@ -82,6 +88,9 @@ public:
 
 	//function to load an asset from a csv file using a char* for path to the file
 	void __load_from_csv(const char *file_name);
+
+	//function to map headers to integers for accesing data later
+	void set_header_map();
 
 	//function to print the asset data to standard out  (used for debuging mainly)
 	void print_data();

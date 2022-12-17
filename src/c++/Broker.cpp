@@ -53,27 +53,7 @@ void __Broker::increase_position(Position &existing_position, std::unique_ptr<Or
 	existing_position.increase(order->fill_price, order->units);
 	this->cash -= order->units * order->fill_price;
 }
-void __Broker::evaluate_portfolio(bool on_close) {
-	float nlv = 0;
-	for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
-		//update portfolio net liquidation value
-		auto asset_name = it->first;
-		float market_price = this->__exchange._get_market_price(asset_name, on_close);
 
-		//check to see if the underlying asset of the position has finished streaming
-		//if so we have to close the current position on close of the current step
-		if (this->__exchange.market[asset_name].is_last_view()) {
-			this->close_position(this->portfolio[asset_name], market_price, this->__exchange.current_time);
-			it = this->portfolio.erase(it);
-		}
-		else {
-			it->second.evaluate(market_price);
-			nlv += it->second.liquidation_value();
-			it++;
-		}
-	}
-	this->net_liquidation_value = nlv + this->cash;
-}
 bool __Broker::cancel_order(std::unique_ptr<Order>& order_cancel) {
 	std::unique_ptr<Order> canceled_order = this->__exchange.cancel_order(order_cancel);
 	canceled_order->order_state = CANCELED;
@@ -152,7 +132,7 @@ OrderState __Broker::send_order(std::unique_ptr<Order> new_order) {
 	this->order_counter++;
 	return ACCEPETED;
 }
-OrderState __Broker::place_market_order(std::string asset_name, float units, bool cheat_on_close) {
+OrderState __Broker::_place_market_order(std::string asset_name, float units, bool cheat_on_close) {
 	std::unique_ptr<Order> order(new MarketOrder(
 		asset_name,
 		units,
@@ -167,7 +147,7 @@ OrderState __Broker::place_market_order(std::string asset_name, float units, boo
 #endif
 	return this->send_order(std::move(order));
 }
-OrderState __Broker::place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close) {
+OrderState __Broker::_place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close) {
 	std::unique_ptr<Order> order(new LimitOrder(
 		asset_name,
 		units,
@@ -247,4 +227,9 @@ void DeleteBrokerPtr(void *ptr) {
 void reset_broker(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->reset();
+}
+OrderState place_market_order(void *broker_ptr, const char* asset_name, float units, bool cheat_on_close) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	std::string _asset_name(asset_name);
+	return __broker_ref->_place_market_order(_asset_name, units, cheat_on_close);
 }

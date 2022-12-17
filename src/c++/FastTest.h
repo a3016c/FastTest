@@ -32,7 +32,7 @@ public:
 
 	//main event lopp
 	void analyze_step();
-	void run();
+	inline void run();
 
 	__FastTest(__Exchange &exchange, __Broker &broker, Strategy *Strategy, bool logging = false);
 	__FastTest(__Exchange &exchange, __Broker &broker, bool logging = false);
@@ -44,6 +44,8 @@ extern "C" {
 
 	FAST_API bool forward_pass(void* fastTest_ptr);
 	FAST_API void backward_pass(void* fastTest_ptr);
+
+	FAST_API void test_speed(void* fastTest_ptr);
 }
 
 #endif

@@ -7,7 +7,7 @@
 #define BROKER_API __declspec(dllimport)
 #endif
 #include <deque>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include "Order.h"
 #include "Position.h"
@@ -39,7 +39,7 @@ public:
 	float net_liquidation_value = cash;
 	float unrealized_pl = 0;
 	float realized_pl = 0;
-	std::map<std::string, Position> portfolio;
+	std::unordered_map<std::string, Position> portfolio;
 
 	void set_cash(float cash);
 	void reset();
@@ -64,13 +64,34 @@ public:
 	ORDER_CHECK check_stop_loss_order(const StopLossOrder* new_order);
 
 	//order wrapers exposed to strategy
-	OrderState place_market_order(std::string asset_name, float units, bool cheat_on_close = false);
-	OrderState place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close = false);
+	OrderState _place_market_order(std::string asset_name, float units, bool cheat_on_close = false);
+	OrderState _place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close = false);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
 	bool position_exists(std::string asset_name);
-	void evaluate_portfolio(bool on_close = true);
+	
+	inline void evaluate_portfolio(bool on_close = false) noexcept {
+		float nlv = 0;
+		for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
+			//update portfolio net liquidation value
+			auto asset_name = it->first;
+			float market_price = this->__exchange._get_market_price(asset_name, on_close);
+
+			//check to see if the underlying asset of the position has finished streaming
+			//if so we have to close the current position on close of the current step
+			if (this->__exchange.market[asset_name].is_last_view()) {
+				this->close_position(this->portfolio[asset_name], market_price, this->__exchange.current_time);
+				it = this->portfolio.erase(it);
+			}
+			else {
+				it->second.evaluate(market_price);
+				nlv += it->second.liquidation_value();
+				it++;
+			}
+		}
+		this->net_liquidation_value = nlv + this->cash;
+	}
 
 	__Broker(__Exchange &exchangeObj, bool logging = false) : __exchange(exchangeObj) {
 		this->logging = logging;
@@ -105,6 +126,8 @@ extern "C" {
 	BROKER_API void DeleteBrokerPtr(void *ptr);
 
 	BROKER_API void reset_broker(void *broker_ptr);
+	
+	BROKER_API OrderState place_market_order(void *broker_ptr, const char* asset_name, float units, bool cheat_on_close = false);
 }
 
 #endif

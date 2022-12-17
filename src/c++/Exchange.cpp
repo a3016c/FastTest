@@ -234,8 +234,10 @@ void __Exchange::log_order_filled(std::unique_ptr<Order>& order) {
 		order->fill_price
 	);
 }
-void * CreateExchangePtr(void){
-	return new __Exchange;
+void * CreateExchangePtr(bool logging){
+	__Exchange *new_exchange = new __Exchange;
+	new_exchange->logging = logging;
+	return new_exchange;
 }
 void DeleteExchangePtr(void *ptr){
 	delete ptr;

@@ -13,7 +13,7 @@ void Strategy::next() {
 void BenchmarkStrategy::next() {
 	if (!this->is_invested) {
 		std::string asset_name = "test1";
-		this->__broker.place_market_order(
+		this->__broker._place_market_order(
 			asset_name,
 			this->__broker.cash / this->__exchange._get_market_price(asset_name, true),
 			true
@@ -30,11 +30,11 @@ void TestStrategy::next() {
 		if (it->i == i) {
 			switch (it->order_type) {
 			case MARKET_ORDER: {
-				this->__broker.place_market_order(it->asset_name, it->units);
+				this->__broker._place_market_order(it->asset_name, it->units);
 				break;
 			}
 			case LIMIT_ORDER: {
-				this->__broker.place_limit_order(it->asset_name, it->units, it->limit);
+				this->__broker._place_limit_order(it->asset_name, it->units, it->limit);
 				break;
 			}
 			case STOP_LOSS_ORDER: {

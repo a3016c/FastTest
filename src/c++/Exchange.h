@@ -13,7 +13,6 @@
 #endif
 #include <deque>
 #include <string>
-#include <map>
 #include <unordered_map>
 #include <set>
 #include <limits>
@@ -181,7 +180,7 @@ private:
 };
 
 extern "C" {
-	EXCHANGE_API void * CreateExchangePtr(void);
+	EXCHANGE_API void * CreateExchangePtr(bool logging = false);
 	EXCHANGE_API void DeleteExchangePtr(void *ptr);
 
 	EXCHANGE_API void register_asset(void *asset_ptr, void *exchange_ptr);

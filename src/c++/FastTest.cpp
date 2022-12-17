@@ -5,6 +5,9 @@
 #include "Exchange.h"
 #include "Broker.h"
 #include "FastTest.h"
+#include <chrono>
+
+using namespace std::chrono;
 
 __FastTest::__FastTest(__Exchange &exchangeObj, __Broker &brokerObj, Strategy *StrategyObj, bool logging) :
 	__exchange(exchangeObj), broker(brokerObj), strategy(StrategyObj){
@@ -39,7 +42,7 @@ void __FastTest::run() {
 			this->broker.process_filled_orders(std::move(filled_orders));
 		}
 		//allow strategy to place orders
-		this->strategy->next();
+		//this->strategy->next();
 
 		//evaluate the portfolio
 		this->broker.evaluate_portfolio();
@@ -86,10 +89,10 @@ bool forward_pass(void *fastTest_ptr){
 		__fastTest_ref->filled_orders = __fastTest_ref->__exchange.process_orders();
 		__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
 	}
+
 	return true;
 }
 void backward_pass(void * fastTest_ptr) {
-	
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 	//evaluate the portfolio
 	__fastTest_ref->broker.evaluate_portfolio();
@@ -106,4 +109,14 @@ void backward_pass(void * fastTest_ptr) {
 		__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
 	}
 	__fastTest_ref->step_count++;
+}
+void test_speed(void* fastTest_ptr) {
+	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+	auto start = high_resolution_clock::now();
+	__fastTest_ref->run();
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<milliseconds>(stop - start);
+	auto f_secs = duration_cast<std::chrono::duration<float>>(duration);
+	std::cout << "FastTest "
+		<< duration.count() << " milliseconds" << std::endl;
 }

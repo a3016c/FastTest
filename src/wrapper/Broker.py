@@ -1,31 +1,39 @@
 import sys
 from ctypes import *
 from Asset import Asset
+from enum import Enum
 
-lib_path = r"C:\Users\bktor\Desktop\C++\FastTestLib\Debug\FASTTESTLIB.dll"
-try:
-    FastTest = CDLL(lib_path)
-except OSError:
-    print("Unable to load the system C library")
-    sys.exit()
-
-"""Broker wrapper"""
-_new_broker_ptr = FastTest.CreateBrokerPtr
-_new_broker_ptr.argtypes =[c_void_p, c_bool]
-_new_broker_ptr.restype = c_void_p
-"""====================================="""
-_free_broker_ptr = FastTest.CreateBrokerPtr
-_free_broker_ptr.argtypes = [c_void_p]
-"""====================================="""
-_reset_broker = FastTest.reset_broker
-_reset_broker.argtypes = [c_void_p]
+class OrderState(Enum):
+	ACCEPETED = 0
+	OPEN = 1
+	FILLED = 2
+	CANCELED = 3
+	BROKER_REJECTED = 4
 
 class Broker():
-    def __init__(self, exchange_ptr : c_void_p, logging = True) -> None:
-        self.ptr = _new_broker_ptr(exchange_ptr, logging)
+    def __init__(self, lib_path, exchange_ptr : c_void_p, logging = True) -> None:
+        try:
+            FastTest = CDLL(lib_path)
+        except OSError:
+            print("Unable to load the system C library")
+            sys.exit()
+        """Broker wrapper"""
+        self._new_broker_ptr = FastTest.CreateBrokerPtr
+        self._new_broker_ptr.argtypes =[c_void_p, c_bool]
+        self._new_broker_ptr.restype = c_void_p
+        """====================================="""
+        self._free_broker_ptr = FastTest.CreateBrokerPtr
+        self._free_broker_ptr.argtypes = [c_void_p]
+        """====================================="""
+        self._reset_broker = FastTest.reset_broker
+        self._reset_broker.argtypes = [c_void_p]
+        """====================================="""
+
+
+        self.ptr = self._new_broker_ptr(exchange_ptr, logging)
 
     def __del__(self):
-        _free_broker_ptr(self.ptr)
+        self._free_broker_ptr(self.ptr)
 
     def reset(self):
-        _reset_broker(self.ptr)
+        self._reset_broker(self.ptr)

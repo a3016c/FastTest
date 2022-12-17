@@ -21,6 +21,7 @@ const char* Order::get_order_type() {
 	case STOP_LOSS_ORDER: return "STOP_LOSS_ORDER";
 	case TAKE_PROFIT_ORDER: return "TAKE_PROFIT_ORDER";
 	}
+	return "";
 }
 void Order::add_stop_loss(float stop_loss, float units) {
 	if (std::isnan(units)) {
