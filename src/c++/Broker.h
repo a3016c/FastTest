@@ -1,6 +1,11 @@
 #pragma once
 #ifndef BROKER_H // include guard
 #define BROKER_H
+#ifdef ASSET_EXPORTS
+#define BROKER_API __declspec(dllexport)
+#else
+#define BROKER_API __declspec(dllimport)
+#endif
 #include <deque>
 #include <map>
 #include <memory>
@@ -19,7 +24,7 @@ enum ORDER_CHECK {
 };
 #endif
 
-class Broker
+class __Broker
 {
 public:
 	std::vector<std::unique_ptr<Order>> order_history;
@@ -67,7 +72,7 @@ public:
 	bool position_exists(std::string asset_name);
 	void evaluate_portfolio(bool on_close = true);
 
-	Broker(__Exchange &exchangeObj, bool logging = false) : __exchange(exchangeObj) {
+	__Broker(__Exchange &exchangeObj, bool logging = false) : __exchange(exchangeObj) {
 		this->logging = logging;
 	};
 
@@ -95,5 +100,11 @@ private:
 	void open_position(std::unique_ptr<Order>& order_filled);
 	void close_position(Position &existing_position, float fill_price, timeval order_fill_time);
 };
+extern "C" {
+	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true);
+	BROKER_API void DeleteBrokerPtr(void *ptr);
+
+	BROKER_API void reset_broker(void *broker_ptr);
+}
 
 #endif

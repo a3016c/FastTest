@@ -140,14 +140,14 @@ public:
 	 *Function to get the market view for the current market time. Consists of pointers to Asset's that
 	 *are currently streaming. Also updates asset_remove with assets that have reached their last row and have expired.
 	*/
-	bool get_market_view();
+	bool _get_market_view();
 
 	/**
 	 *Function to get the current market price of an asset.
 	 *@param asset_name A referece to the name of the Asset for which to get the market price.
 	 *@param on_close Wether or not to return the market price on close or open for the current market view.
 	*/
-	float get_market_price(std::string &asset_name, bool on_close = false);
+	float _get_market_price(std::string &asset_name, bool on_close = false);
 
 	/**
 	 *Function to log orders being placed onto the exchange. Only runs if logging is set to true.
@@ -187,6 +187,10 @@ extern "C" {
 	EXCHANGE_API void register_asset(void *asset_ptr, void *exchange_ptr);
 	EXCHANGE_API int asset_count(void *exchange_ptr);
 	EXCHANGE_API void build_exchange(void *exchange_ptr);
+	EXCHANGE_API void reset_exchange(void *exchange_ptr);
+
+	EXCHANGE_API void get_market_view(void *exchange_ptr);
+	EXCHANGE_API float get_market_price(void *exchange_ptr, const char* asset_name, bool on_close = false);
 }
 
 #endif

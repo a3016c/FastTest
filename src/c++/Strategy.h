@@ -10,17 +10,18 @@ class Strategy
 {
 public:
 	__Exchange &__exchange;
-	Broker &broker;
+	__Broker &__broker;
 
 	virtual void next();
 
-	Strategy(__Exchange &__exchange, Broker &broker);
+	Strategy(__Exchange &__exchange, __Broker &broker);
+	Strategy() = default;
 };
 class BenchmarkStrategy : public Strategy {
 public:
 	bool is_invested = false;
 	void next();
-
+	BenchmarkStrategy() = default;
 	using Strategy::Strategy;
 };
 struct order_schedule {
@@ -36,6 +37,7 @@ public:
 	std::vector<order_schedule> order_scheduler;
 	void register_test_map(std::vector<order_schedule> orders);
 	void next();
+	TestStrategy() = default;
 	using Strategy::Strategy;
 };
 

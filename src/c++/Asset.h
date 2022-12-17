@@ -107,7 +107,7 @@ public:
 	__Asset() = default;
 };
 extern "C" {
-	ASSET_API void * CreateAssetPtr(void);
+	ASSET_API void * CreateAssetPtr(const char *asset_name);
 	ASSET_API void DeleteAssetPtr(void *ptr);
 	ASSET_API int TestAssetPtr(void *ptr);
 

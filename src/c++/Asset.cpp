@@ -84,12 +84,10 @@ void __Asset::print_data()
 		}
 	}
 }
-void * CreateAssetPtr(void)
-{
-	return new __Asset;
+void * CreateAssetPtr(const char *asset_name){
+	return new __Asset(asset_name);
 }
-void DeleteAssetPtr(void *ptr)
-{
+void DeleteAssetPtr(void *ptr){
 	delete ptr;
 }
 int TestAssetPtr(void *ptr){
@@ -116,7 +114,7 @@ void set_format(void *ptr, const char * dformat, size_t open_col, size_t close_c
 	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
 	__AssetDataFormat format(dformat, open_col, close_col);
 	__ref->digit_datetime_format = format.digit_datetime_format;
-	__ref->open_col = format.open_col;
-	__ref->close_col = format.close_col;
+	__ref->open_col = open_col;
+	__ref->close_col = close_col;
 	__ref->format = format;
 }

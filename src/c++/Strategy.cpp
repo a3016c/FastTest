@@ -4,8 +4,8 @@
 #include "Broker.h"
 #include "Order.h"
 
-Strategy::Strategy(__Exchange &exchangeObj, Broker &brokerObj) :
-	__exchange(exchangeObj), broker(brokerObj)
+Strategy::Strategy(__Exchange &exchangeObj, __Broker &brokerObj) :
+	__exchange(exchangeObj), __broker(brokerObj)
 {
 }
 void Strategy::next() {
@@ -13,9 +13,9 @@ void Strategy::next() {
 void BenchmarkStrategy::next() {
 	if (!this->is_invested) {
 		std::string asset_name = "test1";
-		this->broker.place_market_order(
+		this->__broker.place_market_order(
 			asset_name,
-			this->broker.cash / this->__exchange.get_market_price(asset_name, true),
+			this->__broker.cash / this->__exchange._get_market_price(asset_name, true),
 			true
 		);
 		this->is_invested = true;
@@ -30,16 +30,16 @@ void TestStrategy::next() {
 		if (it->i == i) {
 			switch (it->order_type) {
 			case MARKET_ORDER: {
-				this->broker.place_market_order(it->asset_name, it->units);
+				this->__broker.place_market_order(it->asset_name, it->units);
 				break;
 			}
 			case LIMIT_ORDER: {
-				this->broker.place_limit_order(it->asset_name, it->units, it->limit);
+				this->__broker.place_limit_order(it->asset_name, it->units, it->limit);
 				break;
 			}
 			case STOP_LOSS_ORDER: {
-				Position* existing_position = &this->broker.portfolio[it->asset_name];
-				this->broker.place_stoploss_order(existing_position, it->units, it->limit);
+				Position* existing_position = &this->__broker.portfolio[it->asset_name];
+				this->__broker.place_stoploss_order(existing_position, it->units, it->limit);
 				break;
 			}
 			}

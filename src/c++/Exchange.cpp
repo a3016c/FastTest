@@ -52,15 +52,15 @@ void __Exchange::build() {
 	}
 	for (auto& kvp : this->market) { kvp.second.current_index = 0; }
 }
-bool __Exchange::get_market_view() {
+bool __Exchange::_get_market_view() {
 	if (this->current_index == this->datetime_index.size()) {
 		return false;
 	}
 	timeval next_time = this->datetime_index[this->current_index];
 	for (auto& _asset_pair : this->market) {
 		__Asset * const _asset = &_asset_pair.second;
-		if ((_asset_pair.second.asset_time() == next_time)
-			&(_asset_pair.second.current_index >= _asset_pair.second.minimum_warmup)) {
+		if ((_asset->asset_time() == next_time)
+			&(_asset->current_index >= _asset->minimum_warmup)) {
 			_asset->current_index++;
 			if (this->market_view.count(_asset->asset_name) == 0) {
 				this->market_view[_asset->asset_name] = std::move(_asset);
@@ -69,7 +69,7 @@ bool __Exchange::get_market_view() {
 		else {
 			this->market_view.erase(_asset->asset_name);
 		}
-		if (_asset->current_index == (_asset->AM.N)) {
+		if (_asset->current_index == (_asset->AM.N)+1) {
 			this->asset_remove.push_back(_asset->asset_name);
 		}
 	}
@@ -93,8 +93,9 @@ std::vector<std::unique_ptr<Order>> __Exchange::clean_up_market() {
 	this->asset_counter--;
 	return std::move(cleared_orders);
 }
-float __Exchange::get_market_price(std::string &asset_name, bool on_close) {
+float __Exchange::_get_market_price(std::string &asset_name, bool on_close) {
 	this->asset = this->market_view[asset_name];
+	int idx = this->asset->current_index - 1;
 	if (this->market_view.count(asset_name) == 0) {
 		return NAN;
 	}
@@ -106,12 +107,12 @@ float __Exchange::get_market_price(std::string &asset_name, bool on_close) {
 	}
 }
 void __Exchange::process_market_order(MarketOrder * const open_order) {
-	float market_price = get_market_price(open_order->asset_name, open_order->cheat_on_close);
+	float market_price = _get_market_price(open_order->asset_name, open_order->cheat_on_close);
 	if (isnan(market_price)) { throw std::invalid_argument("recieved order for which asset has no market price"); }
 	open_order->fill(market_price, this->current_time);
 }
 void __Exchange::process_limit_order(LimitOrder *const open_order, bool on_close) {
-	float market_price = get_market_price(open_order->asset_name, on_close);
+	float market_price = _get_market_price(open_order->asset_name, on_close);
 	if (isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
@@ -239,6 +240,10 @@ void * CreateExchangePtr(void){
 void DeleteExchangePtr(void *ptr){
 	delete ptr;
 }
+void reset_exchange(void *exchange_ptr) {
+	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	__exchange_ref->reset();
+}
 void register_asset(void *asset_ptr, void *exchange_ptr) {
 	__Asset * __asset_ref = static_cast<__Asset *>(asset_ptr);
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
@@ -251,4 +256,14 @@ int asset_count(void *exchange_ptr) {
 void build_exchange(void *exchange_ptr) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->build();
+}
+void get_market_view(void *exchange_ptr) {
+	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	__exchange_ref->_get_market_view();
+}
+float get_market_price(void *exchange_ptr, const char* asset_name, bool on_close) {
+	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	std::string _asset_name(asset_name);
+	float price =  __exchange_ref->_get_market_price(_asset_name, on_close);
+	return price;
 }
