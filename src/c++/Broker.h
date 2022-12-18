@@ -126,8 +126,12 @@ extern "C" {
 	BROKER_API void DeleteBrokerPtr(void *ptr);
 
 	BROKER_API void reset_broker(void *broker_ptr);
-	
+
+	BROKER_API void* get_order_history(void *broker_ptr);
+	BROKER_API int get_order_count(void *broker_ptr);
+
 	BROKER_API OrderState place_market_order(void *broker_ptr, const char* asset_name, float units, bool cheat_on_close = false);
+	BROKER_API OrderState place_limit_order(void *broker_ptr,const char* asset_name, float units, float limit, bool cheat_on_close = false);
 }
 
 #endif

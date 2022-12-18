@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #endif 
 #include "Order.h"
+#include "Broker.h"
 
 void Order::create(timeval order_create_time) {
 	this->order_create_time = order_create_time;
@@ -33,4 +34,8 @@ void Order::add_stop_loss(float stop_loss, float units) {
 		stop_loss
 	));
 	this->orders_on_fill.push_back(std::move(order));
+}
+OrderType order_type(void *order_ptr) {
+	Order * __order_ref = static_cast<Order *>(order_ptr);
+	return __order_ref->order_type;
 }

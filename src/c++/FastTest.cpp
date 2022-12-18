@@ -76,7 +76,7 @@ void * CreateFastTestPtr(void *exchange_ptr, void *broker_ptr, bool logging) {
 void DeleteFastTestPtr(void *fastTest_ptr){
 	delete fastTest_ptr;
 }
-void reset(void *fastTest_ptr) {
+void reset_fastTest(void *fastTest_ptr) {
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 	__fastTest_ref->reset();
 }
@@ -110,13 +110,11 @@ void backward_pass(void * fastTest_ptr) {
 	}
 	__fastTest_ref->step_count++;
 }
-void test_speed(void* fastTest_ptr) {
-	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
-	auto start = high_resolution_clock::now();
-	__fastTest_ref->run();
-	auto stop = high_resolution_clock::now();
-	auto duration = duration_cast<milliseconds>(stop - start);
-	auto f_secs = duration_cast<std::chrono::duration<float>>(duration);
-	std::cout << "FastTest "
-		<< duration.count() << " milliseconds" << std::endl;
+float * get_nlv_history(void *fastTest_ptr) {
+	__FastTest * __fastTest_ref = reinterpret_cast<__FastTest *>(fastTest_ptr);
+	return __fastTest_ref->nlv_history.data();
+}
+float * get_has_history(void *fastTest_ptr) {
+	__FastTest * __fastTest_ref = reinterpret_cast<__FastTest *>(fastTest_ptr);
+	return __fastTest_ref->cash_history.data();
 }

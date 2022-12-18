@@ -11,6 +11,7 @@
 
 void __Exchange::register_asset(__Asset new_asset) {
 	this->market.insert({ new_asset.asset_name, new_asset });
+	const char * asset_name = new_asset.asset_name.c_str();
 	this->asset_counter++;
 }
 void __Exchange::remove_asset(std::string asset_name) {
@@ -269,3 +270,17 @@ float get_market_price(void *exchange_ptr, const char* asset_name, bool on_close
 	float price =  __exchange_ref->_get_market_price(_asset_name, on_close);
 	return price;
 }
+void* get_asset_ptr(void *exchange_ptr, const char *asset_name) {
+	__Exchange * __exchange_ref = reinterpret_cast<__Exchange *>(exchange_ptr);
+	std::string asset_name_string(asset_name);
+	return &__exchange_ref->market[asset_name_string];
+}
+float get_market_feature(void *exchange_ptr, const char* asset_name, const char* feature_name) {
+	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	std::string asset_name_string(asset_name);
+	std::string feature_name_string(asset_name);
+	__Asset* asset = __exchange_ref->market_view[feature_name_string];
+	int column_idx = asset->header_map[feature_name];
+	return asset->get(column_idx);
+}
+

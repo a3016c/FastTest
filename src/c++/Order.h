@@ -129,4 +129,7 @@ public:
 		this->stop_loss = stop_loss;
 	}
 };
+extern "C" {
+	ORDER_API OrderType order_type(void *order_ptr);
+}
 #endif

@@ -40,12 +40,13 @@ public:
 extern "C" {
 	FAST_API void * CreateFastTestPtr(void *exchange_ptr, void *broker_ptr, bool logging = true);
 	FAST_API void DeleteFastTestPtr(void *ptr);
-	FAST_API void reset(void *exchange_ptr);
+	FAST_API void reset_fastTest(void *exchange_ptr);
 
 	FAST_API bool forward_pass(void* fastTest_ptr);
 	FAST_API void backward_pass(void* fastTest_ptr);
 
-	FAST_API void test_speed(void* fastTest_ptr);
+	FAST_API float* get_nlv_history(void* fastTest_ptr);
+	FAST_API float* get_has_history(void* fastTest_ptr);
 }
 
 #endif

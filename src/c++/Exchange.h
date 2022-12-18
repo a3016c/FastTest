@@ -190,6 +190,9 @@ extern "C" {
 
 	EXCHANGE_API void get_market_view(void *exchange_ptr);
 	EXCHANGE_API float get_market_price(void *exchange_ptr, const char* asset_name, bool on_close = false);
+	EXCHANGE_API float get_market_feature(void *exchange_ptr, const char* asset_name, const char* feature_name);
+
+	EXCHANGE_API void* get_asset_ptr(void *exchange_ptr, const char* asset_name);
 }
 
 #endif

@@ -99,30 +99,43 @@ void DeleteAssetPtr(void *ptr){
 	delete ptr;
 }
 int TestAssetPtr(void *ptr){
-	__Asset *__ref = reinterpret_cast<__Asset *>(ptr);
-	return __ref->current_index + 4;
+	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
+	return __asset_ref->current_index + 4;
 }
 void load_from_csv(void *ptr, const char* file_name) {
-	__Asset *__ref = reinterpret_cast<__Asset *>(ptr);
-	__ref->__load_from_csv(file_name);
+	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
+	__asset_ref->__load_from_csv(file_name);
 }
 float* get_data(void *ptr) {
-	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
-	return &__ref->AM.data[0];
+	__Asset * __asset_ref = reinterpret_cast<__Asset *>(ptr);
+	return &__asset_ref->AM.data[0];
 }
 size_t rows(void *ptr) {
-	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
-	return __ref->AM.N;
+	__Asset * __asset_ref = reinterpret_cast<__Asset *>(ptr);
+	return __asset_ref->AM.N;
 }
 size_t columns(void *ptr) {
-	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
-	return __ref->AM.M;
+	__Asset * __asset_ref = reinterpret_cast<__Asset *>(ptr);
+	return __asset_ref->AM.M;
 }
 void set_format(void *ptr, const char * dformat, size_t open_col, size_t close_col) {
-	__Asset * __ref = reinterpret_cast<__Asset *>(ptr);
+	__Asset * __asset_ref = reinterpret_cast<__Asset *>(ptr);
 	__AssetDataFormat format(dformat, open_col, close_col);
-	__ref->digit_datetime_format = format.digit_datetime_format;
-	__ref->open_col = open_col;
-	__ref->close_col = close_col;
-	__ref->format = format;
+	__asset_ref->digit_datetime_format = format.digit_datetime_format;
+	__asset_ref->open_col = open_col;
+	__asset_ref->close_col = close_col;
+	__asset_ref->format = format;
+}
+float * get_asset_index(void *asset_ptr) {
+	std::vector<float> epoch_index;
+	__Asset * __ref = reinterpret_cast<__Asset *>(asset_ptr);
+	for (auto time : __ref->datetime_index) {
+		float _time = time.tv_sec + time.tv_usec / 1e6;
+		epoch_index.push_back(_time);
+	}
+	return epoch_index.data();
+}
+float * get_asset_data(void *asset_ptr) {
+	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
+	return __asset_ref->AM.data.data();
 }

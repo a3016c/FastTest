@@ -64,6 +64,7 @@ class __Asset {
 public:
 
 	std::string asset_name;
+	int asset_index;
 	bool streaming = false;
 
 	__AssetDataFormat format;
@@ -126,4 +127,6 @@ extern "C" {
 	ASSET_API size_t columns(void *ptr);
 	ASSET_API void set_format(void *ptr, const char * dformat = "%d-%d-%d", size_t open = 0, size_t close = 1);
 
+	ASSET_API float* get_asset_index(void *ptr);
+	ASSET_API float* get_asset_data(void *ptr);
 }

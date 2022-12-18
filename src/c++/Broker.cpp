@@ -228,8 +228,21 @@ void reset_broker(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->reset();
 }
+int get_order_count(void *broker_ptr) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->order_history.size();
+}
+void* get_order_history(void *broker_ptr) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return &__broker_ref->order_history[0];
+}
 OrderState place_market_order(void *broker_ptr, const char* asset_name, float units, bool cheat_on_close) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	std::string _asset_name(asset_name);
 	return __broker_ref->_place_market_order(_asset_name, units, cheat_on_close);
+}
+OrderState place_limit_order(void *broker_ptr, const char* asset_name, float units, float limit, bool cheat_on_close){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	std::string _asset_name(asset_name);
+	return __broker_ref->_place_limit_order(_asset_name, units, limit, cheat_on_close);
 }

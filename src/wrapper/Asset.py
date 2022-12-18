@@ -1,51 +1,27 @@
 import ctypes
 import os
 import sys
+import numpy as np
+import pandas as pd
 from ctypes import *
 import time 
+import LibWrapper
+
 
 class Asset():
-    def __init__(self, lib_path : str, asset_name : str) -> None:
-        try:
-            FastTest = CDLL(lib_path)
-        except OSError:
-            print("Unable to load the system C library")
-            sys.exit()
-        """Asset wrapper"""
-        self._new_asset_ptr = FastTest.CreateAssetPtr
-        self._new_asset_ptr.argtypes = [c_char_p]
-        self._new_asset_ptr.restype = c_void_p
-
-        self.ptr = self._new_asset_ptr(c_char_p(asset_name.encode("utf-8")))
+    def __init__(self, asset_name : str) -> None:
         self.asset_name = asset_name
-
-        """====================================="""
-        self._free_asset_ptr = FastTest.DeleteAssetPtr
-        self._free_asset_ptr.argtypes = [c_void_p]
-        """====================================="""
-        self._asset_from_csv = FastTest.load_from_csv 
-        self._asset_from_csv.argtypes = [c_void_p,c_char_p]
-        """====================================="""
-        self._set_asset_format = FastTest.set_format 
-        self._set_asset_format.argtypes = [c_void_p,c_char_p, c_size_t, c_size_t]
-        """====================================="""
-        self._rows = FastTest.rows
-        self._rows.argtypes = [c_void_p]
-        self._rows.restype = c_size_t
-        """====================================="""
-        self._columns = FastTest.columns
-        self._columns.argtypes = [c_void_p]
-        self._columns.restype = c_size_t
+        self.ptr = LibWrapper._new_asset_ptr(c_char_p(asset_name.encode("utf-8")))
 
     def __del__(self):
-        self._free_asset_ptr(self.ptr)
+        LibWrapper._free_asset_ptr(self.ptr)
 
     def load_from_csv(self, file_name : str):
-        self.file_name = c_char_p(file_name)
-        self._asset_from_csv(self.ptr, self.file_name)
+        self.file_name = c_char_p(file_name.encode("utf-8"))
+        LibWrapper._asset_from_csv(self.ptr, self.file_name)
 
     def set_format(self, digit_format : str, open_col : int, close_col : int):
-        self._set_asset_format(
+        LibWrapper._set_asset_format(
             self.ptr,
             c_char_p(digit_format.encode("utf-8")),
             open_col,
@@ -53,7 +29,30 @@ class Asset():
         )
 
     def rows(self):
-        return self._rows(self.ptr)
+        return LibWrapper._rows(self.ptr)
     
     def columns(self):
-        return self._columns(self.ptr)
+        return LibWrapper._columns(self.ptr)
+
+    def index(self):
+        index_ptr = LibWrapper._get_asset_index(self.ptr)
+        return np.ctypeslib.as_array(index_ptr, shape=(self.rows(),))
+
+    def data(self):
+        data_ptr = LibWrapper._get_asset_data(self.ptr)
+        asset_data = np.ctypeslib.as_array(data_ptr, shape=(self.rows()*self.columns(),))
+        return np.reshape(asset_data,(-1,self.columns()))
+
+    @staticmethod
+    def _data(ptr):
+        M = LibWrapper._columns(ptr)
+        N = LibWrapper._rows(ptr)
+        data_ptr = LibWrapper._get_asset_data(ptr)
+        asset_data = np.ctypeslib.as_array(data_ptr, shape=(
+            M*N,))
+        return np.reshape(asset_data,(-1,M))
+
+    def df(self):
+        asset_index = self.index()
+        asset_data = self.data()
+        return pd.DataFrame(index = asset_index, data = asset_data)
