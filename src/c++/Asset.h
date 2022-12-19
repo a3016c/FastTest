@@ -63,7 +63,7 @@ public:
 class __Asset {
 public:
 
-	std::string asset_name;
+	UINT asset_id;
 	int asset_index;
 	bool streaming = false;
 
@@ -75,7 +75,6 @@ public:
 	size_t close_col;
 
 	std::vector<std::string> headers;
-	std::unordered_map<std::string, unsigned int> header_map;
 	std::vector<timeval> datetime_index;
 	__AssetMatrix<float> AM;
 	unsigned int current_index = 0;
@@ -88,10 +87,10 @@ public:
 	bool is_last_view();
 
 	//function to load an asset from a csv file using a char* for path to the file
-	void __load_from_csv(const char *file_name);
+	void _load_from_csv(const char *file_name);
 
-	//function to map headers to integers for accesing data later
-	void set_header_map();
+	//function to load an asset from a float pointer using specified dims
+	void _load_from_pointer(float *datetime_index,float *data, size_t rows, size_t columns);
 
 	//function to print the asset data to standard out  (used for debuging mainly)
 	void print_data();
@@ -106,8 +105,8 @@ public:
 		return this->datetime_index[this->current_index];
 	}
 
-	__Asset(const char* asset_name, __AssetDataFormat format = __AssetDataFormat(), unsigned int minimum_warmup = 0) {
-		this->asset_name = std::string(asset_name);
+	__Asset(UINT asset_id, __AssetDataFormat format = __AssetDataFormat(), unsigned int minimum_warmup = 0) {
+		this->asset_id = asset_id;
 		this->minimum_warmup = minimum_warmup;
 		this->digit_datetime_format = format.digit_datetime_format;
 		this->open_col = format.open_col;
@@ -117,14 +116,16 @@ public:
 	__Asset() = default;
 };
 extern "C" {
-	ASSET_API void * CreateAssetPtr(const char *asset_name);
+	ASSET_API void * CreateAssetPtr(UINT asset_id);
 	ASSET_API void DeleteAssetPtr(void *ptr);
 	ASSET_API int TestAssetPtr(void *ptr);
 
 	ASSET_API void load_from_csv(void *ptr, const char* file_name);
+	ASSET_API void load_from_pointer(void *ptr, float *datetime_index, float *data, size_t rows, size_t columns);
 	ASSET_API float* get_data(void *ptr);
 	ASSET_API size_t rows(void *ptr);
 	ASSET_API size_t columns(void *ptr);
+
 	ASSET_API void set_format(void *ptr, const char * dformat = "%d-%d-%d", size_t open = 0, size_t close = 1);
 
 	ASSET_API float* get_asset_index(void *ptr);

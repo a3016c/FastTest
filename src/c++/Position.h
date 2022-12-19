@@ -17,7 +17,7 @@ public:
 	float last_price;
 
 	unsigned int position_id;
-	std::string asset_name;
+	UINT asset_id;
 	timeval position_create_time;
 	timeval position_close_time;
 
@@ -27,11 +27,15 @@ public:
 	void increase(float market_price, float units);
 	void reduce(float market_price, float units);
 	void close(float close_price, timeval position_close_time);
-	void evaluate(float market_price);
 	float liquidation_value();
 
-	Position(unsigned int position_id, std::string asset_name, float units, float average_price, timeval position_create_time);
+	Position(unsigned int position_id, UINT asset_id, float units, float average_price, timeval position_create_time);
 	Position() = default;
+
+	inline void evaluate(float market_price) noexcept {
+		this->last_price = market_price;
+		this->unrealized_pl = this->units * (market_price - this->average_price);
+	}
 
 	friend bool operator==(const Position& lhs, const Position& rhs)
 	{

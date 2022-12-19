@@ -17,16 +17,9 @@ public:
 	Strategy(__Exchange &__exchange, __Broker &broker);
 	Strategy() = default;
 };
-class BenchmarkStrategy : public Strategy {
-public:
-	bool is_invested = false;
-	void next();
-	BenchmarkStrategy() = default;
-	using Strategy::Strategy;
-};
 struct order_schedule {
 	OrderType order_type = MARKET_ORDER;
-	std::string asset_name;
+	UINT asset_id;
 	int i;
 	float units;
 	float limit = 0;

@@ -58,7 +58,7 @@ public:
 	float units;			//number of units to buy/sell
 	float fill_price;		//price the order was filled at
 	unsigned int order_id;  //unique identifier for the order
-	std::string asset_name; //underlying asset for the order
+	UINT asset_id; //underlying asset for the order
 
 
 	timeval order_create_time; //the time the order was placed on the exchange
@@ -71,9 +71,9 @@ public:
 	void fill(float market_price, timeval fill_time);
 	void add_stop_loss(float price, float units = NAN);
 
-	Order(OrderType _OrderType, std::string asset_name, float units, bool cheat_on_close = false) {
+	Order(OrderType _OrderType, UINT asset_id, float units, bool cheat_on_close = false) {
 		this->order_type = _OrderType;
-		this->asset_name = asset_name;
+		this->asset_id = asset_id;
 		this->units = units;
 		this->cheat_on_close = cheat_on_close;
 	}
@@ -91,16 +91,16 @@ public:
 class MarketOrder : public Order
 {
 public:
-	MarketOrder(std::string asset_name, float units, bool cheat_on_close = false)
-		: Order(MARKET_ORDER, asset_name, units, cheat_on_close)
+	MarketOrder(UINT asset_id, float units, bool cheat_on_close = false)
+		: Order(MARKET_ORDER, asset_id, units, cheat_on_close)
 	{}
 };
 class LimitOrder : public Order
 {
 public:
 	float limit;
-	LimitOrder(std::string asset_name, float units, float limit, bool cheat_on_close = false)
-		: Order(LIMIT_ORDER, asset_name, units, cheat_on_close) {
+	LimitOrder(UINT asset_id, float units, float limit, bool cheat_on_close = false)
+		: Order(LIMIT_ORDER, asset_id, units, cheat_on_close) {
 		this->limit = limit;
 	}
 };
@@ -117,13 +117,13 @@ public:
 	OrderParent order_parent;
 	float stop_loss;
 	StopLossOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false)
-		: Order(STOP_LOSS_ORDER, parent_order->asset_name, units, cheat_on_close) {
+		: Order(STOP_LOSS_ORDER, parent_order->asset_id, units, cheat_on_close) {
 		this->order_parent.member.parent_order = parent_order;
 		this->order_parent.type = ORDER;
 		this->stop_loss = stop_loss;
 	}
 	StopLossOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false)
-		: Order(STOP_LOSS_ORDER, parent_position->asset_name, units, cheat_on_close) {
+		: Order(STOP_LOSS_ORDER, parent_position->asset_id, units, cheat_on_close) {
 		this->order_parent.member.parent_position = parent_position;
 		this->order_parent.type = POSITION;
 		this->stop_loss = stop_loss;

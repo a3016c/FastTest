@@ -39,14 +39,14 @@ public:
 	*/
 	std::vector<timeval> datetime_index;
 
-	std::unordered_map<std::string, __Asset*> market_view; /*!<FastTest container for assets that are visable at the current datetime*/
+	std::unordered_map<UINT, __Asset*> market_view; /*!<FastTest container for assets that are visable at the current datetime*/
 	//!FastTest container for all assets registered
 	/*!
 		\A map between asset names and the underlying Asset object that contains thhe underlying data.
 		\When the FastTest is run, the market view is populated based on which assets are currently
 		\in the market and currently streaming.
 	*/
-	std::unordered_map<std::string, __Asset> market;
+	std::unordered_map<UINT, __Asset> market;
 
 	//!FastTest container for all assets registered that have expired 
 	/*!
@@ -54,7 +54,7 @@ public:
 		\attempts to access out of bounds data. Instead of deleteing it, we move it from the market to this
 		\container. This way if we run multiple FastTests we can simply move it back to the market instead of reloading.
 	*/
-	std::unordered_map<std::string, __Asset> market_expired;
+	std::unordered_map<UINT, __Asset> market_expired;
 
 	//!FastTest container for all orders that have been placed on the exchange
 	/*!
@@ -65,7 +65,7 @@ public:
 	std::deque<std::unique_ptr<Order>> orders;
 
 
-	std::vector<std::string> asset_remove;  /**<FastTest container for asset names corresponding to those that just expired*/
+	std::vector<UINT> asset_remove;  /**<FastTest container for asset names corresponding to those that just expired*/
 	unsigned int asset_counter = 0; /**<Counter for the number of assets currently in the market*/
 
 	/**
@@ -90,7 +90,7 @@ public:
 	 *@brief Remove an Asset from the FastTest
 	 *@param asset_name The name of the Asset to remove.
 	*/
-	void remove_asset(std::string asset_name);
+	void remove_asset(UINT asset_id);
 
 	/**
 	 *@brief Function to place a new order on the Exchange
@@ -127,7 +127,7 @@ public:
 	 *@param asset_name The name of the Asset to cancel the open Orders on.
 	 *@return A vecotr of unique pointers to Orders that have been canceled.
 	*/
-	std::vector<std::unique_ptr<Order>> cancel_orders(std::string asset_name);
+	std::vector<std::unique_ptr<Order>> cancel_orders(UINT asset_id);
 
 	/**
 	 *@brief Function to clearn up assets that have reached the end of their data.
@@ -146,7 +146,7 @@ public:
 	 *@param asset_name A referece to the name of the Asset for which to get the market price.
 	 *@param on_close Wether or not to return the market price on close or open for the current market view.
 	*/
-	float _get_market_price(std::string &asset_name, bool on_close = false);
+	float _get_market_price(UINT &asset_name, bool on_close = false);
 
 	/**
 	 *Function to log orders being placed onto the exchange. Only runs if logging is set to true.
@@ -189,10 +189,10 @@ extern "C" {
 	EXCHANGE_API void reset_exchange(void *exchange_ptr);
 
 	EXCHANGE_API void get_market_view(void *exchange_ptr);
-	EXCHANGE_API float get_market_price(void *exchange_ptr, const char* asset_name, bool on_close = false);
-	EXCHANGE_API float get_market_feature(void *exchange_ptr, const char* asset_name, const char* feature_name);
+	EXCHANGE_API float get_market_price(void *exchange_ptr, UINT asset_id, bool on_close = false);
+	EXCHANGE_API float get_market_feature(void *exchange_ptr, UINT asset_id, UINT asset_feature_idx);
 
-	EXCHANGE_API void* get_asset_ptr(void *exchange_ptr, const char* asset_name);
+	EXCHANGE_API void* get_asset_ptr(void *exchange_ptr, UINT asset_name);
 }
 
 #endif

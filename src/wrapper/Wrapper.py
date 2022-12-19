@@ -39,7 +39,7 @@ _rows.argtypes = [c_void_p]
 _rows.restype = c_size_t
 
 _new_asset_ptr = FastTest.CreateAssetPtr
-_new_asset_ptr.argtypes = [c_char_p]
+_new_asset_ptr.argtypes = [c_uint]
 _new_asset_ptr.restype = c_void_p
 
 _free_asset_ptr = FastTest.DeleteAssetPtr
@@ -83,11 +83,11 @@ _get_order_history.argtypes = [c_void_p]
 _get_order_history.restype = c_void_p
 
 _place_market_order = FastTest.place_market_order
-_place_market_order.argtypes = [c_void_p, c_char_p, c_float, c_bool]
+_place_market_order.argtypes = [c_void_p, c_uint, c_float, c_bool]
 _place_market_order.restype = c_uint
 
 _place_limit_order = FastTest.place_limit_order
-_place_limit_order.argtypes = [c_void_p, c_char_p, c_float, c_float, c_bool]
+_place_limit_order.argtypes = [c_void_p, c_uint, c_float, c_float, c_bool]
 _place_limit_order.restype = c_uint
 
 """ORDER WRAPPER"""
@@ -110,11 +110,11 @@ _register_asset = FastTest.register_asset
 _register_asset.argtypes = [c_void_p,c_void_p]
 
 _get_market_price = FastTest.get_market_price
-_get_market_price.argtypes = [c_void_p,c_char_p,c_bool]
+_get_market_price.argtypes = [c_void_p,c_uint,c_bool]
 _get_market_price.restype = c_float
 
 _get_market_feature = FastTest.get_market_feature
-_get_market_feature.argtypes = [c_void_p,c_char_p,c_char_p]
+_get_market_feature.argtypes = [c_void_p,c_uint,c_uint]
 _get_market_feature.restype = c_float
 
 _get_market_view = FastTest.get_market_view
@@ -128,5 +128,5 @@ _asset_count.argtypes = [c_void_p]
 _asset_count.restype = c_int
 
 _get_asset_ptr = FastTest.get_asset_ptr
-_get_asset_ptr.argtypes = [c_void_p, c_char_p]  
+_get_asset_ptr.argtypes = [c_void_p, c_uint]  
 _get_asset_ptr.restype = c_void_p

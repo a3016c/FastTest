@@ -1,43 +1,95 @@
 import sys
 from ctypes import *
-from Asset import Asset
-import LibWrapper
+import Wrapper
 import numpy as np
-
+import pandas as pd
 class Exchange():
     def __init__(self, logging = False) -> None:
-        self.ptr = LibWrapper._new_exchange_ptr(logging)
-        self.asset_names = []
+        self.ptr = Wrapper._new_exchange_ptr(logging)
+        self.asset_map = {}
+        self.asset_counter = 0
 
     def __del__(self):
-        LibWrapper._free_exchange_ptr(self.ptr)
+        Wrapper._free_exchange_ptr(self.ptr)
 
     def reset(self):
-        LibWrapper._reset_exchange(self.ptr)
+        Wrapper._reset_exchange(self.ptr)
 
-    def register_asset(self, asset : Asset):
-        self.asset_names.append(asset.asset_name)
-        LibWrapper._register_asset(asset.ptr, self.ptr)
+    def register_asset(self, asset):
+        self.asset_map[asset.asset_name] = self.asset_counter
+        Wrapper._register_asset(asset.ptr, self.ptr)
+        self.asset_counter += 1
 
     def build(self):
-        LibWrapper._build_exchange(self.ptr)
+        Wrapper._build_exchange(self.ptr)
 
     def get_market_price(self, asset_name : str, on_close = True):
-        return LibWrapper._get_market_price(
+        asset_id = self.asset_map[asset_name]
+        return Wrapper._get_market_price(
             self.ptr, 
-            c_char_p(asset_name.encode("utf-8")),
+            asset_id,
             c_bool(on_close)
         )
         
     def get_asset_data(self, asset_name : str):
-        asset_ptr = LibWrapper._get_asset_ptr(self.ptr, c_char_p(asset_name.encode("utf-8")) )
+        asset_id = self.asset_map[asset_name]
+        asset_ptr = Wrapper._get_asset_ptr(self.ptr,asset_id)
         return Asset._data(asset_ptr)
         
     def get_market_view(self):
-        LibWrapper._get_market_view(self.ptr)
+        Wrapper._get_market_view(self.ptr)
 
     def asset_count(self):
-        return LibWrapper._asset_count(self.ptr)
+        return Wrapper._asset_count(self.ptr)
+
+class Asset():
+    def __init__(self, exchange : Exchange, asset_name : str) -> None:
+        self.asset_name = asset_name
+        self.ptr = Wrapper._new_asset_ptr(exchange.asset_counter)
+
+    def __del__(self):
+        Wrapper._free_asset_ptr(self.ptr)
+
+    def load_from_csv(self, file_name : str):
+        self.file_name = c_char_p(file_name.encode("utf-8"))
+        Wrapper._asset_from_csv(self.ptr, self.file_name)
+
+    def set_format(self, digit_format : str, open_col : int, close_col : int):
+        Wrapper._set_asset_format(
+            self.ptr,
+            c_char_p(digit_format.encode("utf-8")),
+            open_col,
+            close_col
+        )
+
+    def rows(self):
+        return Wrapper._rows(self.ptr)
+    
+    def columns(self):
+        return Wrapper._columns(self.ptr)
+
+    def index(self):
+        index_ptr = Wrapper._get_asset_index(self.ptr)
+        return np.ctypeslib.as_array(index_ptr, shape=(self.rows(),))
+
+    def data(self):
+        data_ptr = Wrapper._get_asset_data(self.ptr)
+        asset_data = np.ctypeslib.as_array(data_ptr, shape=(self.rows()*self.columns(),))
+        return np.reshape(asset_data,(-1,self.columns()))
+
+    @staticmethod
+    def _data(ptr):
+        M = Wrapper._columns(ptr)
+        N = Wrapper._rows(ptr)
+        data_ptr = Wrapper._get_asset_data(ptr)
+        asset_data = np.ctypeslib.as_array(data_ptr, shape=(
+            M*N,))
+        return np.reshape(asset_data,(-1,M))
+
+    def df(self):
+        asset_index = self.index()
+        asset_data = self.data()
+        return pd.DataFrame(index = asset_index, data = asset_data)
     
 if __name__ == "__main__":
     pass

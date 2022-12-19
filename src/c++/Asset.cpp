@@ -21,14 +21,25 @@ void __Asset::reset() {
 bool __Asset::is_last_view() {
 	return this->current_index == (this->AM.N);
 }
-void __Asset::set_header_map() {
-	unsigned int i = 0;
-	for (auto header : this->headers) {
-		this->header_map[header] = i;
-		i++;
+void __Asset::_load_from_pointer(float *datetime_index, float *data, size_t rows, size_t columns) {
+	size_t size = rows * columns;
+
+	float whole, fractional;
+	long tv_sec, tv_usec;
+	timeval tv;
+	for (int i = 0; i < size; i++) {
+		fractional = std::modf(datetime_format[i], &whole);
+		tv_sec = static_cast<long>(whole);
+		tv_usec = static_cast<long>(whole);
+		tv = { tv_sec, tv_usec};
+
+		this->datetime_index.emplace_back(tv);
+		this->AM.data.emplace_back(data[i]);
 	}
+	this->AM.set_size(rows, columns);
 }
-void __Asset::__load_from_csv(const char *file_name)
+
+void __Asset::_load_from_csv(const char *file_name)
 {
 	FILE* fp;
 	char line_buffer[1024];
@@ -62,7 +73,6 @@ void __Asset::__load_from_csv(const char *file_name)
 	}
 	fclose(fp);
 	this->AM.set_size(this->AM.data.size() / (this->headers.size() - 1), this->headers.size() - 1);
-	this->set_header_map();
 }
 void __Asset::print_data()
 {
@@ -92,8 +102,8 @@ void __Asset::print_data()
 		}
 	}
 }
-void * CreateAssetPtr(const char *asset_name){
-	return new __Asset(asset_name);
+void * CreateAssetPtr(UINT asset_id){
+	return new __Asset(asset_id);
 }
 void DeleteAssetPtr(void *ptr){
 	delete ptr;
@@ -104,7 +114,11 @@ int TestAssetPtr(void *ptr){
 }
 void load_from_csv(void *ptr, const char* file_name) {
 	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
-	__asset_ref->__load_from_csv(file_name);
+	__asset_ref->_load_from_csv(file_name);
+}
+void load_from_pointer(void *ptr, float *datetime_index, float *data, size_t rows, size_t columns){
+	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
+	__asset_ref->_load_from_pointer(datetime_index,data,rows,columns);
 }
 float* get_data(void *ptr) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(ptr);

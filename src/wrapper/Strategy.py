@@ -1,30 +1,51 @@
 from Broker import *
 from ctypes import *
 import sys 
-import LibWrapper
+import Wrapper
 from Exchange import Exchange
 from Order import OrderSchedule, OrderType
+import numba
+from numba.core import types
+from numba.experimental import jitclass
 
+#spec = [
+#    ('broker_ptr',types.voidptr),
+#    ('exchange_ptr', types.voidptr)
+#]
+
+#@jitclass(spec)
 class Strategy():
-    def __init__(self, broker = None, exchange = None) -> None:
-        self.broker = broker
-        self.exchange = None
+    def __init__(self, broker_ptr : c_void_p, exchange_ptr : c_void_p) -> None:
+        self.broker = broker_ptr 
+        self.exchange_ptr = exchange_ptr
 
-    def build(self, broker, exchange) -> None:
-        self.broker = broker
-        self.exchange = exchange
-        self.broker_ptr = broker.ptr
-        self.exchange_ptr = exchange.ptr
-
-    def get(self, asset_name : str, feature_name : str):
-        return LibWrapper._get_market_feature(
-            self.exchange_ptr,
-            c_char_p(asset_name.encode("utf-8")),
-            c_char_p(feature_name.encode("utf-8")),
-        )
-
-    def next():
+    def next(self):
         return 
+
+spec = [
+    ('broker_ptr',types.voidptr),
+    ('exchange_ptr', types.voidptr),
+    ('i',numba.int32)
+]
+
+@jitclass(spec)
+class BenchMarkStrategy(Strategy):
+    def __init__(self, broker_ptr : c_void_p, exchange_ptr : c_void_p) -> None:
+        self.broker_ptr = broker_ptr 
+        self.exchange_ptr = exchange_ptr
+        self.i = 0
+
+    def next(self):
+        if self.i == 0:
+            number_assets = Wrapper._asset_count(self.exchange_ptr)
+            for i in range(0,number_assets):
+                Wrapper._place_market_order(
+                    self.broker_ptr,
+                    i,
+                    100,
+                    True
+                )
+            self.i += 1
 
 class TestStrategy(Strategy):
     def __init__(self, order_schedule, broker = None, exchange = None) -> None:
@@ -41,17 +62,8 @@ class TestStrategy(Strategy):
                     self.broker.place_market_order(order.asset_name,order.units,order.limit,order.cheat_on_close)
 
         self.i += 1
-        
-class BenchMarkStrategy(Strategy):
-    def __init__(self, broker = None, exchange = None) -> None:
-        super().__init__(broker,exchange)
-        self.i = 0
 
-    def next(self):
-        if self.i == 0:
-            number_assets = self.exchange.asset_count()
-            asset_names = self.exchange.asset_names
-            for i in range(0,number_assets):
-                res = self.broker.place_market_order(asset_names[i],100)
-            print(res)
-            self.i += 1
+
+
+if __name__ == "__main__":
+    pass

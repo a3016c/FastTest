@@ -39,7 +39,7 @@ public:
 	float net_liquidation_value = cash;
 	float unrealized_pl = 0;
 	float realized_pl = 0;
-	std::unordered_map<std::string, Position> portfolio;
+	std::unordered_map<UINT, Position> portfolio;
 
 	void set_cash(float cash);
 	void reset();
@@ -54,7 +54,7 @@ public:
 	OrderState send_order(std::unique_ptr<Order> new_order);
 	bool cancel_order(std::unique_ptr<Order>& order_cancel);
 	void log_canceled_orders(std::vector<std::unique_ptr<Order>> cleared_orders);
-	bool cancel_orders(std::string asset_name = "");
+	bool cancel_orders(UINT asset_id);
 	void clear_child_orders(Position& existing_position);
 	std::deque<std::unique_ptr<Order>>& open_orders();
 	void process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled);
@@ -64,24 +64,25 @@ public:
 	ORDER_CHECK check_stop_loss_order(const StopLossOrder* new_order);
 
 	//order wrapers exposed to strategy
-	OrderState _place_market_order(std::string asset_name, float units, bool cheat_on_close = false);
-	OrderState _place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close = false);
+	OrderState _place_market_order(UINT asset_id, float units, bool cheat_on_close = false);
+	OrderState _place_limit_order(UINT asset_id, float units, float limit, bool cheat_on_close = false);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
-	bool position_exists(std::string asset_name);
+	bool position_exists(UINT asset_id);
 	
 	inline void evaluate_portfolio(bool on_close = false) noexcept {
 		float nlv = 0;
+		UINT asset_id;
 		for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
 			//update portfolio net liquidation value
-			auto asset_name = it->first;
-			float market_price = this->__exchange._get_market_price(asset_name, on_close);
+			asset_id = it->first;
+			float market_price = this->__exchange._get_market_price(asset_id, on_close);
 
 			//check to see if the underlying asset of the position has finished streaming
 			//if so we have to close the current position on close of the current step
-			if (this->__exchange.market[asset_name].is_last_view()) {
-				this->close_position(this->portfolio[asset_name], market_price, this->__exchange.current_time);
+			if (this->__exchange.market[asset_id].is_last_view()) {
+				this->close_position(this->portfolio[asset_id], market_price, this->__exchange.current_time);
 				it = this->portfolio.erase(it);
 			}
 			else {
@@ -130,8 +131,8 @@ extern "C" {
 	BROKER_API void* get_order_history(void *broker_ptr);
 	BROKER_API int get_order_count(void *broker_ptr);
 
-	BROKER_API OrderState place_market_order(void *broker_ptr, const char* asset_name, float units, bool cheat_on_close = false);
-	BROKER_API OrderState place_limit_order(void *broker_ptr,const char* asset_name, float units, float limit, bool cheat_on_close = false);
+	BROKER_API OrderState place_market_order(void *broker_ptr, UINT asset_id, float units, bool cheat_on_close = false);
+	BROKER_API OrderState place_limit_order(void *broker_ptr, UINT asset_id, float units, float limit, bool cheat_on_close = false);
 }
 
 #endif

@@ -28,13 +28,13 @@ float __Broker::get_net_liquidation_value() {
 void __Broker::open_position(std::unique_ptr<Order> &order) {
 	Position new_position = Position{
 		this->position_counter,
-		order->asset_name,
+		order->asset_id,
 		order->units,
 		order->fill_price,
 		order->order_fill_time
 	};
 	if (this->logging) { log_open_position(new_position); }
-	this->portfolio[order->asset_name] = new_position;
+	this->portfolio[order->asset_id] = new_position;
 	this->cash -= (order->units*order->fill_price);
 }
 void __Broker::close_position(Position &existing_position, float fill_price, timeval order_fill_time) {
@@ -65,9 +65,9 @@ void __Broker::log_canceled_orders(std::vector<std::unique_ptr<Order>> cleared_o
 		this->order_history.push_back(std::move(order));
 	}
 }
-bool __Broker::cancel_orders(std::string asset_name) {
+bool __Broker::cancel_orders(UINT asset_id) {
 	for (auto& order : this->__exchange.orders) {
-		if (order->asset_name != asset_name) { continue; }
+		if (order->asset_id != asset_id) { continue; }
 		if (!this->cancel_order(order)) {
 			return false;
 		}
@@ -88,19 +88,19 @@ ORDER_CHECK __Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order
 	OrderParent parent = stop_loss_order->order_parent;
 	if (parent.type == ORDER) {
 		Order* parent_order = parent.member.parent_order;
-		if (parent_order->asset_name != stop_loss_order->asset_name) { return INVALID_ASSET; }
+		if (parent_order->asset_id != stop_loss_order->asset_id) { return INVALID_ASSET; }
 		if (parent_order->order_type > 1) { return INVALID_PARENT_ORDER; }
 		if (parent_order->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE; }
 	}
 	else {
 		Position* parent_position = parent.member.parent_position;
-		if (parent_position->asset_name != stop_loss_order->asset_name) { return INVALID_ASSET; }
+		if (parent_position->asset_id != stop_loss_order->asset_id) { return INVALID_ASSET; }
 		if (parent_position->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE; }
 	}
 	return VALID_ORDER;
 };
 ORDER_CHECK __Broker::check_order(const std::unique_ptr<Order>& new_order) {
-	if (this->__exchange.market.count(new_order->asset_name) == 0) { return INVALID_ASSET; }
+	if (this->__exchange.market.count(new_order->asset_id) == 0) { return INVALID_ASSET; }
 
 	ORDER_CHECK order_code;
 	switch (new_order->order_type) {
@@ -132,9 +132,9 @@ OrderState __Broker::send_order(std::unique_ptr<Order> new_order) {
 	this->order_counter++;
 	return ACCEPETED;
 }
-OrderState __Broker::_place_market_order(std::string asset_name, float units, bool cheat_on_close) {
+OrderState __Broker::_place_market_order(UINT asset_id, float units, bool cheat_on_close) {
 	std::unique_ptr<Order> order(new MarketOrder(
-		asset_name,
+		asset_id,
 		units,
 		cheat_on_close
 	));
@@ -147,9 +147,9 @@ OrderState __Broker::_place_market_order(std::string asset_name, float units, bo
 #endif
 	return this->send_order(std::move(order));
 }
-OrderState __Broker::_place_limit_order(std::string asset_name, float units, float limit, bool cheat_on_close) {
+OrderState __Broker::_place_limit_order(UINT asset_id, float units, float limit, bool cheat_on_close) {
 	std::unique_ptr<Order> order(new LimitOrder(
-		asset_name,
+		asset_id,
 		units,
 		limit,
 		cheat_on_close
@@ -166,15 +166,15 @@ OrderState __Broker::_place_limit_order(std::string asset_name, float units, flo
 void __Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled) {
 	for (auto& order : orders_filled) {
 		//no position exists, create new open position
-		if (!this->position_exists(order->asset_name)) {
+		if (!this->position_exists(order->asset_id)) {
 			this->open_position(order);
 		}
 		else {
-			Position &existing_position = this->portfolio[order->asset_name];
+			Position &existing_position = this->portfolio[order->asset_id];
 			//sum of existing position units and order units is 0. Close existing position
 			if (existing_position.units + order->units == 0) {
 				this->close_position(existing_position, order->fill_price, order->order_fill_time);
-				this->portfolio.erase(order->asset_name);
+				this->portfolio.erase(order->asset_id);
 			}
 			//order is same direction as existing position. Increase existing position
 			else if (existing_position.units * order->units > 0) {
@@ -191,8 +191,8 @@ void __Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_
 std::deque<std::unique_ptr<Order>>& __Broker::open_orders() {
 	return this->__exchange.orders;
 }
-bool __Broker::position_exists(std::string asset_name) {
-	return this->portfolio.count(asset_name) > 0;
+bool __Broker::position_exists(UINT asset_id) {
+	return this->portfolio.count(asset_id) > 0;
 }
 void __Broker::set_cash(float cash) {
 	this->cash = cash;
@@ -200,9 +200,9 @@ void __Broker::set_cash(float cash) {
 void __Broker::log_open_position(Position &position) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&position.position_create_time, this->time, sizeof(this->time));
-	printf("%s: OPENING POSITION: asset_name: %s, units: %f, avg_price: %f\n",
+	printf("%s: OPENING POSITION: asset_id: %i, units: %f, avg_price: %f\n",
 		this->time,
-		position.asset_name.c_str(),
+		position.asset_id,
 		position.units,
 		position.average_price
 	);
@@ -210,9 +210,9 @@ void __Broker::log_open_position(Position &position) {
 void __Broker::log_close_position(Position &position) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&position.position_close_time, this->time, sizeof(this->time));
-	printf("%s: CLOSING POSITION: asset_name: %s, units: %f, close_price: %f\n",
+	printf("%s: CLOSING POSITION: asset_id: %i, units: %f, close_price: %f\n",
 		this->time,
-		position.asset_name.c_str(),
+		position.asset_id,
 		position.units,
 		position.close_price
 	);
@@ -236,13 +236,11 @@ void* get_order_history(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return &__broker_ref->order_history[0];
 }
-OrderState place_market_order(void *broker_ptr, const char* asset_name, float units, bool cheat_on_close) {
+OrderState place_market_order(void *broker_ptr, UINT asset_id, float units, bool cheat_on_close) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	std::string _asset_name(asset_name);
-	return __broker_ref->_place_market_order(_asset_name, units, cheat_on_close);
+	return __broker_ref->_place_market_order(asset_id, units, cheat_on_close);
 }
-OrderState place_limit_order(void *broker_ptr, const char* asset_name, float units, float limit, bool cheat_on_close){
+OrderState place_limit_order(void *broker_ptr, UINT asset_id, float units, float limit, bool cheat_on_close){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	std::string _asset_name(asset_name);
-	return __broker_ref->_place_limit_order(_asset_name, units, limit, cheat_on_close);
+	return __broker_ref->_place_limit_order(asset_id, units, limit, cheat_on_close);
 }

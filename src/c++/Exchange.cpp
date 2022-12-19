@@ -10,12 +10,11 @@
 #include "utils_time.h"
 
 void __Exchange::register_asset(__Asset new_asset) {
-	this->market.insert({ new_asset.asset_name, new_asset });
-	const char * asset_name = new_asset.asset_name.c_str();
+	this->market.insert({ new_asset.asset_id, new_asset });
 	this->asset_counter++;
 }
-void __Exchange::remove_asset(std::string asset_name) {
-	this->market.erase(asset_name);
+void __Exchange::remove_asset(UINT asset_id) {
+	this->market.erase(asset_id);
 }
 void __Exchange::reset() {
 	if (this->market.size() == 0) { this->market.swap(this->market_expired); }
@@ -63,15 +62,15 @@ bool __Exchange::_get_market_view() {
 		if ((_asset->asset_time() == next_time)
 			&(_asset->current_index >= _asset->minimum_warmup)) {
 			_asset->current_index++;
-			if (this->market_view.count(_asset->asset_name) == 0) {
-				this->market_view[_asset->asset_name] = std::move(_asset);
+			if (this->market_view.count(_asset->asset_id) == 0) {
+				this->market_view[_asset->asset_id] = std::move(_asset);
 			}
 		}
 		else {
-			this->market_view.erase(_asset->asset_name);
+			this->market_view.erase(_asset->asset_id);
 		}
 		if (_asset->current_index == (_asset->AM.N)+1) {
-			this->asset_remove.push_back(_asset->asset_name);
+			this->asset_remove.push_back(_asset->asset_id);
 		}
 	}
 	this->current_time = next_time;
@@ -94,10 +93,10 @@ std::vector<std::unique_ptr<Order>> __Exchange::clean_up_market() {
 	this->asset_counter--;
 	return std::move(cleared_orders);
 }
-float __Exchange::_get_market_price(std::string &asset_name, bool on_close) {
-	this->asset = this->market_view[asset_name];
+float __Exchange::_get_market_price(UINT &asset_id, bool on_close) {
+	this->asset = this->market_view[asset_id];
 	int idx = this->asset->current_index - 1;
-	if (this->market_view.count(asset_name) == 0) {
+	if (this->market_view.count(asset_id) == 0) {
 		return NAN;
 	}
 	if (on_close) {
@@ -108,12 +107,12 @@ float __Exchange::_get_market_price(std::string &asset_name, bool on_close) {
 	}
 }
 void __Exchange::process_market_order(MarketOrder * const open_order) {
-	float market_price = _get_market_price(open_order->asset_name, open_order->cheat_on_close);
+	float market_price = _get_market_price(open_order->asset_id, open_order->cheat_on_close);
 	if (isnan(market_price)) { throw std::invalid_argument("recieved order for which asset has no market price"); }
 	open_order->fill(market_price, this->current_time);
 }
 void __Exchange::process_limit_order(LimitOrder *const open_order, bool on_close) {
-	float market_price = _get_market_price(open_order->asset_name, on_close);
+	float market_price = _get_market_price(open_order->asset_id, on_close);
 	if (isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
@@ -206,10 +205,10 @@ std::unique_ptr<Order> __Exchange::cancel_order(std::unique_ptr<Order>& order_ca
 	}
 	return order;
 }
-std::vector<std::unique_ptr<Order>> __Exchange::cancel_orders(std::string asset_name) {
+std::vector<std::unique_ptr<Order>> __Exchange::cancel_orders(UINT asset_id) {
 	std::vector<std::unique_ptr<Order>> canceled_orders;
 	for (auto& order : this->orders) {
-		if (order->asset_name != asset_name) { continue; }
+		if (order->asset_id != asset_id) { continue; }
 		canceled_orders.push_back(std::move(this->cancel_order(order)));
 	}
 	return canceled_orders;
@@ -217,20 +216,20 @@ std::vector<std::unique_ptr<Order>> __Exchange::cancel_orders(std::string asset_
 void __Exchange::log_order_placed(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_create_time, this->time, sizeof(this->time));
-	printf("%s: %s PLACED: asset_name: %s, units: %f\n",
+	printf("%s: %s PLACED: asset_id: %i, units: %f\n",
 		this->time,
 		order->get_order_type(),
-		order->asset_name.c_str(),
+		order->asset_id,
 		order->units
 	);
 }
 void __Exchange::log_order_filled(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_fill_time, this->time, sizeof(this->time));
-	printf("%s: %s FILLED: asset_name: %s, units: %f, fill_price: %f\n",
+	printf("%s: %s FILLED: asset_id: %i, units: %f, fill_price: %f\n",
 		this->time,
 		order->get_order_type(),
-		order->asset_name.c_str(),
+		order->asset_id,
 		order->units,
 		order->fill_price
 	);
@@ -264,23 +263,18 @@ void get_market_view(void *exchange_ptr) {
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->_get_market_view();
 }
-float get_market_price(void *exchange_ptr, const char* asset_name, bool on_close) {
+float get_market_price(void *exchange_ptr, UINT asset_id, bool on_close) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
-	std::string _asset_name(asset_name);
-	float price =  __exchange_ref->_get_market_price(_asset_name, on_close);
+	float price =  __exchange_ref->_get_market_price(asset_id, on_close);
 	return price;
 }
-void* get_asset_ptr(void *exchange_ptr, const char *asset_name) {
+void* get_asset_ptr(void *exchange_ptr, UINT asset_id) {
 	__Exchange * __exchange_ref = reinterpret_cast<__Exchange *>(exchange_ptr);
-	std::string asset_name_string(asset_name);
-	return &__exchange_ref->market[asset_name_string];
+	return &__exchange_ref->market[asset_id];
 }
-float get_market_feature(void *exchange_ptr, const char* asset_name, const char* feature_name) {
+float get_market_feature(void *exchange_ptr, UINT asset_id, UINT feature_index) {
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
-	std::string asset_name_string(asset_name);
-	std::string feature_name_string(asset_name);
-	__Asset* asset = __exchange_ref->market_view[feature_name_string];
-	int column_idx = asset->header_map[feature_name];
-	return asset->get(column_idx);
+	__Asset* asset = __exchange_ref->market_view[asset_id];
+	return asset->get(feature_index);
 }
 
