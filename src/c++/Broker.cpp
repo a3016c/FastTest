@@ -232,10 +232,6 @@ int get_order_count(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->order_history.size();
 }
-void* get_order_history(void *broker_ptr) {
-	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return &__broker_ref->order_history[0];
-}
 OrderState place_market_order(void *broker_ptr, UINT asset_id, float units, bool cheat_on_close) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->_place_market_order(asset_id, units, cheat_on_close);
@@ -243,4 +239,12 @@ OrderState place_market_order(void *broker_ptr, UINT asset_id, float units, bool
 OrderState place_limit_order(void *broker_ptr, UINT asset_id, float units, float limit, bool cheat_on_close){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->_place_limit_order(asset_id, units, limit, cheat_on_close);
+}
+void get_order_history(void *broker_ptr, OrderHistory *order_history) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	int number_orders = order_history->number_orders;
+	for (int i = 0; i < number_orders; i++) {
+		OrderStruct &order_struct_ref = *order_history->ORDER_ARRAY[i];
+		__broker_ref->order_history[i]->to_struct(order_struct_ref);
+	}
 }

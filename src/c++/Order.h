@@ -38,6 +38,22 @@ enum OrderParentType {
 	ORDER = 1
 };
 
+struct OrderStruct {
+	OrderType order_type;
+	OrderState order_state;
+	float units;
+	float fill_price;
+	unsigned int order_id;
+	unsigned int asset_id;
+	long order_create_time;
+	long order_fill_time;
+};
+
+struct OrderHistory {
+	unsigned int number_orders;
+	OrderStruct **ORDER_ARRAY;
+};
+
 class Order
 {
 public:
@@ -70,6 +86,8 @@ public:
 	void create(timeval order_create_time);
 	void fill(float market_price, timeval fill_time);
 	void add_stop_loss(float price, float units = NAN);
+
+	void to_struct(OrderStruct &order_struct);
 
 	Order(OrderType _OrderType, UINT asset_id, float units, bool cheat_on_close = false) {
 		this->order_type = _OrderType;
@@ -131,5 +149,6 @@ public:
 };
 extern "C" {
 	ORDER_API OrderType order_type(void *order_ptr);
+	ORDER_API bool order_compare(void *order_ptr1, void *order_ptr2);
 }
 #endif

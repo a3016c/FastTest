@@ -119,6 +119,7 @@ extern "C" {
 	ASSET_API void * CreateAssetPtr(UINT asset_id);
 	ASSET_API void DeleteAssetPtr(void *ptr);
 	ASSET_API int TestAssetPtr(void *ptr);
+	ASSET_API bool AssetCompare(void *asset_ptr1, void *asset_ptr2);
 
 	ASSET_API void load_from_csv(void *ptr, const char* file_name);
 	ASSET_API void load_from_pointer(void *ptr, float *datetime_index, float *data, size_t rows, size_t columns);
@@ -130,4 +131,5 @@ extern "C" {
 
 	ASSET_API float* get_asset_index(void *ptr);
 	ASSET_API float* get_asset_data(void *ptr);
+
 }

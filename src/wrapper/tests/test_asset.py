@@ -5,7 +5,7 @@ import unittest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import numpy as np
 from Exchange import Exchange, Asset
-from constants import *
+from helpers import *
 import FastTest
 
 class AssetTestMethods(unittest.TestCase):

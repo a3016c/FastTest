@@ -11,6 +11,30 @@ except OSError:
     print("Unable to load the system C library")
     sys.exit()
 
+class OrderStruct(Structure):
+    _fields_ = [
+        ('order_type',c_uint),
+        ('order_state',c_uint),
+        ('units',c_float),
+        ('fill_price',c_float),
+        ('order_id',c_uint),
+        ('asset_id',c_uint),
+        ('order_create_time',c_long),
+        ('order_fill_time',c_long)
+    ]
+class OrderHistoryStruct(Structure):
+    _fields_ = [
+        ('number_orders',c_uint),
+        ('ORDER_ARRAY',POINTER(POINTER(OrderStruct)))
+    ]
+    def __init__(self,number_orders):
+        elements = (POINTER(OrderStruct)*number_orders)()
+        self.ORDER_ARRAY = cast(elements,POINTER(POINTER(OrderStruct)))
+        self.number_orders = number_orders
+
+        for num in range(0,number_orders):
+            self.ORDER_ARRAY[num] = pointer(OrderStruct())
+
 """FastTest wrapper"""
 _new_fastTest_ptr = FastTest.CreateFastTestPtr
 _new_fastTest_ptr.argtypes = [c_void_p, c_void_p, c_bool]
@@ -79,8 +103,7 @@ _get_order_count.argtypes = [c_void_p]
 _get_order_count.restype = c_int
 
 _get_order_history = FastTest.get_order_history
-_get_order_history.argtypes = [c_void_p]
-_get_order_history.restype = c_void_p
+_get_order_history.argtypes = [c_void_p,POINTER(OrderHistoryStruct)]
 
 _place_market_order = FastTest.place_market_order
 _place_market_order.argtypes = [c_void_p, c_uint, c_float, c_bool]

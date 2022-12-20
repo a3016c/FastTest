@@ -108,6 +108,9 @@ void * CreateAssetPtr(UINT asset_id){
 void DeleteAssetPtr(void *ptr){
 	delete ptr;
 }
+bool AssetCompare(void *asset_ptr1, void *asset_ptr2) {
+	return asset_ptr1 == asset_ptr2;
+}
 int TestAssetPtr(void *ptr){
 	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
 	return __asset_ref->current_index + 4;

@@ -8,7 +8,7 @@ from Broker import Broker
 from FastTest import FastTest
 from Exchange import Exchange, Asset
 from Strategy import *
-from constants import *
+from helpers import *
 
 class ExchangeTestMethods(unittest.TestCase):
 

@@ -1,6 +1,13 @@
 from enum import Enum
-from ctypes import *
+import ctypes
 import Wrapper
+
+class OrderState(Enum):
+	ACCEPETED = 0
+	OPEN = 1
+	FILLED = 2
+	CANCELED = 3
+	BROKER_REJECTED = 4
 
 class OrderType(Enum):
 	MARKET_ORDER = 0
@@ -18,7 +25,7 @@ class OrderSchedule():
         self.cheat_on_close = kwargs.get("cheat_on_close") if kwargs.get("cheat_on_close") != None else False
 
 class Order():
-    def __init__(self, order_ptr : c_void_p) -> None:
+    def __init__(self, order_ptr : ctypes.c_void_p) -> None:
         self.ptr = order_ptr
     
     def order_type(self):

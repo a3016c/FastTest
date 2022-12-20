@@ -128,8 +128,8 @@ extern "C" {
 
 	BROKER_API void reset_broker(void *broker_ptr);
 
-	BROKER_API void* get_order_history(void *broker_ptr);
 	BROKER_API int get_order_count(void *broker_ptr);
+	BROKER_API void get_order_history(void *broker_ptr, OrderHistory *order_history);
 
 	BROKER_API OrderState place_market_order(void *broker_ptr, UINT asset_id, float units, bool cheat_on_close = false);
 	BROKER_API OrderState place_limit_order(void *broker_ptr, UINT asset_id, float units, float limit, bool cheat_on_close = false);

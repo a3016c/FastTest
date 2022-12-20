@@ -8,25 +8,38 @@ import numba
 from numba.core import types
 from numba.experimental import jitclass
 
-#spec = [
-#    ('broker_ptr',types.voidptr),
-#    ('exchange_ptr', types.voidptr)
-#]
 
-#@jitclass(spec)
 class Strategy():
-    def __init__(self, broker_ptr : c_void_p, exchange_ptr : c_void_p) -> None:
-        self.broker = broker_ptr 
-        self.exchange_ptr = exchange_ptr
+    def __init__(self, broker : Broker, exchange : Exchange) -> None:
+        self.broker = broker 
+        self.exchange = exchange
 
     def next(self):
         return 
+
+class TestStrategy(Strategy):
+    def __init__(self, order_schedule, broker = None, exchange = None) -> None:
+        super().__init__(broker,exchange)
+        self.order_schedule = order_schedule
+        self.i = 0
+
+    def next(self):
+        for order in self.order_schedule:
+            if order.i == self.i:
+                if order.order_type == OrderType.MARKET_ORDER:
+                    self.broker.place_market_order(order.asset_name,order.units,order.cheat_on_close)
+                elif order.order_type == OrderType.LIMIT_ORDER:
+                    self.broker.place_limit_order(order.asset_name,order.units,order.limit,order.cheat_on_close)
+
+        self.i += 1
+
 
 spec = [
     ('broker_ptr',types.voidptr),
     ('exchange_ptr', types.voidptr),
     ('i',numba.int32)
 ]
+
 
 @jitclass(spec)
 class BenchMarkStrategy(Strategy):
@@ -46,24 +59,6 @@ class BenchMarkStrategy(Strategy):
                     True
                 )
             self.i += 1
-
-class TestStrategy(Strategy):
-    def __init__(self, order_schedule, broker = None, exchange = None) -> None:
-        super().__init__(broker,exchange)
-        self.order_schedule = order_schedule
-        self.i = 0
-
-    def next(self):
-        for order in self.order_schedule:
-            if order.i == self.i:
-                if order.order_type == OrderType.MARKET_ORDER:
-                    self.broker.place_market_order(order.asset_name,order.units,order.cheat_on_close)
-                elif order.order_type == OrderType.LIMIT_ORDER:
-                    self.broker.place_market_order(order.asset_name,order.units,order.limit,order.cheat_on_close)
-
-        self.i += 1
-
-
 
 if __name__ == "__main__":
     pass

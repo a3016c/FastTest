@@ -50,37 +50,19 @@ class FastTest:
         return True
 
 @jit
-def run_slow(fast_test_ptr : c_void_p, strategy):
+def run_jit(fast_test_ptr : c_void_p, strategy):
     while Wrapper._fastTest_forward_pass(fast_test_ptr):
         strategy.next()
         Wrapper._fastTest_backward_pass(fast_test_ptr)
 
 @njit
-def run_fast(fast_test_ptr : c_void_p, strategy):
+def run_njit(fast_test_ptr : c_void_p, strategy):
     while Wrapper._fastTest_forward_pass(fast_test_ptr):
         strategy.next()
         Wrapper._fastTest_backward_pass(fast_test_ptr)
 
 if __name__ == "__main__":
-    exchange = Exchange()
-    broker = Broker(exchange)
-    for i in range (0,20):
-        file_name = "C:/Users/bktor/test_large.csv"
-        #file_name = r"C:\Users\bktor\Desktop\Python\FastTest\src\wrapper\tests\data\test2.csv"
-        new_asset = Asset(exchange = exchange,asset_name=str(i))
-        new_asset.set_format("%d-%d-%d", 0, 1)
-        new_asset.load_from_csv(file_name)
-        exchange.register_asset(new_asset)
-
-    ft = FastTest(exchange, broker)
-    ft.build()
-    strategy = BenchMarkStrategy(exchange.ptr, broker.ptr)
-    ft.add_strategy(strategy)
-
-    st = time.time()
-    run_fast(ft.ptr, strategy)
-    et = time.time()
-    print(f"FastTest run in : {(et-st)*1000} ms")
-
-
-
+    order_count = 2
+    order_history = Wrapper.OrderHistoryStruct(order_count)
+    print(order_history.ORDER_ARRAY[0].contents)
+    #order_struct_pointer = pointer(order_history)
