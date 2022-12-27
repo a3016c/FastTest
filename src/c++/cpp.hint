@@ -1,2 +1,0 @@
-#define FASTTESTLIB_API __declspec(dllexport)
-#define FASTTESTLIB_API __declspec(dllimport)

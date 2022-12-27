@@ -2,7 +2,7 @@
     "python.testing.unittestArgs": [
         "-v",
         "-s",
-        ".",
+        "./wrapper",
         "-p",
         "test_*.py"
     ],
@@ -10,6 +10,14 @@
     "python.testing.unittestEnabled": true,
     "notebook.output.textLineLimit": 30,
     "files.associations": {
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "atomic": "cpp",
+        "chrono": "cpp",
+        "vector": "cpp",
+        "__availability": "cpp",
+        "ctime": "cpp",
+        "type_traits": "cpp",
+        "complex": "cpp",
+        "cmath": "cpp"
     }
 }
