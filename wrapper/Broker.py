@@ -32,7 +32,7 @@ class Broker():
         return order_history
     
     def get_position_history(self):
-        position_count = self.get_order_count()
+        position_count = self.get_total_position_count()
         position_history = Wrapper.PositionHistoryStruct(position_count)
         order_struct_pointer = pointer(position_history)
         Wrapper._get_position_history(self.ptr, order_struct_pointer)

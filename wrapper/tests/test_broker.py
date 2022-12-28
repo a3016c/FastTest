@@ -29,28 +29,64 @@ class AssetTestMethods(unittest.TestCase):
 
     def test_limit_order(self):
         exchange, broker, ft = setup_multi()
+        for j in range(0,2):
+            orders = [
+                OrderSchedule(
+                    order_type = OrderType.LIMIT_ORDER,
+                    asset_name = "2",
+                    i = j,
+                    units = 100,
+                    limit = 97
+                )
+            ]
+            strategy = TestStrategy(orders, broker, exchange)
+            ft.add_strategy(strategy)
+            ft.run()
+            
+            order_history = broker.get_order_history()
+            position_history = broker.get_position_history()
+            assert(len(order_history) == 1)
+            assert(len(position_history) == 1)
+            
+            assert(order_history.ORDER_ARRAY[0].contents.fill_price == 97)
+            assert(position_history.POSITION_ARRAY[0].contents.average_price == 97)
+            assert(position_history.POSITION_ARRAY[0].contents.close_price == 96)
+            
+            assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_create_time,"s") == test2_index[2])
+            assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_close_time,"s") == test2_index[-1])
+
+    def test_limit_sell(self):
         orders = [
-            OrderSchedule(
-                order_type = OrderType.LIMIT_ORDER,
-                asset_name = "2",
-                i = 0,
-                units = 100,
-                limit = 97
-            )
-        ]
+                OrderSchedule(
+                    order_type = OrderType.LIMIT_ORDER,
+                    asset_name = "2",
+                    i = 1,
+                    units = 100,
+                    limit = 97
+                ),
+                OrderSchedule(
+                    order_type = OrderType.LIMIT_ORDER,
+                    asset_name = "2",
+                    i = 3,
+                    units = -100,
+                    limit = 103
+                )
+            ]
+        exchange, broker, ft = setup_multi()
         strategy = TestStrategy(orders, broker, exchange)
         ft.add_strategy(strategy)
         ft.run()
         
         order_history = broker.get_order_history()
         position_history = broker.get_position_history()
-        assert(len(order_history) == 1)
+        assert(len(order_history) == 2)
         assert(len(position_history) == 1)
-        
+            
         assert(order_history.ORDER_ARRAY[0].contents.fill_price == 97)
         assert(position_history.POSITION_ARRAY[0].contents.average_price == 97)
-        print(position_history.POSITION_ARRAY[0].contents.close_price)
+        assert(position_history.POSITION_ARRAY[0].contents.close_price == 103)
         
+        assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_close_time,"s") == test2_index[-1])
 
 if __name__ == '__main__':
     unittest.main()

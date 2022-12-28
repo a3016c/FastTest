@@ -38,10 +38,10 @@ def setup_simple():
     ft.build()
     return exchange, broker, ft
 
-def setup_multi():
+def setup_multi(logging = False):
     exchange = Exchange()
     broker = Broker(exchange)
-    ft = FastTest(exchange, broker)
+    ft = FastTest(exchange, broker, logging)
 
     for i, file_name in enumerate([file_name_1,file_name_2]):
         new_asset = Asset(exchange, asset_name=str(i+1))

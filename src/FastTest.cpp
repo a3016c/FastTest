@@ -99,16 +99,20 @@ bool forward_pass(void *fastTest_ptr){
 }
 void backward_pass(void * fastTest_ptr) {
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+
 	//evaluate the portfolio
-	__fastTest_ref->broker.evaluate_portfolio();
+	__fastTest_ref->broker.evaluate_portfolio(true);
+
 	//evaluate strategy portfolio
 	__fastTest_ref->analyze_step();
+
 	//allow the exchange to clean up assets that are done streaming
 	__fastTest_ref->canceled_orders = __fastTest_ref->__exchange.clean_up_market();
 	if (!__fastTest_ref->canceled_orders.empty()) {
 		//Any orders for assets that have expired are canceled
 		__fastTest_ref->broker.log_canceled_orders(std::move(__fastTest_ref->canceled_orders));
 	}
+
 	//allow exchange to process cheat on close orders
 	if (!__fastTest_ref->__exchange.orders.empty()) {
 		__fastTest_ref->filled_orders = __fastTest_ref->__exchange.process_orders(true);
