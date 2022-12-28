@@ -40,7 +40,6 @@ spec = [
     ('i',numba.int32)
 ]
 
-
 @jitclass(spec)
 class BenchMarkStrategy(Strategy):
     def __init__(self, broker_ptr : c_void_p, exchange_ptr : c_void_p) -> None:

@@ -45,7 +45,7 @@ struct OrderStruct {
 	long order_fill_time;
 };
 
-struct OrderHistory {
+struct OrderArray {
 	unsigned int number_orders;
 	OrderStruct **ORDER_ARRAY;
 };
@@ -101,6 +101,9 @@ public:
 		return &lhs == &rhs;
 	}
 };
+
+void order_ptr_to_struct(std::unique_ptr<Order> &open_order, OrderStruct &order_struct);
+
 
 class MarketOrder : public Order
 {

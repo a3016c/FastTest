@@ -2,13 +2,14 @@ import time
 from ctypes import *
 import sys
 import numpy as np
+import pandas as pd
 from numba import njit, jit
 
 from Exchange import Exchange, Asset
 from Broker import Broker
-from Strategy import Strategy, BenchMarkStrategy
+from Strategy import Strategy, BenchMarkStrategy, TestStrategy
+from Order import OrderSchedule, OrderType
 import Wrapper
-
 
 class FastTest:
     def __init__(self, exchange : Exchange, broker : Broker, logging = False) -> None:
@@ -61,9 +62,53 @@ def run_njit(fast_test_ptr : c_void_p, strategy):
     while Wrapper._fastTest_forward_pass(fast_test_ptr):
         strategy.next()
         Wrapper._fastTest_backward_pass(fast_test_ptr)
+        
+def test_speed():
+    exchange = Exchange()
+    broker = Broker(exchange)
+    ft = FastTest(exchange, broker)
+    
+    n = 20000
+    n_assets = 100
+    
+    o = np.arange(0,10,step = 10/n).astype(np.float32)
+    c = (np.arange(0,10,step = 10/n) + .001).astype(np.float32)
+    index = pd.date_range(end='1/1/2018', periods=n, freq = "s").astype(int) / 10**9
+    df = pd.DataFrame(data = [o,c]).T
+    df.columns = ["OPEN","CLOSE"]
+    df.index = index
+    st = time.time()
+    for i in range(0,n_assets):    
+        new_asset = Asset(exchange, asset_name=str(i))
+        new_asset.set_format("%d-%d-%d", 0, 1)
+        new_asset.load_from_df(df)
+        ft.exchange.register_asset(new_asset)
+    et = time.time()
+    print(f"Average Asset Load Time: {(et-st)*(1000/n_assets):.2f} ms")
+
+    strategy = BenchMarkStrategy(broker.ptr, exchange.ptr)
+        
+    ft.build()
+    ft.add_strategy(strategy)
+    st = time.time()
+    ft.run()
+    et = time.time()
+    print("=========SIMPLE RUN=========")
+    print(f"FastTest run in: {(et-st):.2f} Seconds")
+    print(f"Candles Per Second: {n*n_assets/(et-st):,.2f}")
+    print("============================")
+    
+    ft = FastTest(exchange, broker)
+    ft.build()
+    run_jit(ft.ptr, strategy)
+    st = time.time()
+    ft.run()
+    et = time.time()
+    
+    print("=========JIT RUN=========")
+    print(f"FastTest run in: {(et-st):.2f} Seconds")
+    print(f"Candles Per Second: {n*n_assets/(et-st):,.2f}")
+    print("============================")
 
 if __name__ == "__main__":
-    order_count = 2
-    order_history = Wrapper.OrderHistoryStruct(order_count)
-    print(order_history.ORDER_ARRAY[0].contents)
-    #order_struct_pointer = pointer(order_history)
+    test_speed()

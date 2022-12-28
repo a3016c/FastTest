@@ -133,6 +133,15 @@ void __Exchange::process_limit_order(LimitOrder *const open_order, bool on_close
 		open_order->fill(market_price, this->current_time);
 	}
 }
+void __Exchange::process_stoploss_order(StopLossOrder * const open_order, bool on_close){
+	float market_price = _get_market_price(open_order->asset_id, on_close);
+	if ((open_order->units > 0) & (market_price <= open_order->stop_loss)) {
+		open_order->fill(market_price, this->current_time);
+	}
+	else if ((open_order->units < 0) & (market_price >= open_order->stop_loss)) {
+		open_order->fill(market_price, this->current_time);
+	}
+}
 void __Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close) {
 	try {
 		switch (open_order->order_type) {
@@ -147,9 +156,9 @@ void __Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close
 			this->process_limit_order(order_limit, on_close);
 			break;
 		}
-						  /*
-						  PROCESS SL ORDER;
-						  */
+			StopLossOrder* order_stoploss = static_cast <StopLossOrder*>(open_order.get());
+			this->process_stoploss_order(order_stoploss, on_close);
+			break;
 		}
 	}
 	catch (const std::exception& e) {

@@ -22,7 +22,11 @@ class Broker():
     
     def position_exists(self, asset_name):
         asset_id = self.exchange.asset_map[asset_name]
-        return Wrapper._position_exists(asset_id)
+        return Wrapper._position_exists(self.ptr, asset_id)
+    
+    def get_position_ptr(self, asset_name : str):
+        asset_id = self.exchange.asset_map[asset_name]
+        return Wrapper._get_position_ptr(self.ptr, asset_id)
 
     def get_order_history(self):
         order_count = self.get_order_count()

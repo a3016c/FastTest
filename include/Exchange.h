@@ -173,15 +173,20 @@ public:
 
 private:
 	/**
-	 *Function for processing MarketOrders that are currently open. Private function to prevent others from accessing raw pointer to Order.
+	 *Function for processing Market Orders that are currently open. Private function to prevent others from accessing raw pointer to Order.
 	 *@param open_order A pointer to a MarketOrder currently open on the Exchange. Raw pointer of Order in open Orders container.
 	*/
 	void process_market_order(MarketOrder *open_order);
 	/**
-	 *Function for processing LimitOrders that are currently open. Private function to prevent others from accessing raw pointer to Order.
+	 *Function for processing Limit Orders that are currently open. Private function to prevent others from accessing raw pointer to Order.
 	 *@param open_order A pointer to a LimitOrder currently open on the Exchange. Raw pointer of Order in open Orders container.
 	*/
 	void process_limit_order(LimitOrder *open_order, bool on_close);
+	/**
+	 *Function for processing StopLoss orders that are currently open. Private function to prevent others from accessing raw pointer to Order.
+	 *@param open_order A pointer to a StopLoss currently open on the Exchange. Raw pointer of Order in open Orders container.
+	*/
+	void process_stoploss_order(StopLossOrder * const stoploss_order, bool on_close);
 };
 
 extern "C" {

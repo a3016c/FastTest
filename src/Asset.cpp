@@ -28,14 +28,16 @@ void __Asset::_load_from_pointer(float *datetime_index, float *data, size_t rows
 	size_t size = rows * columns;
 
 	float whole, fractional;
-	long tv_sec, tv_usec;
+	long tv_sec;
+	int tv_usec;
 	timeval tv;
 	int i;
 	for (i = 0; i < rows; i++) {
 		fractional = std::modf(datetime_index[i], &whole);
 		tv_sec = static_cast<long>(whole);
+		fractional *= 1e6;
 		tv_usec = static_cast<long>(fractional);
-		tv = { tv_sec, 0};
+		tv = { tv_sec, tv_usec};
 		this->datetime_index.emplace_back(tv);
 		this->epoch_index.emplace_back(datetime_index[i]);
 		

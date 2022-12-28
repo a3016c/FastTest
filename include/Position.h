@@ -18,7 +18,7 @@ struct PositionStruct {
 	float unrealized_pl;
 };
 
-struct PositionHistory {
+struct PositionArray {
 	unsigned int number_positions;
 	PositionStruct **POSITION_ARRAY;
 };

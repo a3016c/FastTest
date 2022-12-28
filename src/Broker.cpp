@@ -256,7 +256,14 @@ OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float unit
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->_place_limit_order(asset_id, units, limit, cheat_on_close);
 }
-void get_order_history(void *broker_ptr, OrderHistory *order_history) {
+OrderState position_add_stoploss(void *broker_ptr, void * position_ptr, float units, float stop_loss, bool cheat_on_close){
+		__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+		Position * __position_ref = static_cast<Position *>(position_ptr);
+		return __broker_ref->place_stoploss_order(
+			__position_ref, units, stop_loss, cheat_on_close
+		);
+}
+void get_order_history(void *broker_ptr, OrderArray *order_history) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	int number_orders = order_history->number_orders;
 	for (int i = 0; i < number_orders; i++) {
@@ -264,11 +271,32 @@ void get_order_history(void *broker_ptr, OrderHistory *order_history) {
 		__broker_ref->order_history[i]->to_struct(order_struct_ref);
 	}
 }
-void get_position_history(void *broker_ptr, PositionHistory *position_history) {
+void get_position_history(void *broker_ptr, PositionArray *position_history) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	int number_positions = position_history->number_positions;
 	for (int i = 0; i < number_positions; i++) {
 		PositionStruct &position_struct_ref = *position_history->POSITION_ARRAY[i];
 		__broker_ref->position_history[i].to_struct(position_struct_ref);
 	}
+}
+void get_positions(void *broker_ptr, PositionArray *positions){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	int number_positions = __broker_ref->portfolio.size();
+	for (int i = 0; i < number_positions; i++) {
+		PositionStruct &position_struct_ref = *positions->POSITION_ARRAY[i];
+		__broker_ref->portfolio[i].to_struct(position_struct_ref);
+	}
+}
+void get_orders(void *broker_ptr, OrderArray *orders){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	int number_orders = __broker_ref->__exchange.orders.size();
+	for (int i = 0; i < number_orders; i++) {
+		OrderStruct &order_struct_ref = *orders->ORDER_ARRAY[i];
+		std::unique_ptr<Order>& open_order = __broker_ref->__exchange.orders[i];
+		order_ptr_to_struct(open_order, order_struct_ref);
+	}
+}
+void * get_position_ptr(void *broker_ptr, unsigned int asset_id){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return &__broker_ref->portfolio[asset_id];
 }

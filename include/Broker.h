@@ -125,18 +125,21 @@ private:
 extern "C" {
 	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true);
 	BROKER_API void DeleteBrokerPtr(void *ptr);
-
 	BROKER_API void reset_broker(void *broker_ptr);
 
 	BROKER_API int get_order_count(void *broker_ptr);
 	BROKER_API int get_position_count(void *broker_ptr);
-	BROKER_API void get_order_history(void *broker_ptr, OrderHistory *order_history);
-	BROKER_API void get_position_history(void *broker_ptr, PositionHistory *order_history);
+	BROKER_API void get_order_history(void *broker_ptr, OrderArray *order_history);
+	BROKER_API void get_position_history(void *broker_ptr, PositionArray *position_history);
 	
 	BROKER_API bool position_exists(void *broker_ptr, unsigned int asset_id);
+	BROKER_API void get_positions(void *broker_ptr, PositionArray *positions);
+	BROKER_API void * get_position_ptr(void *broker_ptr, unsigned int asset_id);
+	BROKER_API void get_orders(void *broker_ptr, OrderArray *orders);
 
 	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false);
 	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false);
+	BROKER_API OrderState position_add_stoploss(void *broker_ptr, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false);
 }
 
 #endif

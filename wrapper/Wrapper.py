@@ -159,6 +159,18 @@ _place_limit_order = FastTest.place_limit_order
 _place_limit_order.argtypes = [c_void_p, c_uint, c_float, c_float, c_bool]
 _place_limit_order.restype = c_uint
 
+_get_position_ptr = FastTest.get_position_ptr
+_get_position_ptr.argtypes = [c_void_p, c_uint]
+_get_position_ptr.restype = c_void_p
+
+_get_positions = FastTest.get_positions
+_get_positions.argtypes = [c_void_p,POINTER(PositionHistoryStruct)]
+
+_position_place_stoploss_order = FastTest.position_add_stoploss
+_position_place_stoploss_order.argtypes = [c_void_p, c_void_p, c_float, c_float, c_bool]
+_position_place_stoploss_order.restype = c_uint
+
+
 """ORDER WRAPPER"""
 _order_type = FastTest.order_type
 _order_type.argtypes = [c_void_p]

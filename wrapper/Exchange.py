@@ -79,7 +79,6 @@ class Asset():
                 index
             )
         
-        
     def set_format(self, digit_format : str, open_col : int, close_col : int):
         Wrapper._set_asset_format(
             self.ptr,
