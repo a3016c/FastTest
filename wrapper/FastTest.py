@@ -38,6 +38,7 @@ class FastTest:
         self.strategies = np.append(self.strategies,(strategy))
 
     def run(self):
+        self.reset()
         while self.step():
             pass
     

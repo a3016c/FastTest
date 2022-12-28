@@ -42,6 +42,7 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 	if (this->logging) { log_open_position(new_position); }
 	this->portfolio[order->asset_id] = new_position;
 	this->cash -= (order->units*order->fill_price);
+	this->position_counter++;
 }
 void __Broker::close_position(Position &existing_position, float fill_price, timeval order_fill_time) {
 	//note: this function does not remove the position from the portfolio so this should not
@@ -172,7 +173,7 @@ OrderState __Broker::_place_limit_order(unsigned int asset_id, float units, floa
 void __Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled) {
 	for (auto& order : orders_filled) {
 		//no position exists, create new open position
-		if (!this->position_exists(order->asset_id)) {
+		if (!this->_position_exists(order->asset_id)) {
 			this->open_position(order);
 		}
 		else {
@@ -197,7 +198,7 @@ void __Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_
 std::deque<std::unique_ptr<Order>>& __Broker::open_orders() {
 	return this->__exchange.orders;
 }
-bool __Broker::position_exists(unsigned int asset_id) {
+bool __Broker::_position_exists(unsigned int asset_id) {
 	return this->portfolio.count(asset_id) > 0;
 }
 void __Broker::set_cash(float cash) {
@@ -239,6 +240,14 @@ int get_order_count(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->order_history.size();
 }
+int get_position_count(void *broker_ptr) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->position_history.size();
+}
+bool position_exists(void *broker_ptr, unsigned int asset_id){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->_position_exists(asset_id);
+}
 OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->_place_market_order(asset_id, units, cheat_on_close);
@@ -253,5 +262,13 @@ void get_order_history(void *broker_ptr, OrderHistory *order_history) {
 	for (int i = 0; i < number_orders; i++) {
 		OrderStruct &order_struct_ref = *order_history->ORDER_ARRAY[i];
 		__broker_ref->order_history[i]->to_struct(order_struct_ref);
+	}
+}
+void get_position_history(void *broker_ptr, PositionHistory *position_history) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	int number_positions = position_history->number_positions;
+	for (int i = 0; i < number_positions; i++) {
+		PositionStruct &position_struct_ref = *position_history->POSITION_ARRAY[i];
+		__broker_ref->position_history[i].to_struct(position_struct_ref);
 	}
 }

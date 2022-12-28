@@ -18,6 +18,7 @@ class OrderStruct(Structure):
         ('order_create_time',c_long),
         ('order_fill_time',c_long)
     ]
+    
 class OrderHistoryStruct(Structure):
     _fields_ = [
         ('number_orders',c_uint),
@@ -30,6 +31,38 @@ class OrderHistoryStruct(Structure):
 
         for num in range(0,number_orders):
             self.ORDER_ARRAY[num] = pointer(OrderStruct())
+            
+    def __len__(self):
+        return self.number_orders
+    
+class PositionStruct(Structure):
+    _fields_ = [
+        ('average_price', c_float),
+        ('close_price', c_float),
+        ('units',c_float),
+        ('position_id',c_uint),
+        ('asset_id',c_uint),
+        ('position_create_time',c_long),
+        ('position_close_time',c_long),
+        ('realized_pl', c_float),
+        ('unrealized_pl', c_float)
+    ]
+
+class PositionHistoryStruct(Structure):
+    _fields_ = [
+        ('number_positions',c_uint),
+        ('POSITION_ARRAY',POINTER(POINTER(PositionStruct)))
+    ]
+    def __init__(self,number_positions):
+        elements = (POINTER(PositionStruct)*number_positions)()
+        self.POSITION_ARRAY = cast(elements,POINTER(POINTER(PositionStruct)))
+        self.number_positions = number_positions
+
+        for num in range(0,number_positions):
+            self.POSITION_ARRAY[num] = pointer(PositionStruct())
+            
+    def __len__(self):
+        return self.number_positions
 
 """FastTest wrapper"""
 _new_fastTest_ptr = FastTest.CreateFastTestPtr
@@ -46,7 +79,7 @@ _fastTest_forward_pass.restype = c_bool
 _fastTest_backward_pass = FastTest.backward_pass
 _fastTest_backward_pass.argtypes = [c_void_p]
 
-_fastTest_reset = FastTest.reset_exchange
+_fastTest_reset = FastTest.reset_fastTest
 _fastTest_reset.argtypes = [c_void_p]
 
 _rows = FastTest.rows
@@ -104,8 +137,19 @@ _get_order_count = FastTest.get_order_count
 _get_order_count.argtypes = [c_void_p]
 _get_order_count.restype = c_int
 
+_get_position_count = FastTest.get_position_count
+_get_position_count.argtypes = [c_void_p]
+_get_position_count.restype = c_int
+
+_position_exists = FastTest.position_exists
+_position_exists.argtypes = [c_void_p, c_uint]
+_position_exists.restype = c_bool
+
 _get_order_history = FastTest.get_order_history
 _get_order_history.argtypes = [c_void_p,POINTER(OrderHistoryStruct)]
+
+_get_position_history = FastTest.get_position_history
+_get_position_history.argtypes = [c_void_p,POINTER(PositionHistoryStruct)]
 
 _place_market_order = FastTest.place_market_order
 _place_market_order.argtypes = [c_void_p, c_uint, c_float, c_bool]
@@ -140,10 +184,6 @@ _get_market_price.restype = c_float
 
 _get_market_feature = FastTest.get_market_feature
 _get_market_feature.argtypes = [c_void_p,c_uint,c_char_p]
-_get_market_feature.restype = c_float
-
-_get_market_feature = FastTest.get_market_feature
-_get_market_feature.argtypes = [c_void_p,c_uint,c_uint]
 _get_market_feature.restype = c_float
 
 _get_market_view = FastTest.get_market_view

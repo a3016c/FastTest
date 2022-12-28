@@ -16,6 +16,13 @@ class Broker():
 
     def get_order_count(self):
         return Wrapper._get_order_count(self.ptr)
+    
+    def get_total_position_count(self):
+        return Wrapper._get_position_count(self.ptr)
+    
+    def position_exists(self, asset_name):
+        asset_id = self.exchange.asset_map[asset_name]
+        return Wrapper._position_exists(asset_id)
 
     def get_order_history(self):
         order_count = self.get_order_count()
@@ -23,6 +30,13 @@ class Broker():
         order_struct_pointer = pointer(order_history)
         Wrapper._get_order_history(self.ptr, order_struct_pointer)
         return order_history
+    
+    def get_position_history(self):
+        position_count = self.get_order_count()
+        position_history = Wrapper.PositionHistoryStruct(position_count)
+        order_struct_pointer = pointer(position_history)
+        Wrapper._get_position_history(self.ptr, order_struct_pointer)
+        return position_history
 
     def place_market_order(self, asset_name : str, units : float, cheat_on_close = False):
         asset_id = self.exchange.asset_map[asset_name]

@@ -41,12 +41,16 @@ class AssetTestMethods(unittest.TestCase):
         strategy = TestStrategy(orders, broker, exchange)
         ft.add_strategy(strategy)
         ft.run()
-
-        print(broker.get_order_count())
+        
         order_history = broker.get_order_history()
-        print(order_history.ORDER_ARRAY[0].contents.order_fill_time)
-
-
+        position_history = broker.get_position_history()
+        assert(len(order_history) == 1)
+        assert(len(position_history) == 1)
+        
+        assert(order_history.ORDER_ARRAY[0].contents.fill_price == 97)
+        assert(position_history.POSITION_ARRAY[0].contents.average_price == 97)
+        print(position_history.POSITION_ARRAY[0].contents.close_price)
+        
 
 if __name__ == '__main__':
     unittest.main()

@@ -8,6 +8,18 @@
 #include <string>
 #include "Position.h"
 
+void Position::to_struct(PositionStruct &position_struct){
+	position_struct.average_price = this->average_price;
+	position_struct.close_price = this->close_price;
+	position_struct.units = this->units;
+	position_struct.position_id = this->position_id;
+	position_struct.asset_id = this->asset_id;
+	position_struct.position_create_time = this->position_create_time.tv_sec + this->position_create_time.tv_usec/1e6;
+	position_struct.position_close_time = this->position_close_time.tv_sec + this->position_close_time.tv_usec / 1e6;
+	position_struct.realized_pl = this->realized_pl;
+	position_struct.unrealized_pl = this->unrealized_pl;
+}
+
 Position::Position(unsigned int position_id, unsigned int asset_id, float units, float average_price, timeval position_create_time) {
 	this->position_id = position_id;
 	this->asset_id = asset_id;

@@ -195,8 +195,7 @@ extern "C" {
 
 	EXCHANGE_API void get_market_view(void *exchange_ptr);
 	EXCHANGE_API float get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close = false);
-	EXCHANGE_API float get_market_feature(void *exchange_ptr, unsigned int asset_id, unsigned int asset_feature_idx);
-
+	EXCHANGE_API float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column);
 
 	EXCHANGE_API void* get_asset_ptr(void *exchange_ptr, unsigned int asset_name);
 }

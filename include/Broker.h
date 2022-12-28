@@ -69,7 +69,7 @@ public:
 
 	//functions for managing positions
 	float get_net_liquidation_value();
-	bool position_exists(unsigned int asset_id);
+	bool _position_exists(unsigned int asset_id);
 	
 	inline void evaluate_portfolio(bool on_close = false) noexcept {
 		float nlv = 0;
@@ -129,7 +129,11 @@ extern "C" {
 	BROKER_API void reset_broker(void *broker_ptr);
 
 	BROKER_API int get_order_count(void *broker_ptr);
+	BROKER_API int get_position_count(void *broker_ptr);
 	BROKER_API void get_order_history(void *broker_ptr, OrderHistory *order_history);
+	BROKER_API void get_position_history(void *broker_ptr, PositionHistory *order_history);
+	
+	BROKER_API bool position_exists(void *broker_ptr, unsigned int asset_id);
 
 	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false);
 	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false);
