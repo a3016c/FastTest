@@ -35,6 +35,9 @@ class AssetTestMethods(unittest.TestCase):
         assert(position_history.POSITION_ARRAY[0].contents.close_price == 106)
         assert(position_history.POSITION_ARRAY[1].contents.close_price == 96)
         
+        assert((broker.get_cash_history()==np.array([100000,  89850,  79750,  79750,  90350,  99950])).all())
+        assert((broker.get_nlv_history()==np.array([100000,  99750,  99750, 100400, 100500,  99950])).all())
+
 if __name__ == '__main__':
     unittest.main()
 

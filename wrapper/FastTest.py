@@ -31,6 +31,7 @@ class FastTest:
 
     def build(self):
         self.exchange.build()
+        self.broker.build()
         self.ptr = Wrapper._new_fastTest_ptr(self.exchange_ptr,self.broker_ptr,self.logging)
 
     def add_strategy(self, strategy : Strategy):
@@ -68,8 +69,8 @@ def test_speed():
     broker = Broker(exchange)
     ft = FastTest(exchange, broker)
     
-    n = 20000
-    n_assets = 100
+    n = 200000
+    n_assets = 20
     
     o = np.arange(0,10,step = 10/n).astype(np.float32)
     c = (np.arange(0,10,step = 10/n) + .001).astype(np.float32)

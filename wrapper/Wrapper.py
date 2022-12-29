@@ -133,6 +133,9 @@ _free_broker_ptr.argtypes = [c_void_p]
 _reset_broker = FastTest.reset_broker
 _reset_broker.argtypes = [c_void_p]
 
+_build_broker = FastTest.build_broker
+_build_broker.argtypes = [c_void_p]
+
 _get_order_count = FastTest.get_order_count
 _get_order_count.argtypes = [c_void_p]
 _get_order_count.restype = c_int
@@ -144,6 +147,18 @@ _get_position_count.restype = c_int
 _position_exists = FastTest.position_exists
 _position_exists.argtypes = [c_void_p, c_uint]
 _position_exists.restype = c_bool
+
+_broker_get_history_length= FastTest.broker_get_history_length
+_broker_get_history_length.argtypes = [c_void_p]
+_broker_get_history_length.restype = c_size_t
+
+_broker_get_nlv_history = FastTest.broker_get_nlv_history
+_broker_get_nlv_history.argtypes = [c_void_p]
+_broker_get_nlv_history.restype = POINTER(c_float)
+
+_broker_get_cash_history = FastTest.broker_get_cash_history
+_broker_get_cash_history.argtypes = [c_void_p]
+_broker_get_cash_history.restype = POINTER(c_float)
 
 _get_order_history = FastTest.get_order_history
 _get_order_history.argtypes = [c_void_p,POINTER(OrderHistoryStruct)]
@@ -198,7 +213,7 @@ _get_market_price.argtypes = [c_void_p,c_uint,c_bool]
 _get_market_price.restype = c_float
 
 _get_market_feature = FastTest.get_market_feature
-_get_market_feature.argtypes = [c_void_p,c_uint,c_char_p]
+_get_market_feature.argtypes = [c_void_p,c_uint,c_char_p, c_int]
 _get_market_feature.restype = c_float
 
 _get_market_view = FastTest.get_market_view
@@ -214,3 +229,7 @@ _asset_count.restype = c_int
 _get_asset_ptr = FastTest.get_asset_ptr
 _get_asset_ptr.argtypes = [c_void_p, c_uint]  
 _get_asset_ptr.restype = c_void_p
+
+_get_current_datetime = FastTest.get_current_datetime
+_get_current_datetime.argtypes = [c_void_p]  
+_get_current_datetime.restype = c_long

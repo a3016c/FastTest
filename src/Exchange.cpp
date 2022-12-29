@@ -112,12 +112,14 @@ float __Exchange::_get_market_price(unsigned int &asset_id, bool on_close) {
 		return asset->get(asset->open_col);
 	}
 }
-float __Exchange::_get_market_feature(unsigned int asset_id, std::string &column){
-	return this->market_view[asset_id]->get(column);
+float __Exchange::_get_market_feature(unsigned int asset_id, std::string &column, int index){
+	return this->market_view[asset_id]->get(column, index);
 }
 void __Exchange::process_market_order(MarketOrder * const open_order) {
 	float market_price = _get_market_price(open_order->asset_id, open_order->cheat_on_close);
-	if (isnan(market_price)) { throw std::invalid_argument("recieved order for which asset has no market price"); }
+	if (isnan(market_price)) { 
+		throw std::invalid_argument("recieved order for which asset has no market price");
+	}
 	open_order->fill(market_price, this->current_time);
 }
 void __Exchange::process_limit_order(LimitOrder *const open_order, bool on_close) {
@@ -280,6 +282,10 @@ void build_exchange(void *exchange_ptr) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->build();
 }
+long get_current_datetime(void *exchange_ptr){
+	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	return __exchange_ref->current_time.tv_sec + (__exchange_ref->current_time.tv_sec / 1e6);
+}
 void get_market_view(void *exchange_ptr) {
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->_get_market_view();
@@ -293,9 +299,9 @@ void* get_asset_ptr(void *exchange_ptr, unsigned int asset_id) {
 	__Exchange * __exchange_ref = reinterpret_cast<__Exchange *>(exchange_ptr);
 	return &__exchange_ref->market[asset_id];
 }
-float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column) {
+float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index) {
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	std::string column_str(column);
-	return __exchange_ref->_get_market_feature(asset_id,column_str);
+	return __exchange_ref->_get_market_feature(asset_id,column_str, index);
 }
 

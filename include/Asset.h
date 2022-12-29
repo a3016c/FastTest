@@ -102,9 +102,9 @@ public:
 	inline float get(size_t i) {
 		return AM(current_index - 1, i);
 	}
-	inline float get(std::string &s){
+	inline float get(std::string &s, int index = 0){
 		size_t i = this->headers[s];
-		return AM(current_index - 1, i);
+		return AM(this->current_index - 1 + index, i);
 	}
 	inline const timeval & asset_time() {
 		return this->datetime_index[this->current_index];

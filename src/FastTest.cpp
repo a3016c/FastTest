@@ -24,14 +24,8 @@ __FastTest::__FastTest(__Exchange &exchangeObj, __Broker &brokerObj, bool loggin
 void __FastTest::reset() {
 	this->broker.reset();
 	this->__exchange.reset();
-	this->cash_history.clear();
-	this->nlv_history.clear();
 	this->filled_orders.clear();
 	this->canceled_orders.clear();
-}
-void __FastTest::analyze_step() {
-	this->cash_history.push_back(this->broker.cash);
-	this->nlv_history.push_back(this->broker.net_liquidation_value);
 }
 void __FastTest::run() {
 	if (this->logging) { printf("RUNNING FASTEST\n"); }
@@ -52,7 +46,7 @@ void __FastTest::run() {
 		this->broker.evaluate_portfolio();
 
 		//evaluate strategy portfolio
-		this->analyze_step();
+		this->broker.analyze_step();
 
 		//allow the exchange to clean up assets that are done streaming
 		canceled_orders = this->__exchange.clean_up_market();
@@ -102,11 +96,11 @@ void backward_pass(void * fastTest_ptr) {
 	__fastTest_ref->broker.evaluate_portfolio(true);
 
 	//evaluate strategy portfolio
-	__fastTest_ref->analyze_step();
+	__fastTest_ref->broker.analyze_step();
 
 	//allow the exchange to clean up assets that are done streaming
 	__fastTest_ref->canceled_orders = __fastTest_ref->__exchange.clean_up_market();
-	
+
 	if (!__fastTest_ref->canceled_orders.empty()) {
 		//Any orders for assets that have expired are canceled
 		__fastTest_ref->broker.log_canceled_orders(std::move(__fastTest_ref->canceled_orders));
@@ -117,14 +111,5 @@ void backward_pass(void * fastTest_ptr) {
 		__fastTest_ref->filled_orders = __fastTest_ref->__exchange.process_orders(true);
 		__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
 	}
-	
 	__fastTest_ref->step_count++;
-}
-float * get_nlv_history(void *fastTest_ptr) {
-	__FastTest * __fastTest_ref = reinterpret_cast<__FastTest *>(fastTest_ptr);
-	return __fastTest_ref->nlv_history.data();
-}
-float * get_has_history(void *fastTest_ptr) {
-	__FastTest * __fastTest_ref = reinterpret_cast<__FastTest *>(fastTest_ptr);
-	return __fastTest_ref->cash_history.data();
 }

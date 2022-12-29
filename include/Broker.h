@@ -29,6 +29,8 @@ class __Broker
 public:
 	std::vector<std::unique_ptr<Order>> order_history;
 	std::vector<Position> position_history;
+	std::vector<float> cash_history;
+	std::vector<float> nlv_history;
 
 	__Exchange &__exchange;
 
@@ -43,6 +45,10 @@ public:
 
 	void set_cash(float cash);
 	void reset();
+
+	//functions for managing historical values
+	void build();
+	void analyze_step();
 
 	//logging functions
 	char time[28]{};
@@ -126,6 +132,11 @@ extern "C" {
 	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true);
 	BROKER_API void DeleteBrokerPtr(void *ptr);
 	BROKER_API void reset_broker(void *broker_ptr);
+	BROKER_API void build_broker(void *broker_ptr);
+
+	BROKER_API size_t broker_get_history_length(void *broker_ptr);
+	BROKER_API float* broker_get_nlv_history(void *broker_ptr);
+	BROKER_API float* broker_get_cash_history(void *broker_ptr);
 
 	BROKER_API int get_order_count(void *broker_ptr);
 	BROKER_API int get_position_count(void *broker_ptr);
@@ -136,6 +147,10 @@ extern "C" {
 	BROKER_API void get_positions(void *broker_ptr, PositionArray *positions);
 	BROKER_API void * get_position_ptr(void *broker_ptr, unsigned int asset_id);
 	BROKER_API void get_orders(void *broker_ptr, OrderArray *orders);
+
+	BROKER_API float get_cash(void *broker_ptr);
+	BROKER_API float get_unrealied_pl(void *broker_ptr);
+	BROKER_API float get_realied_pl(void *broker_ptr);
 
 	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false);
 	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false);

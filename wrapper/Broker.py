@@ -13,6 +13,9 @@ class Broker():
 
     def __del__(self):
         Wrapper._free_broker_ptr(self.ptr)
+        
+    def build(self):
+        Wrapper._build_broker(self.ptr)
 
     def get_order_count(self):
         return Wrapper._get_order_count(self.ptr)
@@ -27,7 +30,18 @@ class Broker():
     def get_position_ptr(self, asset_name : str):
         asset_id = self.exchange.asset_map[asset_name]
         return Wrapper._get_position_ptr(self.ptr, asset_id)
-
+    
+    def get_history_length(self):
+        return Wrapper._broker_get_history_length(self.ptr)
+    
+    def get_cash_history(self):
+        cash_ptr = Wrapper._broker_get_cash_history(self.ptr)
+        return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
+    
+    def get_nlv_history(self):
+        cash_ptr = Wrapper._broker_get_nlv_history(self.ptr)
+        return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
+        
     def get_order_history(self):
         order_count = self.get_order_count()
         order_history = Wrapper.OrderHistoryStruct(order_count)

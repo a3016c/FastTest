@@ -23,4 +23,9 @@ GENERATE_EXPORT_HEADER (FastTest
     STATIC_DEFINE FastTest_BUILT_AS_STATIC
 )
 
-target_compile_options(FastTest PRIVATE -std=c++11 -fdeclspec)
+IF( NOT CMAKE_BUILD_TYPE )
+   SET( CMAKE_BUILD_TYPE Release ... FORCE )
+   message("RELEASE BUILD...")
+ENDIF()
+
+target_compile_options(FastTest PRIVATE -std=c++11 -fdeclspec -O3)

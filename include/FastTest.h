@@ -23,8 +23,6 @@ public:
 
 	unsigned int step_count = 0;
 
-	std::vector<float> cash_history;
-	std::vector<float> nlv_history;
 	std::vector<std::unique_ptr<Order>> filled_orders;
 	std::vector<std::unique_ptr<Order>> canceled_orders;
 
@@ -45,8 +43,6 @@ extern "C" {
 	FAST_API bool forward_pass(void* fastTest_ptr);
 	FAST_API void backward_pass(void* fastTest_ptr);
 
-	FAST_API float* get_nlv_history(void* fastTest_ptr);
-	FAST_API float* get_has_history(void* fastTest_ptr);
 }
 
 #endif

@@ -18,11 +18,23 @@ void __Broker::reset() {
 	this->order_history.clear();
 	this->portfolio.clear();
 	this->position_history.clear();
+	memset(&this->cash_history[0], 0, this->cash_history.size() * sizeof this->cash_history[0]);
+	memset(&this->cash_history[0], 0, this->cash_history.size() * sizeof this->cash_history[0]);
 	this->position_counter = 0;
 	this->order_counter = 0;
 	this->unrealized_pl = 0;
 	this->realized_pl = 0;
 	this->net_liquidation_value = 0;
+}
+void __Broker::build(){
+	size_t size = this->__exchange.datetime_index.size();
+	this->cash_history.resize(size);
+	this->nlv_history.resize(size);
+}
+void __Broker::analyze_step() {
+	unsigned int index = this->__exchange.current_index-1;
+	this->cash_history[index] = this->cash;
+	this->nlv_history[index] = this->net_liquidation_value;
 }
 float __Broker::get_net_liquidation_value() {
 	float nlv = 0;
@@ -51,6 +63,7 @@ void __Broker::close_position(Position &existing_position, float fill_price, tim
 	if (this->logging) { log_close_position(existing_position); }
 	this->position_history.push_back(existing_position);
 	this->cash += existing_position.units * fill_price;
+	this->realized_pl += existing_position.realized_pl;
 }
 void __Broker::reduce_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.reduce(order->fill_price, order->units);
@@ -60,7 +73,6 @@ void __Broker::increase_position(Position &existing_position, std::unique_ptr<Or
 	existing_position.increase(order->fill_price, order->units);
 	this->cash -= order->units * order->fill_price;
 }
-
 bool __Broker::cancel_order(std::unique_ptr<Order>& order_cancel) {
 	std::unique_ptr<Order> canceled_order = this->__exchange.cancel_order(order_cancel);
 	canceled_order->order_state = CANCELED;
@@ -236,6 +248,22 @@ void reset_broker(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->reset();
 }
+void build_broker(void *broker_ptr) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	__broker_ref->build();
+}
+float get_cash(void *broker_ptr){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->cash;
+}
+float get_unrealized_pl(void *broker_ptr){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->unrealized_pl;
+}
+float get_realized_pl(void *broker_ptr){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->realized_pl;
+}
 int get_order_count(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->order_history.size();
@@ -270,6 +298,19 @@ OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float uni
 			order->add_stop_loss(stop_loss, units);
 		}
 	}
+}
+size_t broker_get_history_length(void *broker_ptr){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	std::cout << __broker_ref->nlv_history.size() << std::endl;
+	return __broker_ref->nlv_history.size();
+}
+float * broker_get_nlv_history(void *broker_ptr) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->nlv_history.data();
+}
+float * broker_get_cash_history(void *broker_ptr) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->cash_history.data();
 }
 void get_order_history(void *broker_ptr, OrderArray *order_history) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

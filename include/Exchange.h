@@ -151,7 +151,7 @@ public:
 	 *@param asset A referece to the name of the Asset for which to get the value.
 	 *@param column The column to get the value of.
 	*/
-	float _get_market_feature(unsigned int asset_id, std::string &column);
+	float _get_market_feature(unsigned int asset_id, std::string &column, int index = 0);
 
 	/**
 	 *Function to log orders being placed onto the exchange. Only runs if logging is set to true.
@@ -198,9 +198,10 @@ extern "C" {
 	EXCHANGE_API void build_exchange(void *exchange_ptr);
 	EXCHANGE_API void reset_exchange(void *exchange_ptr);
 
+	EXCHANGE_API long get_current_datetime(void *exchange_ptr);
 	EXCHANGE_API void get_market_view(void *exchange_ptr);
 	EXCHANGE_API float get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close = false);
-	EXCHANGE_API float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column);
+	EXCHANGE_API float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index = 0);
 
 	EXCHANGE_API void* get_asset_ptr(void *exchange_ptr, unsigned int asset_name);
 }
