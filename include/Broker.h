@@ -140,6 +140,8 @@ extern "C" {
 	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false);
 	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false);
 	BROKER_API OrderState position_add_stoploss(void *broker_ptr, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false);
+	BROKER_API OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false);
+
 }
 
 #endif

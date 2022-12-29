@@ -170,6 +170,9 @@ _position_place_stoploss_order = FastTest.position_add_stoploss
 _position_place_stoploss_order.argtypes = [c_void_p, c_void_p, c_float, c_float, c_bool]
 _position_place_stoploss_order.restype = c_uint
 
+_order_place_stoploss_order = FastTest.order_add_stoploss
+_order_place_stoploss_order.argtypes = [c_void_p, c_uint, c_float, c_float, c_bool]
+_order_place_stoploss_order.restype = c_uint
 
 """ORDER WRAPPER"""
 _order_type = FastTest.order_type

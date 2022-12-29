@@ -101,11 +101,10 @@ std::vector<std::unique_ptr<Order>> __Exchange::clean_up_market() {
 	return std::move(cleared_orders);
 }
 float __Exchange::_get_market_price(unsigned int &asset_id, bool on_close) {
-	this->asset = this->market_view[asset_id];
-	int idx = this->asset->current_index - 1;
 	if (this->market_view.count(asset_id) == 0) {
 		return NAN;
 	}
+	this->asset = this->market_view[asset_id];
 	if (on_close) {
 		return asset->get(asset->close_col);
 	}
@@ -133,12 +132,12 @@ void __Exchange::process_limit_order(LimitOrder *const open_order, bool on_close
 		open_order->fill(market_price, this->current_time);
 	}
 }
-void __Exchange::process_stoploss_order(StopLossOrder * const open_order, bool on_close){
+void __Exchange::process_stoploss_order(StopLossOrder *const open_order, bool on_close){
 	float market_price = _get_market_price(open_order->asset_id, on_close);
-	if ((open_order->units > 0) & (market_price <= open_order->stop_loss)) {
+	if ((open_order->units < 0) & (market_price <= open_order->stop_loss)) {
 		open_order->fill(market_price, this->current_time);
 	}
-	else if ((open_order->units < 0) & (market_price >= open_order->stop_loss)) {
+	else if ((open_order->units > 0) & (market_price >= open_order->stop_loss)) {
 		open_order->fill(market_price, this->current_time);
 	}
 }
@@ -156,6 +155,7 @@ void __Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close
 			this->process_limit_order(order_limit, on_close);
 			break;
 		}
+		case STOP_LOSS_ORDER:
 			StopLossOrder* order_stoploss = static_cast <StopLossOrder*>(open_order.get());
 			this->process_stoploss_order(order_stoploss, on_close);
 			break;
@@ -168,6 +168,7 @@ void __Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close
 std::vector<std::unique_ptr<Order>> __Exchange::process_orders(bool on_close) {
 	std::vector<std::unique_ptr<Order>> orders_filled;
 	std::deque<std::unique_ptr<Order>> orders_open;
+
 	while (!this->orders.empty()) {
 		std::unique_ptr<Order>& order = this->orders[0];
 		/*

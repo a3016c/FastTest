@@ -88,6 +88,38 @@ class AssetTestMethods(unittest.TestCase):
         
         assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_close_time,"s") == test2_index[-1])
 
+    def test_stoploss(self):
+        orders = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 0,
+                    units = 100
+                ),
+                OrderSchedule(
+                    order_type = OrderType.STOP_LOSS_ORDER,
+                    asset_name = "2",
+                    i = 1,
+                    units = -100,
+                    limit = 98
+                )
+            ]
+        exchange, broker, ft = setup_multi(False)
+        strategy = TestStrategy(orders, broker, exchange)
+        ft.add_strategy(strategy)
+        ft.run()
+        
+        order_history = broker.get_order_history()
+        position_history = broker.get_position_history()
+        assert(len(order_history) == 2)
+        assert(len(position_history) == 1)
+        
+        assert(order_history.ORDER_ARRAY[0].contents.fill_price == 100)
+        assert(position_history.POSITION_ARRAY[0].contents.average_price == 100)
+        assert(position_history.POSITION_ARRAY[0].contents.close_price == 98)
+        assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_close_time,"s") == test2_index[2])
+
+        
 if __name__ == '__main__':
     unittest.main()
 

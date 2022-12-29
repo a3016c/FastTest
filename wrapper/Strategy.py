@@ -27,12 +27,14 @@ class TestStrategy(Strategy):
         for order in self.order_schedule:
             if order.i == self.i:
                 if order.order_type == OrderType.MARKET_ORDER:
-                    self.broker.place_market_order(order.asset_name,order.units,order.cheat_on_close)
+                    res = self.broker.place_market_order(order.asset_name,order.units,order.cheat_on_close)
                 elif order.order_type == OrderType.LIMIT_ORDER:
-                    self.broker.place_limit_order(order.asset_name,order.units,order.limit,order.cheat_on_close)
+                    res = self.broker.place_limit_order(order.asset_name,order.units,order.limit,order.cheat_on_close)
+                elif order.order_type == OrderType.STOP_LOSS_ORDER:
+                    res = self.broker.place_stoploss_order(units = order.units,stop_loss = order.limit,asset_name = order.asset_name)
+                assert(res != OrderState.BROKER_REJECTED)
 
         self.i += 1
-
 
 spec = [
     ('broker_ptr',types.voidptr),
@@ -50,10 +52,10 @@ class BenchMarkStrategy(Strategy):
     def next(self):
         if self.i == 0:
             number_assets = Wrapper._asset_count(self.exchange_ptr)
-            for i in range(0,number_assets):
-                Wrapper._place_market_order(
+            for j in range(0,number_assets):
+                res = Wrapper._place_market_order(
                     self.broker_ptr,
-                    i,
+                    j,
                     100,
                     True
                 )

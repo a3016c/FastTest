@@ -25,10 +25,10 @@ def get_unix_time(dt64):
 df1 = pd.DataFrame(index = get_unix_time(test1_index),data = np.vstack((test1_open,test1_close)).T, columns=["OPEN","CLOSE"])
 df2 = pd.DataFrame(index = get_unix_time(test2_index),data = np.vstack((test2_open,test2_close)).T, columns=["OPEN","CLOSE"])
 
-def setup_simple():
+def setup_simple(logging = False):
     exchange = Exchange()
     broker = Broker(exchange)
-    ft = FastTest(exchange, broker)
+    ft = FastTest(exchange, broker, logging)
 
     new_asset = Asset(exchange, asset_name="1")
     new_asset.set_format("%d-%d-%d", 0, 1)

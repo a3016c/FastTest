@@ -87,14 +87,12 @@ void reset_fastTest(void *fastTest_ptr) {
 }
 bool forward_pass(void *fastTest_ptr){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
-	
 	if (!__fastTest_ref->__exchange._get_market_view()) { return false; }
 	//allow exchange to process open orders from previous steps
 	if (!__fastTest_ref->__exchange.orders.empty()) {
 		__fastTest_ref->filled_orders = __fastTest_ref->__exchange.process_orders();
 		__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
 	}
-
 	return true;
 }
 void backward_pass(void * fastTest_ptr) {
@@ -108,6 +106,7 @@ void backward_pass(void * fastTest_ptr) {
 
 	//allow the exchange to clean up assets that are done streaming
 	__fastTest_ref->canceled_orders = __fastTest_ref->__exchange.clean_up_market();
+	
 	if (!__fastTest_ref->canceled_orders.empty()) {
 		//Any orders for assets that have expired are canceled
 		__fastTest_ref->broker.log_canceled_orders(std::move(__fastTest_ref->canceled_orders));
@@ -118,6 +117,7 @@ void backward_pass(void * fastTest_ptr) {
 		__fastTest_ref->filled_orders = __fastTest_ref->__exchange.process_orders(true);
 		__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
 	}
+	
 	__fastTest_ref->step_count++;
 }
 float * get_nlv_history(void *fastTest_ptr) {

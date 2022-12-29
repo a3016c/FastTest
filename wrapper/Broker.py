@@ -51,6 +51,7 @@ class Broker():
             cheat_on_close
             )
         )
+        
     def place_limit_order(self, asset_name : str, units : float, limit : float, cheat_on_close = False):
         asset_id = self.exchange.asset_map[asset_name]
         return OrderState(Wrapper._place_limit_order(
@@ -61,6 +62,28 @@ class Broker():
             cheat_on_close
             )
         )
-
+        
+    def place_stoploss_order(self, units : float, stop_loss : float, asset_name = None, order_id = None, cheat_on_close = False):
+        if asset_name != None:
+            asset_id = self.exchange.asset_map[asset_name]
+            position_ptr = Wrapper._get_position_ptr(self.ptr, asset_id)
+            return OrderState(Wrapper._position_place_stoploss_order(
+                self.ptr,
+                position_ptr,
+                units,
+                stop_loss,
+                cheat_on_close
+                )
+            )
+        elif order_id != None:
+            return OrderState(Wrapper._order_place_stoploss_order(
+                self.ptr,
+                order_id,
+                units,
+                stop_loss,
+                cheat_on_close
+                )
+            )
+        
     def reset(self):
         Wrapper._reset_broker(self.ptr)

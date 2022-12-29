@@ -263,6 +263,14 @@ OrderState position_add_stoploss(void *broker_ptr, void * position_ptr, float un
 			__position_ref, units, stop_loss, cheat_on_close
 		);
 }
+OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float units, float stop_loss, bool cheat_on_close){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	for (auto& order : __broker_ref->__exchange.orders){
+		if(order->order_id == order_id){
+			order->add_stop_loss(stop_loss, units);
+		}
+	}
+}
 void get_order_history(void *broker_ptr, OrderArray *order_history) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	int number_orders = order_history->number_orders;
