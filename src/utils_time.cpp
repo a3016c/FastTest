@@ -31,6 +31,11 @@ bool operator == (const timeval &tv1, const timeval &tv2) {
 	if (tv1.tv_sec != tv2.tv_sec) { return false; }
 	return true;
 }
+long operator - (const timeval &tv1, const timeval &tv2) {
+	long seconds = tv1.tv_sec + tv2.tv_sec;
+	seconds += ((tv1.tv_usec + tv2.tv_usec)/1e6);
+	return seconds;
+}
 /*
 void gettimeofday(timeval *tp)
 {

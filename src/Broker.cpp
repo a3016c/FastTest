@@ -26,6 +26,21 @@ void __Broker::reset() {
 	this->realized_pl = 0;
 	this->net_liquidation_value = 0;
 }
+void __Broker::clean_up(){
+	size_t history_size = this->nlv_history.size();
+	size_t position_count = this->position_history.size();
+	long backtest_duration_seconds = *this->__exchange.datetime_index.end() - this->__exchange.datetime_index[0];
+	long backtest_duration_years = backtest_duration_seconds / 3.154e7;
+
+	this->perfomance.time_in_market /= history_size;
+	this->perfomance.average_time_in_market /= position_count;
+
+	this->perfomance.winrate /= position_count;
+	this->perfomance.pl = this->realized_pl;
+	this->perfomance.average_return = this->realized_pl / position_count;
+	this->perfomance.cagr = pow((*this->nlv_history.end() / this->nlv_history[0]),(1/backtest_duration_years)) - 1;
+
+}
 void __Broker::build(){
 	size_t size = this->__exchange.datetime_index.size();
 	this->cash_history.resize(size);
@@ -35,6 +50,10 @@ void __Broker::analyze_step() {
 	unsigned int index = this->__exchange.current_index-1;
 	this->cash_history[index] = this->cash;
 	this->nlv_history[index] = this->net_liquidation_value;
+
+	if(this->portfolio.size() > 0){
+		this->perfomance.time_in_market++;
+	}
 }
 float __Broker::get_net_liquidation_value() {
 	float nlv = 0;
@@ -64,6 +83,9 @@ void __Broker::close_position(Position &existing_position, float fill_price, tim
 	this->position_history.push_back(existing_position);
 	this->cash += existing_position.units * fill_price;
 	this->realized_pl += existing_position.realized_pl;
+
+	this->perfomance.average_time_in_market += existing_position.position_close_time - existing_position.position_create_time;
+	if(existing_position.realized_pl > 0){this->perfomance.winrate++;}
 }
 void __Broker::reduce_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.reduce(order->fill_price, order->units);
@@ -103,6 +125,7 @@ void __Broker::clear_child_orders(Position& existing_position) {
 		}
 	}
 }
+#ifdef CHECK_ORDER
 ORDER_CHECK __Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order) {
 	OrderParent parent = stop_loss_order->order_parent;
 	if (parent.type == ORDER) {
@@ -118,13 +141,31 @@ ORDER_CHECK __Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order
 	}
 	return VALID_ORDER;
 };
+ORDER_CHECK __Broker::check_market_order(const MarketOrder* market_order) {
+	unsigned int asset_id = market_order->asset_id;
+	float units = market_order->units;
+	float market_price = this->__exchange._get_market_price(asset_id);
+	if(!this->_position_exists(asset_id)){
+		if(market_order->units * market_price > this->cash){
+			return INVALID_ORDER_COLLATERAL;
+		};
+	}
+	else if (this->portfolio[asset_id].units * units > 0){
+		if(market_order->units * market_price > this->cash){
+			return INVALID_ORDER_COLLATERAL;
+		};
+	}
+	return VALID_ORDER;
+}
 ORDER_CHECK __Broker::check_order(const std::unique_ptr<Order>& new_order) {
 	if (this->__exchange.market.count(new_order->asset_id) == 0) { return INVALID_ASSET; }
+	if (new_order->units == 0) { return INVALID_ORDER_UNITS; }
 
 	ORDER_CHECK order_code;
 	switch (new_order->order_type) {
 	case MARKET_ORDER: {
-		order_code = VALID_ORDER;
+		MarketOrder* market_order = static_cast <MarketOrder*>(new_order.get());
+		order_code = check_market_order(market_order);
 		break;
 	}
 	case LIMIT_ORDER: {
@@ -141,8 +182,9 @@ ORDER_CHECK __Broker::check_order(const std::unique_ptr<Order>& new_order) {
 	for (auto& order_on_fill : new_order->orders_on_fill) {
 		this->check_order(order_on_fill);
 	}
-	return VALID_ORDER;
+	return order_code;
 }
+#endif
 OrderState __Broker::send_order(std::unique_ptr<Order> new_order) {
 	new_order->order_state = ACCEPETED;
 	new_order->order_create_time = this->__exchange.current_time;

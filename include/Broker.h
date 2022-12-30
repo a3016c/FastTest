@@ -20,13 +20,37 @@ enum ORDER_CHECK {
 	VALID_ORDER,
 	INVALID_ASSET,
 	INVALID_ORDER_SIDE,
+	INVALID_ORDER_COLLATERAL,
+	INVALID_ORDER_UNITS,
 	INVALID_PARENT_ORDER,
 };
 #endif
 
+struct PerformanceStruct {
+    float risk_free_rate = 0;
+    float time_in_market = 0;
+    float average_time_in_market = 0;
+
+    float pl = 0;
+    float average_return = 0;
+    float cumulative_return = 0;
+    float winrate = 0;
+    float cagr = 0;
+    float sharpe = 0;
+    float sortino = 0;
+    float max_drawdown = 0;
+    float longest_drawdown = 0;
+
+    float volatility = 0;
+    float skew = 0;
+    float kurtosis = 0;
+
+};
+
 class __Broker
 {
 public:
+	PerformanceStruct perfomance;
 	std::vector<std::unique_ptr<Order>> order_history;
 	std::vector<Position> position_history;
 	std::vector<float> cash_history;
@@ -45,6 +69,7 @@ public:
 
 	void set_cash(float cash);
 	void reset();
+	void clean_up();
 
 	//functions for managing historical values
 	void build();
@@ -66,8 +91,11 @@ public:
 	void process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled);
 
 	//functions for order management
+	#ifdef CHECK_ORDER
 	ORDER_CHECK check_order(const std::unique_ptr<Order>& new_order);
 	ORDER_CHECK check_stop_loss_order(const StopLossOrder* new_order);
+	ORDER_CHECK check_market_order(const MarketOrder* new_order);
+	#endif
 
 	//order wrapers exposed to strategy
 	OrderState _place_market_order(unsigned int asset_id, float units, bool cheat_on_close = false);

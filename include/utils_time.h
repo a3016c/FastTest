@@ -45,4 +45,5 @@ size_t timeval_to_char_array(timeval *tv, char *buf, size_t sz);
 bool operator > (const timeval &tv1, const timeval &tv2);
 bool operator < (const timeval &tv1, const timeval &tv2);
 bool operator == (const timeval &tv1, const timeval &tv2);
+long operator - (const timeval &tv1, const timeval &tv2);
 #endif
