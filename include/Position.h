@@ -10,6 +10,7 @@ struct PositionStruct {
 	float average_price;
 	float close_price;
 	float units;
+	unsigned int bars_held;
 	unsigned int position_id;
 	unsigned int asset_id;
 	long position_create_time;
@@ -29,6 +30,7 @@ public:
 
 	bool is_open;
 	float units;
+	unsigned int bars_held = 0;
 
 	float average_price;
 	float close_price;
@@ -55,6 +57,7 @@ public:
 	inline void evaluate(float market_price) noexcept {
 		this->last_price = market_price;
 		this->unrealized_pl = this->units * (market_price - this->average_price);
+		this->bars_held++;
 	}
 
 	friend bool operator==(const Position& lhs, const Position& rhs)

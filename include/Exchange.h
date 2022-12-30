@@ -35,7 +35,7 @@ public:
 		\the datetime_index at least 1 asset has a row corresponing to that date, possible more.
 	*/
 	std::vector<timeval> datetime_index;
-	std::vector<float> epoch_index;
+	std::vector<long> epoch_index;
 
 	std::unordered_map<unsigned int, __Asset*> market_view; /*!<FastTest container for assets that are visable at the current datetime*/
 	//!FastTest container for all assets registered
@@ -199,6 +199,9 @@ extern "C" {
 	EXCHANGE_API void reset_exchange(void *exchange_ptr);
 
 	EXCHANGE_API long get_current_datetime(void *exchange_ptr);
+	EXCHANGE_API long* get_exchange_datetime_index(void *exchange_ptr);
+	EXCHANGE_API size_t get_exchange_index_length(void *exchange_ptr);
+
 	EXCHANGE_API void get_market_view(void *exchange_ptr);
 	EXCHANGE_API float get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close = false);
 	EXCHANGE_API float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index = 0);

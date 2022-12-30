@@ -23,7 +23,16 @@ class Exchange():
         self.asset_counter += 1
 
     def build(self):
+        self.id_map = {v: k for k, v in self.asset_map.items()}
         Wrapper._build_exchange(self.ptr)
+        
+    def get_exchange_index_length(self):
+        return Wrapper._get_exchange_index_length(self.ptr)
+        
+    def get_datetime_index(self):
+        index_ptr = Wrapper._get_exchange_datetime_index(self.ptr)
+        length = self.get_exchange_index_length()
+        return np.ctypeslib.as_array(index_ptr, shape=(length,))
 
     def get_market_price(self, asset_name : str, on_close = True):
         asset_id = self.asset_map[asset_name]

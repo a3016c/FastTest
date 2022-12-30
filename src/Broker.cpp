@@ -314,6 +314,10 @@ int get_position_count(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->position_history.size();
 }
+int get_open_position_count(void *broker_ptr){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->portfolio.size();
+}
 bool position_exists(void *broker_ptr, unsigned int asset_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->_position_exists(asset_id);
@@ -372,9 +376,11 @@ void get_position_history(void *broker_ptr, PositionArray *position_history) {
 void get_positions(void *broker_ptr, PositionArray *positions){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	int number_positions = __broker_ref->portfolio.size();
-	for (int i = 0; i < number_positions; i++) {
+	int i = 0;
+	for (auto &kvp : __broker_ref->portfolio){
 		PositionStruct &position_struct_ref = *positions->POSITION_ARRAY[i];
-		__broker_ref->portfolio[i].to_struct(position_struct_ref);
+		__broker_ref->portfolio[kvp.first].to_struct(position_struct_ref);
+		i++;
 	}
 }
 void get_position(void *broker_ptr, unsigned int assset_id, PositionStruct *position){

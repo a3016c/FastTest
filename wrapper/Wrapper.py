@@ -61,10 +61,12 @@ class OrderHistoryStruct(Structure):
         
         
 class PositionStruct(Structure):
+    
     _fields_ = [
         ('average_price', c_float),
         ('close_price', c_float),
         ('units',c_float),
+        ('bars_held', c_uint),
         ('position_id',c_uint),
         ('asset_id',c_uint),
         ('position_create_time',c_long),
@@ -72,7 +74,9 @@ class PositionStruct(Structure):
         ('realized_pl', c_float),
         ('unrealized_pl', c_float)
     ]
-
+    
+    asset_name = ""
+    
     def to_list(self):
         return [
             self.position_create_time,
@@ -80,13 +84,14 @@ class PositionStruct(Structure):
             self.average_price,
             self.close_price,
             self.units,
+            self.bars_held,
             self.realized_pl,
             self.unrealized_pl,
             self.position_id,
             self.asset_id
         ]
 
-class PositionHistoryStruct(Structure):
+class PositionArrayStruct(Structure):
     _fields_ = [
         ('number_positions',c_uint),
         ('POSITION_ARRAY',POINTER(POINTER(PositionStruct)))
@@ -105,7 +110,7 @@ class PositionHistoryStruct(Structure):
     def to_df(self):
         positions = [self.POSITION_ARRAY[i].contents.to_list() for i in range(self.number_positions)]
         df = pd.DataFrame(positions, columns = ["position_create_time","position_close_time","average_price",
-                                "close_price","units","realized_pl","unrealized_pl","position_id","asset_id"])
+                                "close_price","units","bars_held","realized_pl","unrealized_pl","position_id","asset_id"])
         df["position_create_time"] = df["position_create_time"]  * 1e9
         df["position_close_time"] = df["position_close_time"]  * 1e9
         df["position_create_time"]= df["position_create_time"].astype('datetime64[ns]')
@@ -192,6 +197,10 @@ _get_position_count = FastTest.get_position_count
 _get_position_count.argtypes = [c_void_p]
 _get_position_count.restype = c_int
 
+_get_open_position_count = FastTest.get_open_position_count
+_get_open_position_count.argtypes = [c_void_p]
+_get_open_position_count.restype = c_int
+
 _position_exists = FastTest.position_exists
 _position_exists.argtypes = [c_void_p, c_uint]
 _position_exists.restype = c_bool
@@ -212,7 +221,7 @@ _get_order_history = FastTest.get_order_history
 _get_order_history.argtypes = [c_void_p,POINTER(OrderHistoryStruct)]
 
 _get_position_history = FastTest.get_position_history
-_get_position_history.argtypes = [c_void_p,POINTER(PositionHistoryStruct)]
+_get_position_history.argtypes = [c_void_p,POINTER(PositionArrayStruct)]
 
 _place_market_order = FastTest.place_market_order
 _place_market_order.argtypes = [c_void_p, c_uint, c_float, c_bool]
@@ -227,7 +236,7 @@ _get_position_ptr.argtypes = [c_void_p, c_uint]
 _get_position_ptr.restype = c_void_p
 
 _get_positions = FastTest.get_positions
-_get_positions.argtypes = [c_void_p,POINTER(PositionHistoryStruct)]
+_get_positions.argtypes = [c_void_p,POINTER(PositionArrayStruct)]
 
 _get_position = FastTest.get_position
 _get_position.argtypes = [c_void_p,c_uint,POINTER(PositionStruct)]
@@ -284,3 +293,11 @@ _get_asset_ptr.restype = c_void_p
 _get_current_datetime = FastTest.get_current_datetime
 _get_current_datetime.argtypes = [c_void_p]  
 _get_current_datetime.restype = c_long
+
+_get_exchange_datetime_index = FastTest.get_exchange_datetime_index
+_get_exchange_datetime_index.argtypes = [c_void_p]  
+_get_exchange_datetime_index.restype = POINTER(c_long)
+
+_get_exchange_index_length = FastTest.get_exchange_index_length
+_get_exchange_index_length.argtypes = [c_void_p]  
+_get_exchange_index_length.restype = c_size_t

@@ -58,7 +58,7 @@ void __Exchange::build() {
 			break;
 		};
 		this->datetime_index.push_back(next_time);
-		float _time = next_time.tv_sec + next_time.tv_usec / 1e6;
+		long _time = next_time.tv_sec + next_time.tv_usec / 1e6;
 		this->epoch_index.push_back(_time);
 	}
 	for (auto& kvp : this->market) { kvp.second.current_index = 0; }
@@ -117,6 +117,7 @@ float __Exchange::_get_market_price(unsigned int &asset_id, bool on_close) {
 	}
 }
 float __Exchange::_get_market_feature(unsigned int asset_id, std::string &column, int index){
+	if (this->market_view.count(asset_id) == 0){return NAN;}
 	return this->market_view[asset_id]->get(column, index);
 }
 void __Exchange::process_market_order(MarketOrder * const open_order) {
@@ -285,6 +286,14 @@ int asset_count(void *exchange_ptr) {
 void build_exchange(void *exchange_ptr) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->build();
+}
+size_t get_exchange_index_length(void *exchange_ptr){
+	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	return __exchange_ref->epoch_index.size();
+}
+long *get_exchange_datetime_index(void *exchange_ptr){
+	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	return __exchange_ref->epoch_index.data();
 }
 long get_current_datetime(void *exchange_ptr){
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);

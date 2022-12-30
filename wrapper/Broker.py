@@ -23,17 +23,28 @@ class Broker():
     def get_total_position_count(self):
         return Wrapper._get_position_count(self.ptr)
     
+    def get_open_position_count(self):
+        return Wrapper._get_open_position_count(self.ptr)
+    
     def position_exists(self, asset_name):
         asset_id = self.exchange.asset_map[asset_name]
         return Wrapper._position_exists(self.ptr, asset_id)
+    
+    def get_positions(self):
+        position_count = self.get_open_position_count()
+        open_positions = Wrapper.PositionArrayStruct(position_count)
+        position_struct_pointer = pointer(open_positions)
+        Wrapper._get_positions(self.ptr, position_struct_pointer)
         
+        return open_positions
+            
     def get_position(self, asset_name : str):
         asset_id = self.exchange.asset_map[asset_name]
         position_struct = Wrapper.PositionStruct()
         position_struct_pointer = pointer(position_struct)
         Wrapper._get_position(self.ptr, position_struct_pointer)
-        return None
-    
+        return position_struct
+          
     def get_position_ptr(self, asset_name : str):
         asset_id = self.exchange.asset_map[asset_name]
         return Wrapper._get_position_ptr(self.ptr, asset_id)
@@ -58,7 +69,7 @@ class Broker():
     
     def get_position_history(self):
         position_count = self.get_total_position_count()
-        position_history = Wrapper.PositionHistoryStruct(position_count)
+        position_history = Wrapper.PositionArrayStruct(position_count)
         order_struct_pointer = pointer(position_history)
         Wrapper._get_position_history(self.ptr, order_struct_pointer)
         return position_history

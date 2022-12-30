@@ -168,6 +168,7 @@ extern "C" {
 
 	BROKER_API int get_order_count(void *broker_ptr);
 	BROKER_API int get_position_count(void *broker_ptr);
+	BROKER_API int get_open_position_count(void *broker_ptr);
 	BROKER_API void get_order_history(void *broker_ptr, OrderArray *order_history);
 	BROKER_API void get_position_history(void *broker_ptr, PositionArray *position_history);
 	

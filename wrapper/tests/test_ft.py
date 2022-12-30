@@ -32,7 +32,7 @@ class MA_Cross(Strategy):
                     Wrapper._place_market_order(
                         self.broker_ptr,
                         asset_id,
-                        1,
+                        10,
                         False
                     )
             else:
@@ -40,7 +40,7 @@ class MA_Cross(Strategy):
                     Wrapper._place_market_order(
                         self.broker_ptr,
                         asset_id,
-                        -1,
+                        -10,
                         False
                     )                 
         
@@ -70,11 +70,11 @@ class AssetTestMethods(unittest.TestCase):
         
         assert((broker.get_cash_history()==np.array([100000,  89850,  79750,  79750,  90350,  99950])).all())
         assert((broker.get_nlv_history()==np.array([100000,  99750,  99750, 100400, 100500,  99950])).all())
-
+    
     def test_ma_cross(self):
         COLUMNS = ['OPEN','CLOSE']
         CANDLES = 20000
-        STOCKS = 100
+        STOCKS = 10
         dateindex = pd.date_range(start='2010-01-01', periods=CANDLES, freq='15Min')
 
         exchange = Exchange()
@@ -97,17 +97,8 @@ class AssetTestMethods(unittest.TestCase):
         ft.build()
         strategy = MA_Cross(broker, exchange, 10, 50)
         ft.add_strategy(strategy)
-        st = time.time()
-        ft.profile()
-        et = time.time()
-        print("=========SIMPLE RUN=========")
-        print(f"FastTest run in: {(et-st):.2f} Seconds")
-        print(f"Candles Per Second: {CANDLES*STOCKS/(et-st):,.2f}")
-        print("============================")        
-        order_history = broker.get_order_history()
-        position_history = broker.get_position_history()
-        
-        print(position_history.to_df())
+        ft.run()
+    
         
 if __name__ == '__main__':
     unittest.main()
