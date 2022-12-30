@@ -301,7 +301,6 @@ OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float uni
 }
 size_t broker_get_history_length(void *broker_ptr){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	std::cout << __broker_ref->nlv_history.size() << std::endl;
 	return __broker_ref->nlv_history.size();
 }
 float * broker_get_nlv_history(void *broker_ptr) {
@@ -335,6 +334,12 @@ void get_positions(void *broker_ptr, PositionArray *positions){
 		PositionStruct &position_struct_ref = *positions->POSITION_ARRAY[i];
 		__broker_ref->portfolio[i].to_struct(position_struct_ref);
 	}
+}
+void get_position(void *broker_ptr, unsigned int assset_id, PositionStruct *position){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	int number_positions = __broker_ref->portfolio.size();
+	if(__broker_ref->portfolio.count(assset_id) == 0){return;}
+	__broker_ref->portfolio[assset_id].to_struct(*position);
 }
 void get_orders(void *broker_ptr, OrderArray *orders){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

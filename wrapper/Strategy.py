@@ -8,11 +8,13 @@ import numba
 from numba.core import types
 from numba.experimental import jitclass
 
-
 class Strategy():
     def __init__(self, broker : Broker, exchange : Exchange) -> None:
         self.broker = broker 
         self.exchange = exchange
+        
+    def build():
+        return
 
     def next(self):
         return 
@@ -22,6 +24,9 @@ class TestStrategy(Strategy):
         super().__init__(broker,exchange)
         self.order_schedule = order_schedule
         self.i = 0
+        
+    def build():
+        return
 
     def next(self):
         for order in self.order_schedule:
@@ -48,7 +53,10 @@ class BenchMarkStrategy(Strategy):
         self.broker_ptr = broker_ptr 
         self.exchange_ptr = exchange_ptr
         self.i = 0
-
+        
+    def build(self):
+        return
+        
     def next(self):
         if self.i == 0:
             number_assets = Wrapper._asset_count(self.exchange_ptr)

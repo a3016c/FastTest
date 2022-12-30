@@ -145,6 +145,7 @@ extern "C" {
 	
 	BROKER_API bool position_exists(void *broker_ptr, unsigned int asset_id);
 	BROKER_API void get_positions(void *broker_ptr, PositionArray *positions);
+	BROKER_API void get_position(void *broker_ptr, unsigned int asset_id, PositionStruct *position);
 	BROKER_API void * get_position_ptr(void *broker_ptr, unsigned int asset_id);
 	BROKER_API void get_orders(void *broker_ptr, OrderArray *orders);
 

@@ -1,6 +1,8 @@
 import time
 from ctypes import *
+import pandas as pd
 from numpy.ctypeslib import ndpointer
+from Order import OrderState, OrderType
 import sys
 
 lib_path = r"/Users/nathantormaschy/Desktop/C++/FastTest/build/build/libFastTest.dylib"
@@ -19,6 +21,18 @@ class OrderStruct(Structure):
         ('order_fill_time',c_long)
     ]
     
+    def to_list(self):
+        return [
+            self.order_create_time,
+            self.order_fill_time,
+            OrderType(self.order_type),
+            OrderState(self.order_state),
+            self.units,
+            self.fill_price,
+            self.order_id,
+            self.asset_id
+        ]
+    
 class OrderHistoryStruct(Structure):
     _fields_ = [
         ('number_orders',c_uint),
@@ -35,6 +49,17 @@ class OrderHistoryStruct(Structure):
     def __len__(self):
         return self.number_orders
     
+    def to_df(self):
+        orders = [self.ORDER_ARRAY[i].contents.to_list() for i in range(self.number_orders)]
+        df = pd.DataFrame(orders, columns = ["order_create_time","order_fill_time","order_type",
+                                "order_state","units","fill_price","order_id",'asset_id'])
+        df["order_create_time"] = df["order_create_time"]  * 1e9
+        df["order_fill_time"] = df["order_fill_time"]  * 1e9
+        df["order_create_time"]= df["order_create_time"].astype('datetime64[ns]')
+        df["order_fill_time"]= df["order_fill_time"].astype('datetime64[ns]')
+        return df
+        
+        
 class PositionStruct(Structure):
     _fields_ = [
         ('average_price', c_float),
@@ -47,6 +72,19 @@ class PositionStruct(Structure):
         ('realized_pl', c_float),
         ('unrealized_pl', c_float)
     ]
+
+    def to_list(self):
+        return [
+            self.position_create_time,
+            self.position_close_time,
+            self.average_price,
+            self.close_price,
+            self.units,
+            self.realized_pl,
+            self.unrealized_pl,
+            self.position_id,
+            self.asset_id
+        ]
 
 class PositionHistoryStruct(Structure):
     _fields_ = [
@@ -63,6 +101,16 @@ class PositionHistoryStruct(Structure):
             
     def __len__(self):
         return self.number_positions
+    
+    def to_df(self):
+        positions = [self.POSITION_ARRAY[i].contents.to_list() for i in range(self.number_positions)]
+        df = pd.DataFrame(positions, columns = ["position_create_time","position_close_time","average_price",
+                                "close_price","units","realized_pl","unrealized_pl","position_id","asset_id"])
+        df["position_create_time"] = df["position_create_time"]  * 1e9
+        df["position_close_time"] = df["position_close_time"]  * 1e9
+        df["position_create_time"]= df["position_create_time"].astype('datetime64[ns]')
+        df["position_close_time"]= df["position_close_time"].astype('datetime64[ns]')
+        return df
 
 """FastTest wrapper"""
 _new_fastTest_ptr = FastTest.CreateFastTestPtr
@@ -180,6 +228,9 @@ _get_position_ptr.restype = c_void_p
 
 _get_positions = FastTest.get_positions
 _get_positions.argtypes = [c_void_p,POINTER(PositionHistoryStruct)]
+
+_get_position = FastTest.get_position
+_get_position.argtypes = [c_void_p,c_uint,POINTER(PositionStruct)]
 
 _position_place_stoploss_order = FastTest.position_add_stoploss
 _position_place_stoploss_order.argtypes = [c_void_p, c_void_p, c_float, c_float, c_bool]

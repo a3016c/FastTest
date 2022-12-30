@@ -1,6 +1,7 @@
 import time
 from ctypes import *
 import sys
+import cProfile
 import numpy as np
 import pandas as pd
 from numba import njit, jit
@@ -25,6 +26,9 @@ class FastTest:
             Wrapper._free_fastTest_ptr(self.ptr)
         except:
             pass
+        
+    def profile(self):
+        cProfile.runctx('self.run()', globals(), locals())
 
     def reset(self):
         Wrapper._fastTest_reset(self.ptr)
@@ -33,7 +37,7 @@ class FastTest:
         self.exchange.build()
         self.broker.build()
         self.ptr = Wrapper._new_fastTest_ptr(self.exchange_ptr,self.broker_ptr,self.logging)
-
+        
     def add_strategy(self, strategy : Strategy):
         strategy.broker_ptr = self.broker_ptr
         strategy.exchange_ptr = self.exchange_ptr
@@ -41,6 +45,8 @@ class FastTest:
 
     def run(self):
         self.reset()
+        for strategy in self.strategies:
+            strategy.build()
         while self.step():
             pass
     
@@ -52,14 +58,10 @@ class FastTest:
         Wrapper._fastTest_backward_pass(self.ptr)
         return True
 
-@jit
+@jit(forceobj=True)
 def run_jit(fast_test_ptr : c_void_p, strategy):
-    while Wrapper._fastTest_forward_pass(fast_test_ptr):
-        strategy.next()
-        Wrapper._fastTest_backward_pass(fast_test_ptr)
-
-@njit
-def run_njit(fast_test_ptr : c_void_p, strategy):
+    Wrapper._fastTest_reset(fast_test_ptr)
+    strategy.build()
     while Wrapper._fastTest_forward_pass(fast_test_ptr):
         strategy.next()
         Wrapper._fastTest_backward_pass(fast_test_ptr)
@@ -101,9 +103,8 @@ def test_speed():
     
     ft = FastTest(exchange, broker)
     ft.build()
-    run_jit(ft.ptr, strategy)
     st = time.time()
-    ft.run()
+    run_jit(ft.ptr, strategy)
     et = time.time()
     
     print("=========JIT RUN=========")

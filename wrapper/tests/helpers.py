@@ -7,9 +7,9 @@ from Exchange import Exchange, Asset
 from Broker import Broker 
 from FastTest import FastTest
 
-test1_index = np.array([np.datetime64("2000-06-06T05:00:00"),np.datetime64("2000-06-07T05:00:00"),np.datetime64("2000-06-08T05:00:00"),np.datetime64("2000-06-09T05:00:00")])
-test2_index = np.array([np.datetime64("2000-06-05T05:00:00"), np.datetime64("2000-06-06T05:00:00"),np.datetime64("2000-06-07T05:00:00"),
-                            np.datetime64("2000-06-08T05:00:00"),np.datetime64("2000-06-09T05:00:00"),np.datetime64("2000-06-12T05:00:00")])
+test1_index = np.array([np.datetime64("2000-06-06T00:00:00"),np.datetime64("2000-06-07T00:00:00"),np.datetime64("2000-06-08T00:00:00"),np.datetime64("2000-06-09T00:00:00")])
+test2_index = np.array([np.datetime64("2000-06-05T00:00:00"), np.datetime64("2000-06-06T00:00:00"),np.datetime64("2000-06-07T00:00:00"),
+                            np.datetime64("2000-06-08T00:00:00"),np.datetime64("2000-06-09T00:00:00"),np.datetime64("2000-06-12T00:00:00")])
 
 test1_open = np.array([100,102,104,105])
 test1_close = np.array([101,103,105,106])
@@ -28,7 +28,7 @@ df2 = pd.DataFrame(index = get_unix_time(test2_index),data = np.vstack((test2_op
 def setup_simple(logging = False):
     exchange = Exchange()
     broker = Broker(exchange)
-    ft = FastTest(exchange, broker, logging)
+    ft = FastTest(exchange, broker, logging=logging)
 
     new_asset = Asset(exchange, asset_name="1")
     new_asset.set_format("%d-%d-%d", 0, 1)

@@ -10,7 +10,7 @@
 #include <string>
 #include <assert.h>
 #include "utils_time.h"
-
+ 
 static const unsigned long long  EPOCH = ((unsigned long long)116444736000000000ULL);
 const char *_datetime_format = "%Y-%m-%d %H:%M:%S";
 
@@ -77,7 +77,7 @@ void string_to_timeval(timeval *tv, std::string input_date, const char *digit_da
 	datetime_tm.tm_sec = ss;
 	datetime_tm.tm_isdst = -1;
 
-	long tStart = (long)mktime(&datetime_tm);
+	long tStart = (long)timegm(&datetime_tm);
 	tv->tv_sec = tStart;
 }
 size_t timeval_to_char_array(timeval *tv, char *buf, size_t sz)

@@ -46,13 +46,17 @@ void __Exchange::build() {
 			}
 		}
 		for (auto& kvp : this->market) {
-			if (kvp.second.current_index >= (kvp.second.AM.N)) { continue; }
+			if (kvp.second.current_index >= (kvp.second.AM.N)) {
+				continue; 
+			}
 			if ((kvp.second.asset_time() == next_time)
 				&(kvp.second.current_index >= kvp.second.minimum_warmup)) {
 				kvp.second.current_index++;
 			}
 		}
-		if (!update) { break; };
+		if (!update){
+			break;
+		};
 		this->datetime_index.push_back(next_time);
 		float _time = next_time.tv_sec + next_time.tv_usec / 1e6;
 		this->epoch_index.push_back(_time);

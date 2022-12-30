@@ -33,6 +33,16 @@ class Exchange():
             c_bool(on_close)
         )
         
+    def get(self, asset_name : str, column : str, index = 0):
+        if index > 0: raise Exception("invalid index passed to get_market_feature")
+        asset_id = self.asset_map[asset_name]
+        return Wrapper._get_market_feature(
+            self.ptr, 
+            asset_id,
+            c_char_p(column.encode("utf-8")),
+            index
+        )
+        
     def get_asset_data(self, asset_name : str):
         asset_id = self.asset_map[asset_name]
         asset_ptr = Wrapper._get_asset_ptr(self.ptr,asset_id)
@@ -58,7 +68,7 @@ class Asset():
         
     def load_from_df(self, df : pd.DataFrame):
         values = df.values.flatten().astype(np.float32)
-        epoch_index = df.index.values.astype(np.float32)
+        epoch_index = df.index.values.astype(np.float32) / 1e9
         
         values_p = values.ctypes.data_as(POINTER(c_float))
         epoch_index_p = epoch_index.ctypes.data_as(POINTER(c_float))
@@ -78,7 +88,7 @@ class Asset():
                 c_char_p(column.encode("utf-8")),
                 index
             )
-        
+                    
     def set_format(self, digit_format : str, open_col : int, close_col : int):
         Wrapper._set_asset_format(
             self.ptr,
