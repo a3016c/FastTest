@@ -54,7 +54,7 @@ class TestStrategy(Strategy):
         self.order_schedule = order_schedule
         self.i = 0
         
-    def build():
+    def build(self):
         return
 
     def next(self):

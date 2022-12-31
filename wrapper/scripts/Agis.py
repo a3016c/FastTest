@@ -48,9 +48,9 @@ class Agis_Strategy(Strategy):
         predicted_returns = {k: v for k, v in sorted(predicted_returns.items(), key=lambda item: item[1], reverse = True)}
         _avg_predicted_return = sum(predicted_returns.values()) / len(predicted_returns)
         
-        if _avg_predicted_return <= 0:
-            self.close_positions()
-            return
+        #if _avg_predicted_return <= 0:
+        #    self.close_positions()
+        #    return
     
         keys = list(predicted_returns.keys())
         for index, asset_name in enumerate(keys):
@@ -78,7 +78,7 @@ class Agis_Strategy(Strategy):
             asset_name = asset_names[index]
             new_asset = Asset(exchange, asset_name=asset_name)
             new_asset.set_format("%d-%d-%d", 0, 1)
-            new_asset.load_from_df(df)
+            new_asset.load_from_df(df, nano=True)
             ft.exchange.register_asset(new_asset)
             
         

@@ -63,29 +63,72 @@ float __Broker::get_net_liquidation_value() {
 	return nlv;
 }
 void __Broker::open_position(std::unique_ptr<Order> &order) {
+	float order_fill_price = order->fill_price;
+	float fill_price;
+
+	if(this->slippage){
+		if(order->units > 0){
+			fill_price = order_fill_price * (1 + this->slippage);
+			this->total_slippage += ((fill_price - order_fill_price) * order->units);
+			order_fill_price = fill_price;
+		}
+		else if (order->units < 0){
+			fill_price = order_fill_price * (1 - this->slippage);
+			this->total_slippage += ((fill_price - order_fill_price) * order->units);
+			order_fill_price = fill_price;
+		}
+	}
+
 	Position new_position = Position{
 		this->position_counter,
 		order->asset_id,
 		order->units,
-		order->fill_price,
+		order_fill_price,
 		order->order_fill_time
 	};
 	if (this->logging) { log_open_position(new_position); }
 	this->portfolio[order->asset_id] = new_position;
-	this->cash -= (order->units*order->fill_price);
+	this->cash -= (order->units*order_fill_price);
+
+	if(this->commission){
+		this->cash -= this->commission;
+		this->total_commission += this->commission;
+	}
+
 	this->position_counter++;
 }
-void __Broker::close_position(Position &existing_position, float fill_price, timeval order_fill_time) {
+void __Broker::close_position(Position &existing_position, float order_fill_price, timeval order_fill_time) {
 	//note: this function does not remove the position from the portfolio so this should not
 	//be called directly in order to close a position. Close position through a appropriate order.
-	existing_position.close(fill_price, order_fill_time);
+	float fill_price;
+
+	if(this->slippage){
+		if(existing_position.units < 0){
+			fill_price = order_fill_price * (1 + this->slippage);
+			this->total_slippage += ((fill_price - order_fill_price) * existing_position.units);
+			order_fill_price = fill_price;
+		}
+		else if (existing_position.units > 0){
+			fill_price = order_fill_price * (1 - this->slippage);
+			this->total_slippage += ((fill_price - order_fill_price) * existing_position.units);
+			order_fill_price = fill_price;
+		}
+	}
+	
+	existing_position.close(order_fill_price, order_fill_time);
 	if (this->logging) { log_close_position(existing_position); }
 	this->position_history.push_back(existing_position);
-	this->cash += existing_position.units * fill_price;
+	this->cash += existing_position.units * order_fill_price;
 	this->realized_pl += existing_position.realized_pl;
 
 	this->perfomance.average_time_in_market += existing_position.position_close_time - existing_position.position_create_time;
 	if(existing_position.realized_pl > 0){this->perfomance.winrate++;}
+
+	if(this->commission){
+		this->cash -= this->commission;
+		this->total_commission += this->commission;
+	}
+
 }
 void __Broker::reduce_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.reduce(order->fill_price, order->units);

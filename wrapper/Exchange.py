@@ -75,9 +75,10 @@ class Asset():
         self.file_name = c_char_p(file_name.encode("utf-8"))
         Wrapper._asset_from_csv(self.ptr, self.file_name)
         
-    def load_from_df(self, df : pd.DataFrame):
+    def load_from_df(self, df : pd.DataFrame, nano = False):
         values = df.values.flatten().astype(np.float32)
-        epoch_index = df.index.values.astype(np.float32) / 1e9
+        epoch_index = df.index.values.astype(np.float32)
+        if nano: epoch_index /=  1e9
         
         values_p = values.ctypes.data_as(POINTER(c_float))
         epoch_index_p = epoch_index.ctypes.data_as(POINTER(c_float))

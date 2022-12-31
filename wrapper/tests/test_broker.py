@@ -10,7 +10,7 @@ from Strategy import *
 from FastTest import FastTest
 from helpers import *
 
-class AssetTestMethods(unittest.TestCase):
+class BrokerTestMethods(unittest.TestCase):
 
     def test_broker_load(self):
         exchange = Exchange()

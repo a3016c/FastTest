@@ -44,7 +44,7 @@ class MA_Cross(Strategy):
                         False
                     )                 
         
-class AssetTestMethods(unittest.TestCase):
+class FTTestMethods(unittest.TestCase):
 
     def test_strat_construction(self):
         exchange, broker, ft = setup_multi()

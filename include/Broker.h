@@ -56,6 +56,11 @@ public:
 	std::vector<float> cash_history;
 	std::vector<float> nlv_history;
 
+	float slippage = 0.0f;
+	float commission = 0.0f;
+	float total_slippage = 0;
+	float total_commission = 0; 
+
 	__Exchange &__exchange;
 
 	unsigned int position_counter = 1;
