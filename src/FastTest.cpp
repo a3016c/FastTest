@@ -27,6 +27,9 @@ void __FastTest::reset() {
 	this->filled_orders.clear();
 	this->canceled_orders.clear();
 }
+void __FastTest::_register_benchmark(__Asset new_benchmark){
+	this->benchmark = new_benchmark;
+}
 void __FastTest::run() {
 	if (this->logging) { printf("RUNNING FASTEST\n"); }
 	this->__exchange.logging = this->logging;
@@ -112,4 +115,13 @@ void backward_pass(void * fastTest_ptr) {
 		__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
 	}
 	__fastTest_ref->step_count++;
+}
+void register_benchmark(void* fastTest_ptr, void *asset_ptr){
+	__Asset * __asset_ref = static_cast<__Asset *>(asset_ptr);
+	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+	__fastTest_ref->_register_benchmark(*__asset_ref);
+}
+void* get_benchmark_ptr(void* fastTest_ptr){
+	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+	return & __fastTest_ref->benchmark;
 }

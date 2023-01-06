@@ -10,6 +10,7 @@
 #include <string>
 #include "Exchange.h"
 #include "Strategy.h"
+#include "Asset.h"
 #include "Broker.h"
 #include "Order.h"
 
@@ -19,13 +20,18 @@ public:
 	__Broker &broker;
 	Strategy *strategy;
 
-	bool logging;
+	__Asset benchmark; 
 
+	bool logging;
 	unsigned int step_count = 0;
 
 	std::vector<std::unique_ptr<Order>> filled_orders;
 	std::vector<std::unique_ptr<Order>> canceled_orders;
 
+	//function to register a benchmark to compare results too
+	void _register_benchmark(__Asset new_benchmark);
+
+	//function to rest fasttest and member objects
 	void reset();
 
 	//main event lopp
@@ -42,6 +48,9 @@ extern "C" {
 
 	FAST_API bool forward_pass(void* fastTest_ptr);
 	FAST_API void backward_pass(void* fastTest_ptr);
+
+	FAST_API void register_benchmark(void* fastTest_ptr, void *asset_ptr);
+	FAST_API void * get_benchmark_ptr(void* fastTest_ptr);
 
 }
 

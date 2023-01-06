@@ -135,6 +135,13 @@ _fastTest_backward_pass.argtypes = [c_void_p]
 _fastTest_reset = FastTest.reset_fastTest
 _fastTest_reset.argtypes = [c_void_p]
 
+_fastTest_register_benchmark = FastTest.register_benchmark
+_fastTest_register_benchmark.argtypes = [c_void_p, c_void_p]
+
+_get_benchmark_ptr = FastTest.get_benchmark_ptr
+_get_benchmark_ptr.argtypes = [c_void_p]
+_get_benchmark_ptr.restype = c_void_p
+
 _rows = FastTest.rows
 _rows.argtypes = [c_void_p]
 _rows.restype = c_size_t

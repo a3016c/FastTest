@@ -80,9 +80,9 @@ class Agis_Strategy(Strategy):
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_df(df, nano=True)
             ft.exchange.register_asset(new_asset)
-            
-        
+                
 if __name__ == "__main__":
+
     exchange = Exchange()
     broker = Broker(exchange)
     ft = FastTest(exchange, broker, False)
@@ -90,8 +90,20 @@ if __name__ == "__main__":
     strategy = Agis_Strategy(broker, exchange)
     
     ft.build()
+
+    df = pd.read_csv("/Users/nathantormaschy/Downloads/SPY.csv")
+    df["Date"] = pd.to_datetime(pd.to_datetime(df["Date"], format = "%Y-%m-%d"))
+    df.set_index("Date",inplace=True)
+    
+    benchmark = Asset(exchange, asset_name=str("Benchmark"))
+    benchmark.set_format("%d-%d-%d", 0, 1)
+    benchmark.load_from_df(df, nano=True)
+    ft.register_benchmark(benchmark)
+
+        
     ft.add_strategy(strategy)
     ft.run()
-    
-    strategy.plot()
+
+    strategy.plot(benchmark)
+
     

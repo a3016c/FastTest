@@ -74,6 +74,7 @@ class Asset():
     def load_from_csv(self, file_name : str):
         self.file_name = c_char_p(file_name.encode("utf-8"))
         Wrapper._asset_from_csv(self.ptr, self.file_name)
+        self.headers = pd.read_csv(file_name, index_col=0, nrows=0).columns.tolist()
         
     def load_from_df(self, df : pd.DataFrame, nano = False):
         values = df.values.flatten().astype(np.float32)
@@ -98,6 +99,7 @@ class Asset():
                 c_char_p(column.encode("utf-8")),
                 index
             )
+        self.headers = columns
                     
     def set_format(self, digit_format : str, open_col : int, close_col : int):
         Wrapper._set_asset_format(
@@ -121,7 +123,18 @@ class Asset():
         data_ptr = Wrapper._get_asset_data(self.ptr)
         asset_data = np.ctypeslib.as_array(data_ptr, shape=(self.rows()*self.columns(),))
         return np.reshape(asset_data,(-1,self.columns()))
-
+    
+    def df(self):
+        asset_index = self.index()
+        asset_data = self.data()
+        return pd.DataFrame(index = asset_index, data = asset_data, columns = self.headers)
+    
+    @staticmethod
+    def _index(ptr):
+        index_ptr = Wrapper._get_asset_index(ptr)
+        rows = Wrapper._rows(ptr)
+        return np.ctypeslib.as_array(index_ptr, shape=(rows,))
+        
     @staticmethod
     def _data(ptr):
         M = Wrapper._columns(ptr)
@@ -131,10 +144,5 @@ class Asset():
             M*N,))
         return np.reshape(asset_data,(-1,M))
 
-    def df(self):
-        asset_index = self.index()
-        asset_data = self.data()
-        return pd.DataFrame(index = asset_index, data = asset_data)
-    
 if __name__ == "__main__":
     pass

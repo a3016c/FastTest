@@ -118,7 +118,7 @@ class BrokerTestMethods(unittest.TestCase):
         assert(position_history.POSITION_ARRAY[0].contents.average_price == 100)
         assert(position_history.POSITION_ARRAY[0].contents.close_price == 98)
         assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_close_time,"s") == test2_index[2])
-        print(position_history.to_df())
+
         
 if __name__ == '__main__':
     unittest.main()

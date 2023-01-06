@@ -25,24 +25,40 @@ class Strategy():
     def next(self):
         return 
     
-    def plot(self):
+    def plot(self, benchmark = None):
         nlv = self.broker.get_nlv_history()
         roll_max = np.maximum.accumulate(nlv)
         daily_drawdown = nlv / roll_max - 1.0
-        max_drawdown = np.minimum.accumulate(daily_drawdown) * 100
         
         datetime_epoch_index = self.exchange.get_datetime_index()
         datetime_index = pd.to_datetime(datetime_epoch_index, unit = "s")
         
+        backtest_df = pd.DataFrame(index = datetime_index, data = nlv, columns=["nlv"])
+        backtest_df["max_drawdown"] = np.minimum.accumulate(daily_drawdown) * 100
+                    
         fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, height_ratios = [1,3])
         fig = matplotlib.pyplot.gcf()
         fig.set_size_inches(10.5, 6.5, forward = True)
+                    
+        if benchmark != None:
+            benchmark_df = benchmark.df()
+            benchmark_df = benchmark_df[["Close"]]
+            benchmark_df.rename({'Close': 'Benchmark'}, axis=1, inplace=True)
+            
+            benchmark_df.index = pd.to_datetime(benchmark_df.index, unit = "s")
+            backtest_df = pd.merge(backtest_df,benchmark_df, how='inner', left_index=True, right_index=True)
+
+            ratio = nlv[0] / backtest_df["Benchmark"].values[0]
+            backtest_df["Benchmark"] = backtest_df["Benchmark"].apply(lambda x: x*ratio)
+
+            ax2.plot(datetime_index, backtest_df["Benchmark"], color = "black", label = "Benchmark")  
         
-        ax2.plot(datetime_index, nlv)
+        ax2.plot(datetime_index, backtest_df["nlv"], label = "NLV")
         ax2.set_ylabel("NLV")
         ax2.set_xlabel("Datetime")
+        ax2.legend()
         
-        ax1.plot(datetime_index, max_drawdown)
+        ax1.plot(datetime_index, backtest_df["max_drawdown"])
         ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
         ax1.set_ylabel("Max Drawdown")
         

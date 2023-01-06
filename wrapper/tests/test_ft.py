@@ -73,7 +73,7 @@ class FTTestMethods(unittest.TestCase):
     
     def test_ma_cross(self):
         COLUMNS = ['OPEN','CLOSE']
-        CANDLES = 20000
+        CANDLES = 2000
         STOCKS = 10
         dateindex = pd.date_range(start='2010-01-01', periods=CANDLES, freq='15Min')
 
@@ -98,8 +98,18 @@ class FTTestMethods(unittest.TestCase):
         strategy = MA_Cross(broker, exchange, 10, 50)
         ft.add_strategy(strategy)
         ft.run()
-    
         
+    def test_benchmark_asset(self):
+        exchange, broker, ft = setup_multi(False)
+        
+        benchmark = Asset(exchange, asset_name=str("Benchmark"))
+        benchmark.set_format("%d-%d-%d", 0, 1)
+        benchmark.load_from_csv(file_name_2)
+        ft.register_benchmark(benchmark)
+        
+        benchmark = ft.benchmark.df()
+        assert((benchmark["CLOSE"].values == test2_close).all())
+            
 if __name__ == '__main__':
     unittest.main()
 

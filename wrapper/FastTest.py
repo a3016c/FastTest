@@ -19,6 +19,7 @@ class FastTest:
         self.exchange_ptr = exchange.ptr
         self.broker = broker
         self.broker_ptr = broker.ptr
+        self.benchmark = None
         self.strategies = np.array([], dtype="O")
 
     def __del__(self):
@@ -38,6 +39,13 @@ class FastTest:
         self.broker.build()
         self.ptr = Wrapper._new_fastTest_ptr(self.exchange_ptr,self.broker_ptr,self.logging)
         
+    def register_benchmark(self, asset : Asset):
+        self.benchmark = asset
+        Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
+        
+    def get_benchmark_ptr(self):
+        return Wrapper._get_benchmark_ptr(self.ptr)
+    
     def add_strategy(self, strategy : Strategy):
         strategy.broker_ptr = self.broker_ptr
         strategy.exchange_ptr = self.exchange_ptr
