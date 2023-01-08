@@ -30,6 +30,9 @@ class Broker():
         asset_id = self.exchange.asset_map[asset_name]
         return Wrapper._position_exists(self.ptr, asset_id)
     
+    def get_nlv(self):
+        return Wrapper._get_nlv(self.ptr)
+    
     def get_positions(self):
         position_count = self.get_open_position_count()
         open_positions = Wrapper.PositionArrayStruct(position_count)

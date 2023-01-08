@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
+from matplotlib.offsetbox import AnchoredText
 
 import numba
 from numba.core import types
@@ -25,6 +26,13 @@ class Strategy():
     def next(self):
         return 
     
+    def get_sharpe(self, nlvs, N = 255, rf = .01):
+        returns = np.diff(nlvs) / nlvs[:-1]
+        sharpe = returns.mean() / returns.std()
+        sharpe = (252**.5)*sharpe
+        return round(sharpe,3)
+        
+    
     def plot(self, benchmark = None):
         nlv = self.broker.get_nlv_history()
         roll_max = np.maximum.accumulate(nlv)
@@ -42,8 +50,8 @@ class Strategy():
                     
         if benchmark != None:
             benchmark_df = benchmark.df()
-            benchmark_df = benchmark_df[["Close"]]
-            benchmark_df.rename({'Close': 'Benchmark'}, axis=1, inplace=True)
+            benchmark_df = benchmark_df[["Adj Close"]]
+            benchmark_df.rename({'Adj Close': 'Benchmark'}, axis=1, inplace=True)
             
             benchmark_df.index = pd.to_datetime(benchmark_df.index, unit = "s")
             backtest_df = pd.merge(backtest_df,benchmark_df, how='inner', left_index=True, right_index=True)
@@ -61,6 +69,11 @@ class Strategy():
         ax1.plot(datetime_index, backtest_df["max_drawdown"])
         ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
         ax1.set_ylabel("Max Drawdown")
+        
+        sharpe = self.get_sharpe(backtest_df["nlv"].values)
+        metrics = f"Sharpe: {sharpe}"
+        anchored_text = AnchoredText(metrics, loc=1)
+        ax2.add_artist(anchored_text)
         
         plt.show()
 

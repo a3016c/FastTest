@@ -119,6 +119,29 @@ class BrokerTestMethods(unittest.TestCase):
         assert(position_history.POSITION_ARRAY[0].contents.close_price == 98)
         assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_close_time,"s") == test2_index[2])
 
+    def test_short(self):
+        orders = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 0,
+                    units = -100
+                )
+         ]
+        exchange, broker, ft = setup_multi(False)
+        strategy = TestStrategy(orders, broker, exchange)
+        ft.add_strategy(strategy)
+        ft.run()
+        
+        order_history = broker.get_order_history()
+        position_history = broker.get_position_history()
+        
+        assert(len(order_history) == 1)
+        assert(len(position_history) == 1)
+        assert(position_history.POSITION_ARRAY[0].contents.realized_pl == 400)
+        assert((broker.get_nlv_history()==np.array([100000,  100100,  100300, 99850, 99850,  100400])).all())
+        assert((broker.get_cash_history()==np.array([100000,  110000,  110000, 110000, 110000,  100400])).all())
+
         
 if __name__ == '__main__':
     unittest.main()

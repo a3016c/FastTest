@@ -4,7 +4,7 @@ import time
 import unittest
 import zipfile
 import io
-from math import isnan
+from math import isnan, floor
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import numpy as np
@@ -21,7 +21,7 @@ class Agis_Strategy(Strategy):
         self.load()
         self.i = 0
         self.lookahead = 20
-        self.position_size =4000
+        self.position_size = .025
         
     def check_positions(self):
         positions = self.broker.get_positions()
@@ -49,16 +49,28 @@ class Agis_Strategy(Strategy):
         _avg_predicted_return = sum(predicted_returns.values()) / len(predicted_returns)
         
         #if _avg_predicted_return <= 0:
-        #    self.close_positions()
-        #    return
-    
+            #self.close_positions()
+            #return
+        
+        nlv = broker.get_nlv()
+        position_size = nlv * self.position_size
+            
         keys = list(predicted_returns.keys())
-        for index, asset_name in enumerate(keys):
-            #if self.broker.position_exists(asset_name): continue
-            market_price = self.exchange.get_market_price(asset_name)
-            units = self.position_size / market_price
-            self.broker.place_market_order(asset_name, units)
-            break
+        if _avg_predicted_return > 0:
+            for index, asset_name in enumerate(keys):
+                #if self.broker.position_exists(asset_name): continue
+                market_price = self.exchange.get_market_price(asset_name)
+                units = position_size / market_price
+                self.broker.place_market_order(asset_name, units)
+                break
+        
+        if _avg_predicted_return < 0: 
+            for index, asset_name in enumerate(keys[::-1]):
+                #if self.broker.position_exists(asset_name): continue
+                market_price = self.exchange.get_market_price(asset_name)
+                units = -1 * (position_size / market_price)
+                self.broker.place_market_order(asset_name, units)
+                break
            
     def load(self):
         z = zipfile.ZipFile(self.zip_path)

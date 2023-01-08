@@ -286,7 +286,15 @@ void __Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_
 			}
 			//order is in opposite direction as existing position. Reduce existing position
 			else {
-				this->reduce_position(existing_position, order);
+				if(abs(order->units) < abs(existing_position.units)){
+					this->reduce_position(existing_position, order);
+				}
+				else{
+					this->close_position(existing_position, order->fill_price, order->order_fill_time);
+					this->portfolio.erase(order->asset_id);
+					order->units = order->units + existing_position.units;
+					this->open_position(order);
+				}
 			}
 		}
 		this->order_history.push_back(std::move(order));
@@ -340,6 +348,10 @@ void build_broker(void *broker_ptr) {
 float get_cash(void *broker_ptr){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->cash;
+}
+float get_nlv(void *broker_ptr){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->net_liquidation_value;
 }
 float get_unrealized_pl(void *broker_ptr){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

@@ -208,6 +208,10 @@ _get_open_position_count = FastTest.get_open_position_count
 _get_open_position_count.argtypes = [c_void_p]
 _get_open_position_count.restype = c_int
 
+_get_nlv = FastTest.get_nlv
+_get_nlv.argtypes = [c_void_p]
+_get_nlv.restype = c_float
+
 _position_exists = FastTest.position_exists
 _position_exists.argtypes = [c_void_p, c_uint]
 _position_exists.restype = c_bool
