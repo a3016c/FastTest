@@ -50,8 +50,8 @@ class Strategy():
                     
         if benchmark != None:
             benchmark_df = benchmark.df()
-            benchmark_df = benchmark_df[["Adj Close"]]
-            benchmark_df.rename({'Adj Close': 'Benchmark'}, axis=1, inplace=True)
+            benchmark_df = benchmark_df[["CLOSE"]]
+            benchmark_df.rename({'CLOSE': 'Benchmark'}, axis=1, inplace=True)
             
             benchmark_df.index = pd.to_datetime(benchmark_df.index, unit = "s")
             backtest_df = pd.merge(backtest_df,benchmark_df, how='inner', left_index=True, right_index=True)

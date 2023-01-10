@@ -54,7 +54,7 @@ class Agis_Strategy(Strategy):
             #return
         
         nlv = broker.get_nlv()
-        position_size = (nlv) / (self.position_count * self.lookahead) * .95
+        position_size = (nlv) / (self.position_count * self.lookahead) * .90
      
         keys = list(predicted_returns.keys())
         counts = 0
@@ -109,8 +109,8 @@ if __name__ == "__main__":
     ft.build()
 
     df = pd.read_csv("/Users/nathantormaschy/Downloads/SPY.csv")
-    df["Date"] = pd.to_datetime(pd.to_datetime(df["Date"], format = "%Y-%m-%d"))
-    df.set_index("Date",inplace=True)
+    df["DATE"] = pd.to_datetime(pd.to_datetime(df["DATE"], format = "%Y-%m-%d"))
+    df.set_index("DATE",inplace=True)
     
     benchmark = Asset(exchange, asset_name=str("Benchmark"))
     benchmark.set_format("%d-%d-%d", 0, 1)

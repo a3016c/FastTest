@@ -81,6 +81,7 @@ public:
 	//margin settings
 	bool margin = false;
 	float margin_req = REG_T_REQ;
+	float short_margin_req = REG_T_SHORT_REQ;
 
 	__Exchange &__exchange;
 
@@ -143,35 +144,66 @@ public:
 	inline void evaluate_portfolio(bool on_close = false) noexcept {
 		float nlv = 0;
 		float collateral = 0;
+		float margin_req_mid;
 		unsigned int asset_id;
+
 		for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
 			//update portfolio net liquidation value
 			asset_id = it->first;
+			Position& position =  it->second;
 			float market_price = this->__exchange._get_market_price(asset_id, on_close);
 
 			//check to see if the underlying asset of the position has finished streaming
 			//if so we have to close the current position on close of the current step
 			if (this->__exchange.market[asset_id].is_last_view()) {
 				if(this->margin){
-					float new_collateral = abs(this->margin_req * it->second.units*market_price);
-					float adjustment = (new_collateral - it->second.collateral);
-					this->cash += adjustment;
-					it->second.collateral = new_collateral;
+					if(position.units < 0){
+						margin_req_mid = this->short_margin_req;
+					}
+					else{
+						margin_req_mid = this->margin_req;
+					}
+					float new_collateral = abs(margin_req_mid * position.units*market_price);
+					float adjustment = (new_collateral - position.collateral);
+					
+					if(position.units > 0){
+						this->cash += adjustment;
+					}
+					else{
+						this->cash -= adjustment;
+					}
+					position.collateral = new_collateral;
 				}
 				this->close_position(this->portfolio[asset_id], market_price, this->__exchange.current_time);
 				it = this->portfolio.erase(it);
 			}
 			else {
-				it->second.evaluate(market_price);
-				nlv += it->second.liquidation_value();
+				position.evaluate(market_price);
+				nlv += position.liquidation_value();
 
 				if(this->margin){
 					//update the margin required to maintain the position. 
-					float new_collateral = abs(this->margin_req * it->second.units*market_price);
-					float adjustment = (new_collateral - it->second.collateral);
-					this->cash += adjustment;
-					it->second.collateral = new_collateral;
-					collateral += new_collateral;
+					if(position.units < 0){
+						margin_req_mid = this->short_margin_req;
+					}
+					else{
+						margin_req_mid = this->margin_req;
+					}
+					float new_collateral = abs(margin_req_mid* position.units*market_price);
+					float adjustment = (new_collateral - position.collateral);
+					position.collateral = new_collateral;
+
+					//if long position, add collateral to subtract off later to prevent double counting the
+					//value of the security 
+					if(position.units > 0){
+						this->cash += adjustment;
+						collateral += new_collateral;
+					}
+					//if short position, add the collateral back into nlv to maintain balanced counting
+					else{
+						this->cash -= adjustment;
+						nlv += new_collateral;
+					}
 				}
 				it++;
 			}

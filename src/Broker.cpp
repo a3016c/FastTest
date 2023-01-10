@@ -99,12 +99,26 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 		this->cash -= order->units*order_fill_price;
 	}
 	else {
+		//set the appropriate margin requirment for the position
+		float margin_req_mid;
+		if(new_position.units < 0){
+			margin_req_mid = this->short_margin_req;
+		}
+		else{
+			margin_req_mid = this->margin_req;
+		}
 		//if is margin account, calculate the colateral needed to maintain the trade and the 
 		//margin loan provided by the broker. Subtract collateral from the cash available.
-		float collateral = abs(this->margin_req * order->units*order_fill_price);
-		float loan = abs((1-this->margin_req) * order->units*order_fill_price);
+		float collateral = abs(margin_req_mid * order->units*order_fill_price);
+		float loan = abs((1-margin_req_mid) * order->units*order_fill_price);
 		
+		//remove collateral required for the position from the cash in the account
 		this->cash -= collateral;
+
+		//if the position is short, credit the account with the cash from the sale of borrowd securities
+		if(new_position.units < 0){
+			this->cash -= order->units*order_fill_price;
+		}
 		this->margin_loan += loan;
 
 		new_position.collateral = collateral;
@@ -154,8 +168,14 @@ void __Broker::close_position(Position &existing_position, float order_fill_pric
 	}
 
 	if(this->margin){
+		//free the collateral from the position and remove the margin loan
 		this->cash += existing_position.collateral;
 		this->margin_loan -= existing_position.margin_loan;
+
+		//if closing a short position have to buy back the position at the filled price
+		if(existing_position.units < 0){
+			this->cash += existing_position.units * order_fill_price;
+		}
 	}
 	else{
 		this->cash += existing_position.units * order_fill_price;

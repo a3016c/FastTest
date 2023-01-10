@@ -141,7 +141,7 @@ class BrokerTestMethods(unittest.TestCase):
         assert(position_history.POSITION_ARRAY[0].contents.realized_pl == 400)
         assert((broker.get_nlv_history()==np.array([100000,  100100,  100300, 99850, 99850,  100400])).all())
         assert((broker.get_cash_history()==np.array([100000,  110000,  110000, 110000, 110000,  100400])).all())
-
+    
     def test_margin_long(self):
         orders = [
                 OrderSchedule(
@@ -159,7 +159,26 @@ class BrokerTestMethods(unittest.TestCase):
         
         assert((broker.get_nlv_history()==np.array([100000,  99900,  99700, 100150, 100150,  99600])).all())
         assert((broker.get_cash_history()==np.array([100000,  94950,  94850,  95075,  95075,  99600])).all())
-                
+
+    def test_margin_short(self):
+        orders = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 0,
+                    units = -100
+                )
+         ]
+        exchange, broker, ft = setup_multi(logging=False, margin=True)
+        
+        strategy = TestStrategy(orders, broker, exchange)
+        ft.add_strategy(strategy)
+        ft.run()
+        
+        assert((broker.get_nlv_history()==np.array([100000,  100100,  100300, 99850, 99850,  100400])).all())
+        assert((broker.get_cash_history()==np.array([100000,  95150,  95450,  94775,  94775,  100400])).all())
+
+
 if __name__ == '__main__':
     unittest.main()
 
