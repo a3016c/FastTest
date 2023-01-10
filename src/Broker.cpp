@@ -26,6 +26,7 @@ void __Broker::reset() {
 	this->realized_pl = 0;
 	this->net_liquidation_value = 0;
 }
+
 void __Broker::clean_up(){
 	size_t history_size = this->nlv_history.size();
 	size_t position_count = this->position_history.size();
@@ -41,32 +42,39 @@ void __Broker::clean_up(){
 	this->perfomance.cagr = pow((*this->nlv_history.end() / this->nlv_history[0]),(1/backtest_duration_years)) - 1;
 
 }
+
 void __Broker::build(){
 	size_t size = this->__exchange.datetime_index.size();
 	this->cash_history.resize(size);
 	this->nlv_history.resize(size);
+	this->margin_history.resize(size);
+
 }
 void __Broker::analyze_step() {
 	unsigned int index = this->__exchange.current_index-1;
 	this->cash_history[index] = this->cash;
 	this->nlv_history[index] = this->net_liquidation_value;
+	this->margin_history[index] = this->margin_loan;
 
 	if(this->portfolio.size() > 0){
 		this->perfomance.time_in_market++;
 	}
 }
+
 float __Broker::get_net_liquidation_value() {
 	float nlv = 0;
 	for (auto& position : this->portfolio) {
 		nlv += position.second.liquidation_value();
 	}
+	nlv -= this->margin_loan;
 	return nlv;
 }
+
 void __Broker::open_position(std::unique_ptr<Order> &order) {
 	float order_fill_price = order->fill_price;
 	float fill_price;
 
-	if(this->slippage){
+	if(this->has_slippage){
 		if(order->units > 0){
 			fill_price = order_fill_price * (1 + this->slippage);
 			this->total_slippage += ((fill_price - order_fill_price) * order->units);
@@ -86,23 +94,40 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 		order_fill_price,
 		order->order_fill_time
 	};
-	if (this->logging) { log_open_position(new_position); }
-	this->portfolio[order->asset_id] = new_position;
-	this->cash -= (order->units*order_fill_price);
 
-	if(this->commission){
+	if(!this->margin){
+		this->cash -= order->units*order_fill_price;
+	}
+	else {
+		//if is margin account, calculate the colateral needed to maintain the trade and the 
+		//margin loan provided by the broker. Subtract collateral from the cash available.
+		float collateral = abs(this->margin_req * order->units*order_fill_price);
+		float loan = abs((1-this->margin_req) * order->units*order_fill_price);
+		
+		this->cash -= collateral;
+		this->margin_loan += loan;
+
+		new_position.collateral = collateral;
+		new_position.margin_loan = loan;
+	}
+	
+	if(this->has_commission){
 		this->cash -= this->commission;
 		this->total_commission += this->commission;
 	}
 
 	this->position_counter++;
+
+	if (this->logging) { log_open_position(new_position); }
+	this->portfolio[order->asset_id] = new_position;
 }
+
 void __Broker::close_position(Position &existing_position, float order_fill_price, timeval order_fill_time) {
 	//note: this function does not remove the position from the portfolio so this should not
 	//be called directly in order to close a position. Close position through a appropriate order.
 	float fill_price;
 
-	if(this->slippage){
+	if(this->has_slippage){
 		if(existing_position.units < 0){
 			fill_price = order_fill_price * (1 + this->slippage);
 			this->total_slippage += ((fill_price - order_fill_price) * existing_position.units);
@@ -118,37 +143,48 @@ void __Broker::close_position(Position &existing_position, float order_fill_pric
 	existing_position.close(order_fill_price, order_fill_time);
 	if (this->logging) { log_close_position(existing_position); }
 	this->position_history.push_back(existing_position);
-	this->cash += existing_position.units * order_fill_price;
 	this->realized_pl += existing_position.realized_pl;
 
 	this->perfomance.average_time_in_market += existing_position.position_close_time - existing_position.position_create_time;
 	if(existing_position.realized_pl > 0){this->perfomance.winrate++;}
 
-	if(this->commission){
+	if(this->has_commission){
 		this->cash -= this->commission;
 		this->total_commission += this->commission;
 	}
 
+	if(this->margin){
+		this->cash += existing_position.collateral;
+		this->margin_loan -= existing_position.margin_loan;
+	}
+	else{
+		this->cash += existing_position.units * order_fill_price;
+	}
 }
+
 void __Broker::reduce_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.reduce(order->fill_price, order->units);
 	this->cash += abs(order->units) * order->fill_price;
 }
+
 void __Broker::increase_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.increase(order->fill_price, order->units);
 	this->cash -= order->units * order->fill_price;
 }
+
 bool __Broker::cancel_order(std::unique_ptr<Order>& order_cancel) {
 	std::unique_ptr<Order> canceled_order = this->__exchange.cancel_order(order_cancel);
 	canceled_order->order_state = CANCELED;
 	this->order_history.push_back(std::move(canceled_order));
 	return true;
 }
+
 void __Broker::log_canceled_orders(std::vector<std::unique_ptr<Order>> cleared_orders) {
 	for (auto& order : cleared_orders) {
 		this->order_history.push_back(std::move(order));
 	}
 }
+
 bool __Broker::cancel_orders(unsigned int asset_id) {
 	for (auto& order : this->__exchange.orders) {
 		if (order->asset_id != asset_id) { continue; }
@@ -158,6 +194,7 @@ bool __Broker::cancel_orders(unsigned int asset_id) {
 	}
 	return true;
 }
+
 void __Broker::clear_child_orders(Position& existing_position) {
 	for (auto& order : this->__exchange.orders) {
 		if (order->order_type == STOP_LOSS_ORDER || order->order_type == TAKE_PROFIT_ORDER) {
@@ -168,6 +205,7 @@ void __Broker::clear_child_orders(Position& existing_position) {
 		}
 	}
 }
+
 #ifdef CHECK_ORDER
 ORDER_CHECK __Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order) {
 	OrderParent parent = stop_loss_order->order_parent;
@@ -183,7 +221,8 @@ ORDER_CHECK __Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order
 		if (parent_position->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE; }
 	}
 	return VALID_ORDER;
-};
+}
+
 ORDER_CHECK __Broker::check_market_order(const MarketOrder* market_order) {
 	unsigned int asset_id = market_order->asset_id;
 	float units = market_order->units;
@@ -200,8 +239,22 @@ ORDER_CHECK __Broker::check_market_order(const MarketOrder* market_order) {
 	}
 	return VALID_ORDER;
 }
+
+MARGIN_CHECK __Broker::check_margin() noexcept{
+	if(!margin){
+		return VALID_ACCOUNT_STATUS;
+	}
+	//check to see if nlv is below broker's margin account requirment 
+	if(this->net_liquidation_value < this->minimum_nlv){
+		return NLV_BELOW_BROKER_REQ;
+	}
+}
+
 ORDER_CHECK __Broker::check_order(const std::unique_ptr<Order>& new_order) {
+	//check to see if the asset exsists on the exchange
 	if (this->__exchange.market.count(new_order->asset_id) == 0) { return INVALID_ASSET; }
+	
+	//An order can not have units set to 0
 	if (new_order->units == 0) { return INVALID_ORDER_UNITS; }
 
 	ORDER_CHECK order_code;
@@ -329,9 +382,9 @@ void __Broker::log_close_position(Position &position) {
 		position.close_price
 	);
 }
-void * CreateBrokerPtr(void *exchange_ptr, bool logging) {
+void * CreateBrokerPtr(void *exchange_ptr, bool logging, bool margin) {
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
-	return new __Broker(*__exchange_ref, logging);
+	return new __Broker(*__exchange_ref, logging, margin);
 }
 void DeleteBrokerPtr(void *ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(ptr);
@@ -411,6 +464,10 @@ float * broker_get_nlv_history(void *broker_ptr) {
 float * broker_get_cash_history(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->cash_history.data();
+}
+float * broker_get_margin_history(void *broker_ptr) {
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	return __broker_ref->margin_history.data();
 }
 void get_order_history(void *broker_ptr, OrderArray *order_history) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

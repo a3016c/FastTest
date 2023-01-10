@@ -59,9 +59,9 @@ public:
 };
 class __Asset {
 public:
-
-	unsigned int asset_id;
-	int asset_index;
+	 
+	unsigned int asset_id; // unique identifier of the asset
+	int asset_index; // current position on a asset's datetime index
 	bool streaming = false;
 
 	__AssetDataFormat format;

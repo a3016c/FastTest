@@ -84,7 +84,13 @@ void reset_fastTest(void *fastTest_ptr) {
 }
 bool forward_pass(void *fastTest_ptr){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+
 	if (!__fastTest_ref->__exchange._get_market_view()) { return false; }
+
+	#ifdef MARGIN
+	__fastTest_ref->broker.check_margin();
+	#endif
+
 	//allow exchange to process open orders from previous steps
 	if (!__fastTest_ref->__exchange.orders.empty()) {
 		__fastTest_ref->filled_orders = __fastTest_ref->__exchange.process_orders();

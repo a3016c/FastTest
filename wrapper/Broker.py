@@ -7,9 +7,11 @@ from Exchange import Exchange, Asset
 from Order import OrderState
 
 class Broker():
-    def __init__(self, exchange : Exchange, logging = True) -> None:
+    def __init__(self, exchange : Exchange, logging = True, margin = False) -> None:
         self.exchange = exchange 
-        self.ptr = Wrapper._new_broker_ptr(exchange.ptr, logging)
+        self.logging = logging 
+        self.margin = margin
+        self.ptr = Wrapper._new_broker_ptr(exchange.ptr, logging, margin)
 
     def __del__(self):
         Wrapper._free_broker_ptr(self.ptr)
@@ -61,6 +63,10 @@ class Broker():
     
     def get_nlv_history(self):
         cash_ptr = Wrapper._broker_get_nlv_history(self.ptr)
+        return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
+    
+    def get_margin_history(self):
+        cash_ptr = Wrapper._broker_get_margin_history(self.ptr)
         return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
         
     def get_order_history(self):

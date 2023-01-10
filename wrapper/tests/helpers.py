@@ -38,9 +38,9 @@ def setup_simple(logging = False):
     ft.build()
     return exchange, broker, ft
 
-def setup_multi(logging = False):
+def setup_multi(logging = False, margin = False):
     exchange = Exchange()
-    broker = Broker(exchange)
+    broker = Broker(exchange,logging=logging, margin=margin)
     ft = FastTest(exchange, broker, logging)
 
     for i, file_name in enumerate([file_name_1,file_name_2]):

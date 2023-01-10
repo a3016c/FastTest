@@ -14,6 +14,9 @@
 #include "Asset.h"
 #include "Exchange.h"
 
+#define REG_T_REQ .5
+#define REG_T_SHORT_REQ 1.5
+
 #define CHECK_ORDER
 #ifdef CHECK_ORDER
 enum ORDER_CHECK {
@@ -23,6 +26,15 @@ enum ORDER_CHECK {
 	INVALID_ORDER_COLLATERAL,
 	INVALID_ORDER_UNITS,
 	INVALID_PARENT_ORDER,
+};
+#endif
+
+#define MARGIN
+#ifdef MARGIN
+enum MARGIN_CHECK{
+	VALID_ACCOUNT_STATUS,
+	NLV_BELOW_BROKER_REQ,
+	MARGIN_CALL
 };
 #endif
 
@@ -53,20 +65,33 @@ public:
 	PerformanceStruct perfomance;
 	std::vector<std::unique_ptr<Order>> order_history;
 	std::vector<Position> position_history;
+
 	std::vector<float> cash_history;
 	std::vector<float> nlv_history;
+	std::vector<float> margin_history;
 
+	//friction settings for the broker
+	bool has_slippage = false;
+	bool has_commission = false;
 	float slippage = 0.0f;
 	float commission = 0.0f;
 	float total_slippage = 0;
 	float total_commission = 0; 
 
+	//margin settings
+	bool margin = false;
+	float margin_req = REG_T_REQ;
+
 	__Exchange &__exchange;
 
+	//counters to keep track of the IDs for orders and positions
 	unsigned int position_counter = 1;
 	unsigned int order_counter = 1;
 
+	//portfolio values 
+	float minimum_nlv = 2000;
 	float cash = 100000;
+	float margin_loan = 0;
 	float net_liquidation_value = cash;
 	float unrealized_pl = 0;
 	float realized_pl = 0;
@@ -102,6 +127,11 @@ public:
 	ORDER_CHECK check_market_order(const MarketOrder* new_order);
 	#endif
 
+	//functions for managing margin 
+	#ifdef MARGIN
+	MARGIN_CHECK check_margin() noexcept;
+	#endif
+
 	//order wrapers exposed to strategy
 	OrderState _place_market_order(unsigned int asset_id, float units, bool cheat_on_close = false);
 	OrderState _place_limit_order(unsigned int asset_id, float units, float limit, bool cheat_on_close = false);
@@ -112,6 +142,7 @@ public:
 	
 	inline void evaluate_portfolio(bool on_close = false) noexcept {
 		float nlv = 0;
+		float collateral = 0;
 		unsigned int asset_id;
 		for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
 			//update portfolio net liquidation value
@@ -121,20 +152,36 @@ public:
 			//check to see if the underlying asset of the position has finished streaming
 			//if so we have to close the current position on close of the current step
 			if (this->__exchange.market[asset_id].is_last_view()) {
+				if(this->margin){
+					float new_collateral = abs(this->margin_req * it->second.units*market_price);
+					float adjustment = (new_collateral - it->second.collateral);
+					this->cash += adjustment;
+					it->second.collateral = new_collateral;
+				}
 				this->close_position(this->portfolio[asset_id], market_price, this->__exchange.current_time);
 				it = this->portfolio.erase(it);
 			}
 			else {
 				it->second.evaluate(market_price);
 				nlv += it->second.liquidation_value();
+
+				if(this->margin){
+					//update the margin required to maintain the position. 
+					float new_collateral = abs(this->margin_req * it->second.units*market_price);
+					float adjustment = (new_collateral - it->second.collateral);
+					this->cash += adjustment;
+					it->second.collateral = new_collateral;
+					collateral += new_collateral;
+				}
 				it++;
 			}
 		}
-		this->net_liquidation_value = nlv + this->cash;
+		this->net_liquidation_value = nlv + this->cash - collateral;
 	}
 
-	__Broker(__Exchange &exchangeObj, bool logging = false) : __exchange(exchangeObj) {
+	__Broker(__Exchange &exchangeObj, bool logging = false, bool margin = false) : __exchange(exchangeObj) {
 		this->logging = logging;
+		this->margin = margin;
 	};
 
 	template <class T>
@@ -162,7 +209,7 @@ private:
 	void close_position(Position &existing_position, float fill_price, timeval order_fill_time);
 };
 extern "C" {
-	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true);
+	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true, bool margin = false);
 	BROKER_API void DeleteBrokerPtr(void *ptr);
 	BROKER_API void reset_broker(void *broker_ptr);
 	BROKER_API void build_broker(void *broker_ptr);
@@ -170,6 +217,7 @@ extern "C" {
 	BROKER_API size_t broker_get_history_length(void *broker_ptr);
 	BROKER_API float* broker_get_nlv_history(void *broker_ptr);
 	BROKER_API float* broker_get_cash_history(void *broker_ptr);
+	BROKER_API float* broker_get_margin_history(void *broker_ptr);
 
 	BROKER_API int get_order_count(void *broker_ptr);
 	BROKER_API int get_position_count(void *broker_ptr);

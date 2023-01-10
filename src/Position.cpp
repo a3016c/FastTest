@@ -12,6 +12,7 @@ void Position::to_struct(PositionStruct &position_struct){
 	position_struct.average_price = this->average_price;
 	position_struct.close_price = this->close_price;
 	position_struct.bars_held = this->bars_held;
+	position_struct.bars_since_change = this->bars_since_change;
 	position_struct.units = this->units;
 	position_struct.position_id = this->position_id;
 	position_struct.asset_id = this->asset_id;
@@ -32,10 +33,12 @@ void Position::increase(float market_price, float _units) {
 	float new_units = abs(this->units) + abs(_units);
 	this->average_price = ((abs(this->units)*this->average_price) + (abs(_units)*market_price)) / new_units;
 	this->units += _units;
+	this->bars_since_change = 0;
 }
 void Position::reduce(float market_price, float _units) {
 	this->realized_pl += abs(_units) * (market_price - this->average_price);
 	this->units -= abs(_units);
+	this->bars_since_change = 0;
 }
 void Position::close(float close_price, timeval position_close_time) {
 	this->is_open = false;

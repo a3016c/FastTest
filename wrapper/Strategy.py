@@ -71,7 +71,12 @@ class Strategy():
         ax1.set_ylabel("Max Drawdown")
         
         sharpe = self.get_sharpe(backtest_df["nlv"].values)
-        metrics = f"Sharpe: {sharpe}"
+        corr = round(np.corrcoef(
+            backtest_df["nlv"].values, 
+            backtest_df["Benchmark"].values, 
+            rowvar = False)[0][1],3)
+        
+        metrics = f"Sharpe: {sharpe} \n Benchmark Corr: {corr}"
         anchored_text = AnchoredText(metrics, loc=1)
         ax2.add_artist(anchored_text)
         

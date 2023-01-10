@@ -67,6 +67,7 @@ class PositionStruct(Structure):
         ('close_price', c_float),
         ('units',c_float),
         ('bars_held', c_uint),
+        ('bars_since_change', c_uint),
         ('position_id',c_uint),
         ('asset_id',c_uint),
         ('position_create_time',c_long),
@@ -85,6 +86,7 @@ class PositionStruct(Structure):
             self.close_price,
             self.units,
             self.bars_held,
+            self.bars_since_change,
             self.realized_pl,
             self.unrealized_pl,
             self.position_id,
@@ -110,7 +112,7 @@ class PositionArrayStruct(Structure):
     def to_df(self):
         positions = [self.POSITION_ARRAY[i].contents.to_list() for i in range(self.number_positions)]
         df = pd.DataFrame(positions, columns = ["position_create_time","position_close_time","average_price",
-                                "close_price","units","bars_held","realized_pl","unrealized_pl","position_id","asset_id"])
+                                "close_price","units","bars_held","bars_since_change","realized_pl","unrealized_pl","position_id","asset_id"])
         df["position_create_time"] = df["position_create_time"]  * 1e9
         df["position_close_time"] = df["position_close_time"]  * 1e9
         df["position_create_time"]= df["position_create_time"].astype('datetime64[ns]')
@@ -184,10 +186,10 @@ _get_asset_data.restype = POINTER(c_float)
 
 """BROKER WRAPPER"""
 _new_broker_ptr = FastTest.CreateBrokerPtr
-_new_broker_ptr.argtypes =[c_void_p, c_bool]
+_new_broker_ptr.argtypes =[c_void_p, c_bool, c_bool]
 _new_broker_ptr.restype = c_void_p
 
-_free_broker_ptr = FastTest.CreateBrokerPtr
+_free_broker_ptr = FastTest.DeleteBrokerPtr
 _free_broker_ptr.argtypes = [c_void_p]
 
 _reset_broker = FastTest.reset_broker
@@ -227,6 +229,10 @@ _broker_get_nlv_history.restype = POINTER(c_float)
 _broker_get_cash_history = FastTest.broker_get_cash_history
 _broker_get_cash_history.argtypes = [c_void_p]
 _broker_get_cash_history.restype = POINTER(c_float)
+
+_broker_get_margin_history = FastTest.broker_get_margin_history
+_broker_get_margin_history.argtypes = [c_void_p]
+_broker_get_margin_history.restype = POINTER(c_float)
 
 _get_order_history = FastTest.get_order_history
 _get_order_history.argtypes = [c_void_p,POINTER(OrderHistoryStruct)]

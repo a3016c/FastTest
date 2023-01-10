@@ -22,6 +22,7 @@ class Agis_Strategy(Strategy):
         self.i = 0
         self.lookahead = 20
         self.position_size = .025
+        self.position_count = 2
         
     def check_positions(self):
         positions = self.broker.get_positions()
@@ -53,24 +54,28 @@ class Agis_Strategy(Strategy):
             #return
         
         nlv = broker.get_nlv()
-        position_size = nlv * self.position_size
-            
+        position_size = (nlv) / (self.position_count * self.lookahead) * .95
+     
         keys = list(predicted_returns.keys())
+        counts = 0
         if _avg_predicted_return > 0:
             for index, asset_name in enumerate(keys):
                 #if self.broker.position_exists(asset_name): continue
                 market_price = self.exchange.get_market_price(asset_name)
                 units = position_size / market_price
                 self.broker.place_market_order(asset_name, units)
-                break
+                counts += 1
+                if counts == self.position_count: break
         
+        counts = 0
         if _avg_predicted_return < 0: 
             for index, asset_name in enumerate(keys[::-1]):
                 #if self.broker.position_exists(asset_name): continue
                 market_price = self.exchange.get_market_price(asset_name)
                 units = -1 * (position_size / market_price)
                 self.broker.place_market_order(asset_name, units)
-                break
+                counts += 1
+                if counts == self.position_count: break
            
     def load(self):
         z = zipfile.ZipFile(self.zip_path)
@@ -112,10 +117,12 @@ if __name__ == "__main__":
     benchmark.load_from_df(df, nano=True)
     ft.register_benchmark(benchmark)
 
-        
     ft.add_strategy(strategy)
     ft.run()
 
+    positions = broker.get_position_history().to_df()
+    positions["asset_id"] = positions["asset_id"].map(exchange.id_map)
+    print(positions)
     strategy.plot(benchmark)
 
     
