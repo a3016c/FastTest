@@ -10,6 +10,13 @@
 #include <string>
 #include <unordered_map>
 
+enum ASSET_TYPE {
+	FOREX,
+	FUTURE,
+	US_EQUITY,
+	INDEX
+};
+
 struct __AssetDataFormat {
 	const char * digit_datetime_format;
 	size_t open_col;
@@ -61,6 +68,7 @@ class __Asset {
 public:
 	 
 	unsigned int asset_id; // unique identifier of the asset
+	ASSET_TYPE asset_type; //type of asset
 	int asset_index; // current position on a asset's datetime index
 	bool streaming = false; //is the asset finished streaming data
 
@@ -104,6 +112,8 @@ public:
 	inline float get(size_t i) {
 		return AM(current_index - 1, i);
 	}
+	//if a column is provided as a string then lookup appropriate column index. Index param is used 
+	//as a row offset when querying the data.
 	inline float get(std::string &s, int index = 0){
 		size_t i = this->headers[s];
 		return AM(this->current_index - 1 + index, i);

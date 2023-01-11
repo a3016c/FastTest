@@ -11,7 +11,7 @@ from FastTest import FastTest
 from helpers import *
 
 class BrokerTestMethods(unittest.TestCase):
-
+    
     def test_broker_load(self):
         exchange = Exchange()
         broker = Broker(exchange)
@@ -26,10 +26,11 @@ class BrokerTestMethods(unittest.TestCase):
         strategy = Strategy(broker, exchange)
         ft.add_strategy(strategy)
         ft.run()
-
+        
     def test_limit_order(self):
-        exchange, broker, ft = setup_multi()
+        exchange, broker, ft = setup_multi(logging=False)
         for j in range(0,2):
+            ft.reset()
             orders = [
                 OrderSchedule(
                     order_type = OrderType.LIMIT_ORDER,
@@ -54,7 +55,7 @@ class BrokerTestMethods(unittest.TestCase):
             
             assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_create_time,"s") == test2_index[2])
             assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_close_time,"s") == test2_index[-1])
-
+    
     def test_limit_sell(self):
         orders = [
                 OrderSchedule(
@@ -236,7 +237,7 @@ class BrokerTestMethods(unittest.TestCase):
         
         assert((broker.get_cash_history()==np.array([100000,  90000,  90000,  95050,  95050,  99850])).all())
         assert((broker.get_nlv_history()==np.array([100000,  99900,  99700, 100125, 100125,  99850])).all())
-
+    
 
 if __name__ == '__main__':
     unittest.main()

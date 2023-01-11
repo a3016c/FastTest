@@ -26,6 +26,7 @@ __FastTest::__FastTest(__Exchange *exchange_ptr, __Broker &brokerObj, bool loggi
 	this->_register_exchange(exchange_ptr);
 }
 void __FastTest::reset() {
+	this->current_index = 0;
 	this->broker.reset();
 	this->filled_orders.clear();
 	this->canceled_orders.clear();
@@ -130,13 +131,19 @@ void build_fastTest(void *fastTest_ptr) {
 bool forward_pass(void *fastTest_ptr){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 
+	if(__fastTest_ref->current_index == __fastTest_ref->epoch_index.size()){
+		return false;
+	}
+
 	bool complete = true;
+	long fasttest_time = __fastTest_ref->epoch_index[__fastTest_ref->current_index];
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
+		if(!exchange->epoch_index[exchange->current_index] == fasttest_time){continue;}
 		if(exchange->_get_market_view()){
 			complete = false;
 		}
 	}
-	if(complete){return false;}
+	__fastTest_ref->current_index++;
 
 	#ifdef MARGIN
 	__fastTest_ref->broker.check_margin();
