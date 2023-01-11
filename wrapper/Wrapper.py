@@ -127,6 +127,9 @@ _new_fastTest_ptr.restype = c_void_p
 _free_fastTest_ptr = FastTest.DeleteFastTestPtr
 _free_fastTest_ptr.argtypes = [c_void_p]
 
+_build_fastTest = FastTest.build_fastTest
+_build_fastTest.argtypes = [c_void_p]
+
 _fastTest_forward_pass = FastTest.forward_pass
 _fastTest_forward_pass.argtypes = [c_void_p]
 _fastTest_forward_pass.restype = c_bool
@@ -139,6 +142,9 @@ _fastTest_reset.argtypes = [c_void_p]
 
 _fastTest_register_benchmark = FastTest.register_benchmark
 _fastTest_register_benchmark.argtypes = [c_void_p, c_void_p]
+
+_fastTest_register_exchange = FastTest.register_exchange
+_fastTest_register_exchange.argtypes = [c_void_p, c_void_p]
 
 _get_benchmark_ptr = FastTest.get_benchmark_ptr
 _get_benchmark_ptr.argtypes = [c_void_p]

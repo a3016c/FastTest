@@ -38,10 +38,14 @@ class FastTest:
         self.exchange.build()
         self.broker.build()
         self.ptr = Wrapper._new_fastTest_ptr(self.exchange_ptr,self.broker_ptr,self.logging)
+        Wrapper._build_fastTest(self.ptr)
         
     def register_benchmark(self, asset : Asset):
         self.benchmark = asset
         Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
+        
+    def register_exchange(self, exchange_ptr):
+        Wrapper._fastTest_register_exchange(self.ptr, exchange_ptr)
         
     def get_benchmark_ptr(self):
         return Wrapper._get_benchmark_ptr(self.ptr)
