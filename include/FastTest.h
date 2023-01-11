@@ -27,6 +27,7 @@ public:
 	__Asset benchmark; 
 
 	bool logging;
+	bool debug;
 	unsigned int step_count = 0;
 
 	std::vector<std::unique_ptr<Order>> filled_orders;
@@ -49,20 +50,12 @@ public:
 	void analyze_step();
 	inline void run();
 
-	__FastTest(__Exchange *exchange, __Broker &broker, Strategy *Strategy, bool logging = false);
-	__FastTest(__Exchange *exchange, __Broker &broker, bool logging = false);
+	__FastTest(__Broker &broker, Strategy *Strategy, bool logging = false, bool debug = false);
+	__FastTest(__Broker &broker, bool logging = false, bool debug = false);
 };
-std::vector<std::unique_ptr<Order>> combine_order_vectors(std::vector<std::unique_ptr<Order>> &v1, std::vector<std::unique_ptr<Order>> &v2) {
-    std::vector<std::unique_ptr<Order>> combined;
-    combined.reserve(v1.size() + v2.size());
-    for(auto& p: v1)
-        combined.push_back(std::move(p));
-    for(auto& p: v2)
-        combined.push_back(std::move(p));
-    return combined;
-}
+
 extern "C" {
-	FAST_API void * CreateFastTestPtr(void *exchange_ptr, void *broker_ptr, bool logging = true);
+	FAST_API void * CreateFastTestPtr(void *broker_ptr, bool logging = true, bool debug = false);
 	FAST_API void DeleteFastTestPtr(void *ptr);
 	FAST_API void reset_fastTest(void *exchange_ptr);
 
@@ -72,7 +65,7 @@ extern "C" {
 	FAST_API void backward_pass(void* fastTest_ptr);
 
 	FAST_API void register_benchmark(void* fastTest_ptr, void *asset_ptr);
-	FAST_API void register_exchange(void* fastTest_ptr, void *asset_ptr);
+	FAST_API void register_exchange(void* fastTest_ptr, void *asset_ptr, unsigned int exchange_id);
 	FAST_API void * get_benchmark_ptr(void* fastTest_ptr);
 
 }

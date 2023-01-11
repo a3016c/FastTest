@@ -21,6 +21,8 @@ class __Exchange
 {
 public:
 
+	unsigned int exchange_id /**<unique id of the exchange*/; 
+
 	bool logging; /**<wether or not to log events*/
 	char time[28]{}; /**<char array used for datetimes of log events*/
 

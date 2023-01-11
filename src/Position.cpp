@@ -22,12 +22,13 @@ void Position::to_struct(PositionStruct &position_struct){
 	position_struct.unrealized_pl = this->unrealized_pl;
 }
 
-Position::Position(unsigned int position_id, unsigned int asset_id, float units, float average_price, timeval position_create_time) {
+Position::Position(unsigned int position_id, unsigned int asset_id, float units, float average_price, timeval position_create_time, unsigned int exchange_id) {
 	this->position_id = position_id;
 	this->asset_id = asset_id;
 	this->position_create_time = position_create_time;
 	this->units = units;
 	this->average_price = average_price;
+	this->exchange_id = exchange_id;
 }
 void Position::increase(float market_price, float _units) {
 	float new_units = abs(this->units) + abs(_units);

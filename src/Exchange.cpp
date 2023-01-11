@@ -15,6 +15,7 @@
 #include "utils_time.h"
 
 void __Exchange::register_asset(__Asset new_asset) {
+	new_asset.exchange_id = this->exchange_id;
 	this->market.insert({ new_asset.asset_id, new_asset });
 	this->asset_counter++;
 }
@@ -89,6 +90,7 @@ bool __Exchange::_get_market_view() {
 	return true;
 }
 std::vector<std::unique_ptr<Order>> __Exchange::clean_up_market() {
+
 	std::vector<std::unique_ptr<Order>> cleared_orders;
 	if (this->asset_remove.empty()) {
 		return cleared_orders;

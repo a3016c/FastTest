@@ -6,22 +6,27 @@ import numpy as np
 import pandas as pd
 from numba import njit, jit
 
-from Exchange import Exchange, Asset
+
+from Exchange import Exchange, Asset, g_asset_counter
 from Broker import Broker
 from Strategy import Strategy, BenchMarkStrategy, TestStrategy
 from Order import OrderSchedule, OrderType
 import Wrapper
 
 class FastTest:
-    def __init__(self, exchange : Exchange, broker : Broker, logging = False) -> None:
+    def __init__(self, broker : Broker, logging = False, debug = False) -> None:
         self.logging = logging
-        self.exchange = exchange
-        self.exchange_ptr = exchange.ptr
+        self.debug = debug
+        self.exchange_counter = 0
         self.broker = broker
         self.broker_ptr = broker.ptr
         self.benchmark = None
         self.strategies = np.array([], dtype="O")
-
+        
+        g_asset_counter = 0 
+        
+        self.ptr = Wrapper._new_fastTest_ptr(self.broker_ptr,self.logging,self.debug)
+        
     def __del__(self):
         try:
             Wrapper._free_fastTest_ptr(self.ptr)
@@ -35,24 +40,23 @@ class FastTest:
         Wrapper._fastTest_reset(self.ptr)
 
     def build(self):
-        self.exchange.build()
-        self.broker.build()
-        self.ptr = Wrapper._new_fastTest_ptr(self.exchange_ptr,self.broker_ptr,self.logging)
         Wrapper._build_fastTest(self.ptr)
+        self.broker.build()
         
     def register_benchmark(self, asset : Asset):
         self.benchmark = asset
         Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
         
-    def register_exchange(self, exchange_ptr):
-        Wrapper._fastTest_register_exchange(self.ptr, exchange_ptr)
+    def register_exchange(self, exchange : Exchange, register = True):
+        exchange.exchange_id = self.exchange_counter
+        self.exchange_counter += 1
+        if register: Wrapper._fastTest_register_exchange(self.ptr, exchange.ptr, exchange.exchange_id)
         
     def get_benchmark_ptr(self):
         return Wrapper._get_benchmark_ptr(self.ptr)
     
     def add_strategy(self, strategy : Strategy):
         strategy.broker_ptr = self.broker_ptr
-        strategy.exchange_ptr = self.exchange_ptr
         self.strategies = np.append(self.strategies,(strategy))
 
     def run(self):
@@ -84,7 +88,7 @@ def test_speed():
     ft = FastTest(exchange, broker)
     
     n = 200000
-    n_assets = 20
+    n_assets = 40
     
     o = np.arange(0,10,step = 10/n).astype(np.float32)
     c = (np.arange(0,10,step = 10/n) + .001).astype(np.float32)

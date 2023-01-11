@@ -67,10 +67,11 @@ public:
 	bool alive = false;
 
 
-	float units;			//number of units to buy/sell
-	float fill_price;		//price the order was filled at
-	unsigned int order_id;  //unique identifier for the order
-	unsigned int asset_id; //underlying asset for the order
+	float units;			  //number of units to buy/sell
+	float fill_price;		  //price the order was filled at
+	unsigned int order_id;    //unique identifier for the order
+	unsigned int asset_id;    //underlying asset for the order
+	unsigned int exchange_id; //id of the exchange the order was placed on
 
 
 	timeval order_create_time; //the time the order was placed on the exchange
@@ -85,11 +86,12 @@ public:
 
 	void to_struct(OrderStruct &order_struct);
 
-	Order(OrderType _OrderType, unsigned int asset_id, float units, bool cheat_on_close = false) {
+	Order(OrderType _OrderType, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0) {
 		this->order_type = _OrderType;
 		this->asset_id = asset_id;
 		this->units = units;
 		this->cheat_on_close = cheat_on_close;
+		this->exchange_id = exchange_id;
 	}
 	Order() = default;
 	virtual ~Order() {};
@@ -108,16 +110,16 @@ void order_ptr_to_struct(std::unique_ptr<Order> &open_order, OrderStruct &order_
 class MarketOrder : public Order
 {
 public:
-	MarketOrder(unsigned int asset_id, float units, bool cheat_on_close = false)
-		: Order(MARKET_ORDER, asset_id, units, cheat_on_close)
+	MarketOrder(unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0)
+		: Order(MARKET_ORDER, asset_id, units, cheat_on_close, exchange_id)
 	{}
 };
 class LimitOrder : public Order
 {
 public:
 	float limit;
-	LimitOrder(unsigned int asset_id, float units, float limit, bool cheat_on_close = false)
-		: Order(LIMIT_ORDER, asset_id, units, cheat_on_close) {
+	LimitOrder(unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0)
+		: Order(LIMIT_ORDER, asset_id, units, cheat_on_close, exchange_id) {
 		this->limit = limit;
 	}
 };
@@ -133,8 +135,8 @@ class StopLossOrder : public Order
 public:
 	OrderParent order_parent;
 	float stop_loss;
-	StopLossOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false)
-		: Order(STOP_LOSS_ORDER, parent_order->asset_id, units, cheat_on_close) {
+	StopLossOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0)
+		: Order(STOP_LOSS_ORDER, parent_order->asset_id, units, cheat_on_close, exchange_id) {
 		this->order_parent.member.parent_order = parent_order;
 		this->order_parent.type = ORDER;
 		this->stop_loss = stop_loss;

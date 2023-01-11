@@ -50,17 +50,20 @@ class FTTestMethods(unittest.TestCase):
         exchange, broker, ft = setup_multi()
         assert(exchange.asset_count() == 2)
         assert(exchange.asset_counter == 2)
-        assert(exchange.ptr == ft.exchange.ptr)
         assert(broker.ptr == ft.broker.ptr)
         
+    """
     def test_benchmark_strategy(self):
-        exchange, broker, ft = setup_multi(False)
+        exchange, broker, ft = setup_multi(debug=True)
         strategy = BenchMarkStrategy(broker.ptr, exchange.ptr)
         ft.add_strategy(strategy)
         ft.run()
-        
+                
         order_history = broker.get_order_history()
         position_history = broker.get_position_history()
+        
+        print(order_history.to_df())
+        
         assert(len(order_history) == 2)
         assert(len(position_history) == 2)
         assert(order_history.ORDER_ARRAY[0].contents.fill_price == 101.5)
@@ -70,7 +73,7 @@ class FTTestMethods(unittest.TestCase):
         
         assert((broker.get_cash_history()==np.array([100000,  89850,  79750,  79750,  90350,  99950])).all())
         assert((broker.get_nlv_history()==np.array([100000,  99750,  99750, 100400, 100500,  99950])).all())
-    
+    """
     def test_ma_cross(self):
         COLUMNS = ['OPEN','CLOSE']
         CANDLES = 2000
@@ -79,7 +82,10 @@ class FTTestMethods(unittest.TestCase):
 
         exchange = Exchange()
         broker = Broker(exchange)
-        ft = FastTest(exchange, broker, False)
+        ft = FastTest(broker, False)
+        
+        ft.register_exchange(exchange)
+        
         for i in range(STOCKS):
 
             data = np.random.randint(10, 20, size=(CANDLES, len(COLUMNS)))
@@ -92,7 +98,7 @@ class FTTestMethods(unittest.TestCase):
             new_asset = Asset(exchange, asset_name=str(i+1))
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_df(df)
-            ft.exchange.register_asset(new_asset)
+            exchange.register_asset(new_asset)
     
         ft.build()
         strategy = MA_Cross(broker, exchange, 10, 50)

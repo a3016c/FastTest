@@ -23,7 +23,12 @@ class OrderSchedule():
         self.units = kwargs["units"]
         self.limit = kwargs.get("limit")
         self.cheat_on_close = kwargs.get("cheat_on_close") if kwargs.get("cheat_on_close") != None else False
-
+        
+        if kwargs.get("exchange_name") == None:
+            self.exchange_name = "default"
+        else:
+            self.exchange_name = kwargs.get("exchange_name")
+            
 class Order():
     def __init__(self, order_ptr : ctypes.c_void_p) -> None:
         self.ptr = order_ptr

@@ -6,24 +6,24 @@
 #endif 
 #include <unordered_set>
 #include <algorithm>
+#include <chrono>
+#include "utils_vector.h"
 #include "Order.h"
 #include "Position.h"
 #include "Asset.h"
 #include "Exchange.h"
 #include "Broker.h"
 #include "FastTest.h"
-#include <chrono>
 
-
-__FastTest::__FastTest(__Exchange *exchange_ptr, __Broker &brokerObj, Strategy *StrategyObj, bool logging) :
+__FastTest::__FastTest(__Broker &brokerObj, Strategy *StrategyObj, bool logging, bool debug) :
 	broker(brokerObj), strategy(StrategyObj){
 	this->logging = logging;
-	this->_register_exchange(exchange_ptr);
+	this->debug = debug;
 }
-__FastTest::__FastTest(__Exchange *exchange_ptr, __Broker &brokerObj, bool logging) :
+__FastTest::__FastTest(__Broker &brokerObj, bool logging, bool debug) :
 	broker(brokerObj) {
 	this->logging = logging;
-	this->_register_exchange(exchange_ptr);
+	this->debug = debug;
 }
 void __FastTest::reset() {
 	this->current_index = 0;
@@ -36,24 +36,18 @@ void __FastTest::reset() {
 	}
 }
 
-std::vector<long> getUnion(std::vector<long> &v1, std::vector<long> &v2) {
-    std::vector<long> unionVec;
-    std::unordered_set<long> s;
-    // Insert all elements of first vector 
-    for (auto &i : v1) {
-        s.insert(i);
-    }
-
-    // Insert all elements of second vector
-    for (auto &i : v2) {
-        s.insert(i);
-    }
-    unionVec.insert(unionVec.end(),s.begin(),s.end());
-	sort(unionVec.begin(),unionVec.end());
-    return unionVec;
-}
-
 void __FastTest::build(){
+	if(this->debug){
+		printf("BUILDING FASTTEST \n");
+	}
+
+	this->broker.debug = this->debug;
+
+	for(auto const & pair : this->broker.exchanges){
+		__Exchange *exchange = pair.second;
+		exchange->build();
+	}
+
 	this->epoch_index = this->__exchanges[0]->epoch_index;
 	if(this->__exchanges.size() > 1){
 		for(int i = 1; i < this->__exchanges.size(); i++){
@@ -109,11 +103,11 @@ void __FastTest::run() {
 	}
 	*/
 }
-void * CreateFastTestPtr(void *exchange_ptr, void *broker_ptr, bool logging) {
-	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+void * CreateFastTestPtr(void *broker_ptr, bool logging, bool debug) {
 	__Broker *__broker_ref = static_cast<__Broker *>(broker_ptr);
-	__FastTest* fastTest_ptr = new __FastTest(__exchange_ref,*__broker_ref, logging);
+	__FastTest* fastTest_ptr = new __FastTest(*__broker_ref, logging, debug);
 	fastTest_ptr->broker.logging = logging;
+	fastTest_ptr->broker.debug = debug;
 	return fastTest_ptr;
 }
 void DeleteFastTestPtr(void *ptr){
@@ -131,14 +125,23 @@ void build_fastTest(void *fastTest_ptr) {
 bool forward_pass(void *fastTest_ptr){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 
+	if(__fastTest_ref->debug){
+		printf("ENTERING FORWARD PASS\n");
+	}
+
 	if(__fastTest_ref->current_index == __fastTest_ref->epoch_index.size()){
 		return false;
 	}
 
 	bool complete = true;
 	long fasttest_time = __fastTest_ref->epoch_index[__fastTest_ref->current_index];
+	
+	if(__fastTest_ref->debug){
+		printf("TIME: %ld\n", fasttest_time);
+	}
+
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
-		if(!exchange->epoch_index[exchange->current_index] == fasttest_time){continue;}
+		if(!(exchange->epoch_index[exchange->current_index] == fasttest_time)){continue;}
 		if(exchange->_get_market_view()){
 			complete = false;
 		}
@@ -156,10 +159,19 @@ bool forward_pass(void *fastTest_ptr){
 			__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
 		}
 	}
+
+	if(__fastTest_ref->debug){
+		printf("EXITING FORWARD PASS\n");
+	}
+
 	return true;
 }
 void backward_pass(void * fastTest_ptr) {
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+
+	if(__fastTest_ref->debug){
+		printf("ENTERING BACKWARD PASS\n");
+	}
 
 	//evaluate the portfolio
 	__fastTest_ref->broker.evaluate_portfolio(true);
@@ -187,7 +199,12 @@ void backward_pass(void * fastTest_ptr) {
 			__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
 		}
 	}
+
 	__fastTest_ref->step_count++;
+
+	if(__fastTest_ref->debug){
+		printf("EXITING BACKWARD PASS\n\n\n");
+	}
 }
 void register_benchmark(void* fastTest_ptr, void *asset_ptr){
 	__Asset * __asset_ref = static_cast<__Asset *>(asset_ptr);
@@ -195,9 +212,10 @@ void register_benchmark(void* fastTest_ptr, void *asset_ptr){
 	__fastTest_ref->_register_benchmark(*__asset_ref);
 }
 
-void register_exchange(void * fastTest_ptr, void *exchange_ptr){
+void register_exchange(void * fastTest_ptr, void *exchange_ptr, unsigned int exchange_id){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	__exchange_ref->exchange_id = exchange_id;
 	__fastTest_ref->_register_exchange(__exchange_ref);
 }
 

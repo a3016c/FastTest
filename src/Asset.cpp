@@ -115,8 +115,14 @@ void __Asset::print_data()
 		}
 	}
 }
-void * CreateAssetPtr(unsigned int asset_id){
-	return new __Asset(asset_id);
+void * CreateAssetPtr(unsigned int asset_id, unsigned int exchange_id){
+	 __AssetDataFormat format = __AssetDataFormat();
+	return new __Asset(
+		asset_id, 
+		format,
+		0,
+		exchange_id
+	);
 }
 void DeleteAssetPtr(void *ptr){
 	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);

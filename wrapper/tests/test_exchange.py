@@ -15,17 +15,20 @@ class ExchangeTestMethods(unittest.TestCase):
     def test_exchange_build(self):
         exchange = Exchange()
         broker = Broker(exchange)
-        ft = FastTest(exchange, broker)
+        ft = FastTest(broker)
+        
+        ft.register_exchange(exchange)
+        
         for i in range (0,6):
             new_asset = Asset(exchange, asset_name=str(i))
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_csv(file_name_2)
-            ft.exchange.register_asset(new_asset)
+            exchange.register_asset(new_asset)
 
         ft.build()
-        assert(list(ft.exchange.asset_map.keys()) == ['0', '1', '2', '3', '4', '5'])
+        assert(list(exchange.asset_map.keys()) == ['0', '1', '2', '3', '4', '5'])
         for i in range(0,6):
-            asset_data = ft.exchange.get_asset_data(str(i))
+            asset_data = exchange.get_asset_data(str(i))
             assert((asset_data[:,0] == test2_open).all())
             assert((asset_data[:,1] == test2_close).all())
 

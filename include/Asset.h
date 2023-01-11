@@ -72,7 +72,7 @@ public:
 	int asset_index; // current position on a asset's datetime index
 	bool streaming = false; //is the asset finished streaming data
 
-	__Asset* benchmark; 
+	unsigned int exchange_id; //the id of the exchange the asset is listed on
 
 	__AssetDataFormat format; //define the format of the asset
 	const char *digit_datetime_format; //the digit sequence used to parse datetime index
@@ -122,18 +122,21 @@ public:
 		return this->datetime_index[this->current_index];
 	}
 
-	__Asset(unsigned int asset_id, __AssetDataFormat format = __AssetDataFormat(), unsigned int minimum_warmup = 0) {
+	__Asset(unsigned int asset_id, __AssetDataFormat format = __AssetDataFormat(), 
+									unsigned int minimum_warmup = 0, 
+									unsigned int exchange_id = 0) {
 		this->asset_id = asset_id;
 		this->minimum_warmup = minimum_warmup;
 		this->digit_datetime_format = format.digit_datetime_format;
 		this->open_col = format.open_col;
 		this->close_col = format.close_col;
 		this->format = format;
+		this->exchange_id = exchange_id;
 	}
 	__Asset() = default;
 };
 extern "C" {
-	ASSET_API void * CreateAssetPtr(unsigned int asset_id);
+	ASSET_API void * CreateAssetPtr(unsigned int asset_id, unsigned int exchange_id = 0);
 	ASSET_API void DeleteAssetPtr(void *ptr);
 	ASSET_API int TestAssetPtr(void *ptr);
 	ASSET_API bool AssetCompare(void *asset_ptr1, void *asset_ptr2);

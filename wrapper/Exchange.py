@@ -4,11 +4,16 @@ import Wrapper
 import numpy as np
 import pandas as pd
 
+global g_asset_counter 
+g_asset_counter = 0
 
 class Exchange():
-    def __init__(self, logging = False) -> None:
+    def __init__(self, logging = False, exchange_name = "default") -> None:
+        self.exchange_name = exchange_name
+        self.exchange_id = None
         self.ptr = Wrapper._new_exchange_ptr(logging)
         self.asset_map = {}
+        self.id_map = {}
         self.asset_counter = 0
 
     def __del__(self):
@@ -18,12 +23,12 @@ class Exchange():
         Wrapper._reset_exchange(self.ptr)
 
     def register_asset(self, asset):
-        self.asset_map[asset.asset_name] = self.asset_counter
-        Wrapper._register_asset(asset.ptr, self.ptr)
+        self.asset_map[asset.asset_name] = asset.asset_id
+        self.id_map[asset.asset_id] = asset.asset_name
         self.asset_counter += 1
+        Wrapper._register_asset(asset.ptr, self.ptr)
 
     def build(self):
-        self.id_map = {v: k for k, v in self.asset_map.items()}
         Wrapper._build_exchange(self.ptr)
         
     def get_exchange_index_length(self):
@@ -66,7 +71,10 @@ class Exchange():
 class Asset():
     def __init__(self, exchange : Exchange, asset_name : str) -> None:
         self.asset_name = asset_name
-        self.ptr = Wrapper._new_asset_ptr(exchange.asset_counter)
+        global g_asset_counter
+        self.asset_id = g_asset_counter
+        g_asset_counter += 1
+        self.ptr = Wrapper._new_asset_ptr(self.asset_id, exchange.exchange_id)
 
     def __del__(self):
         Wrapper._free_asset_ptr(self.ptr)

@@ -42,6 +42,7 @@ public:
 
 	unsigned int position_id;
 	unsigned int asset_id;
+	unsigned int exchange_id;
 	timeval position_create_time;
 	timeval position_close_time;
 
@@ -55,7 +56,7 @@ public:
 
 	void to_struct(PositionStruct &position_struct);
 
-	Position(unsigned int position_id, unsigned int asset_id, float units, float average_price, timeval position_create_time);
+	Position(unsigned int position_id, unsigned int asset_id, float units, float average_price, timeval position_create_time, unsigned int exchange_id);
 	Position() = default;
 
 	inline void evaluate(float market_price) noexcept {

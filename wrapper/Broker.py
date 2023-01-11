@@ -7,18 +7,25 @@ from Exchange import Exchange, Asset
 from Order import OrderState
 
 class Broker():
-    def __init__(self, exchange : Exchange, logging = True, margin = False) -> None:
-        self.exchange = exchange 
+    def __init__(self, exchange : Exchange, logging = True, margin = False, debug = False) -> None:
+        self.exchange_map = {exchange.exchange_name : exchange} 
         self.logging = logging 
+        self.debug = debug
         self.margin = margin
-        self.ptr = Wrapper._new_broker_ptr(exchange.ptr, logging, margin)
+        self.ptr = Wrapper._new_broker_ptr(exchange.ptr, logging, margin, debug)
 
     def __del__(self):
         Wrapper._free_broker_ptr(self.ptr)
         
     def build(self):
         Wrapper._build_broker(self.ptr)
-
+        
+    def register_exchange(self, exchange : Exchange):
+        if(exchange.exchange_id == None):
+            raise Exception("broker not registered to FastTest")
+        self.exchange_map[exchange.exchange_name] = exchange
+        Wrapper._broker_register_exchange(self.ptr, exchange.ptr)
+        
     def get_order_count(self):
         return Wrapper._get_order_count(self.ptr)
         
@@ -86,31 +93,44 @@ class Broker():
         Wrapper._get_position_history(self.ptr, order_struct_pointer)
         return position_history
 
-    def place_market_order(self, asset_name : str, units : float, cheat_on_close = False):
-        asset_id = self.exchange.asset_map[asset_name]
+    def place_market_order(self, asset_name : str, units : float, cheat_on_close = False, exchange_name = "default"):
+        exchange = self.exchange_map[exchange_name]
+        exchange_id = exchange.exchange_id
+        asset_id = exchange.asset_map[asset_name]
+        
         return OrderState(Wrapper._place_market_order(
             self.ptr,
             asset_id,
             units,
-            cheat_on_close
+            cheat_on_close,
+            exchange_id
             )
         )
         
-    def place_limit_order(self, asset_name : str, units : float, limit : float, cheat_on_close = False):
-        asset_id = self.exchange.asset_map[asset_name]
+    def place_limit_order(self, asset_name : str, units : float, limit : float, cheat_on_close = False, exchange_name = "default"):
+        exchange = self.exchange_map[exchange_name]
+        exchange_id = exchange.exchange_id
+        asset_id = exchange.asset_map[asset_name]
+
         return OrderState(Wrapper._place_limit_order(
             self.ptr,
             asset_id,
             units,
             limit,
-            cheat_on_close
+            cheat_on_close,
+            exchange_id
             )
         )
         
-    def place_stoploss_order(self, units : float, stop_loss : float, asset_name = None, order_id = None, cheat_on_close = False):
+    def place_stoploss_order(self, units : float, stop_loss : float, asset_name = None, order_id = None, cheat_on_close = False, exchange_name = "default"):
+
         if asset_name != None:
-            asset_id = self.exchange.asset_map[asset_name]
+            
+            exchange = self.exchange_map[exchange_name]
+            exchange_id = exchange.exchange_id
+            asset_id = exchange.asset_map[asset_name]
             position_ptr = Wrapper._get_position_ptr(self.ptr, asset_id)
+            
             return OrderState(Wrapper._position_place_stoploss_order(
                 self.ptr,
                 position_ptr,

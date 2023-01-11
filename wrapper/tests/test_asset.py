@@ -6,12 +6,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.
 import numpy as np
 from Exchange import Exchange, Asset
 from helpers import *
-import FastTest
+from FastTest import FastTest
 
 class AssetTestMethods(unittest.TestCase):
 
     def test_asset_load_csv(self):
         exchange = Exchange()
+        broker = Broker(exchange)
+        ft = FastTest(broker)
+        
+        ft.register_exchange(exchange) 
         new_asset = Asset(exchange, asset_name="test1")
         new_asset.set_format("%d-%d-%d", 0, 1)
         new_asset.load_from_csv(file_name_1)
@@ -19,6 +23,11 @@ class AssetTestMethods(unittest.TestCase):
         
     def test_asset_load_df(self):
         exchange = Exchange()
+        broker = Broker(exchange)
+        ft = FastTest(broker)
+        
+        ft.register_exchange(exchange) 
+    
         for index, df in enumerate([df1,df2]):
             new_asset = Asset(exchange, asset_name="test1")
             new_asset.set_format("%d-%d-%d", 0, 1)
@@ -40,6 +49,10 @@ class AssetTestMethods(unittest.TestCase):
 
     def test_asset_datetime_index(self):
         exchange = Exchange()
+        broker = Broker(exchange)
+        ft = FastTest(broker)
+        
+        ft.register_exchange(exchange) 
         for index, file_name in enumerate([file_name_1,file_name_2]):
             new_asset = Asset(exchange, asset_name="test1")
             new_asset.set_format("%d-%d-%d", 0, 1)
@@ -54,6 +67,10 @@ class AssetTestMethods(unittest.TestCase):
 
     def test_asset_data(self):
         exchange = Exchange()
+        broker = Broker(exchange)
+        ft = FastTest(broker)
+        
+        ft.register_exchange(exchange) 
         for index, file_name in enumerate([file_name_1,file_name_2]):
             new_asset = Asset(exchange, asset_name="test1")
             new_asset.set_format("%d-%d-%d", 0, 1)

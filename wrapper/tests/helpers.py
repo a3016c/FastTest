@@ -28,28 +28,65 @@ df2 = pd.DataFrame(index = get_unix_time(test2_index),data = np.vstack((test2_op
 def setup_simple(logging = False):
     exchange = Exchange()
     broker = Broker(exchange)
-    ft = FastTest(exchange, broker, logging=logging)
+    ft = FastTest(broker, logging=logging)
+    
+    ft.register_exchange(exchange)
 
     new_asset = Asset(exchange, asset_name="1")
     new_asset.set_format("%d-%d-%d", 0, 1)
     new_asset.load_from_csv(file_name_2)
-    ft.exchange.register_asset(new_asset)
+    
+    exchange.register_asset(new_asset)
+    
 
     ft.build()
     return exchange, broker, ft
 
-def setup_multi(logging = False, margin = False):
+def setup_multi(logging = False, margin = False, debug = False):
     exchange = Exchange()
-    broker = Broker(exchange,logging=logging, margin=margin)
-    ft = FastTest(exchange, broker, logging)
+    broker = Broker(exchange,logging=logging, margin=margin, debug=debug)
+    ft = FastTest(broker, logging=logging, debug=debug)
+    
+    ft.register_exchange(exchange)
 
     for i, file_name in enumerate([file_name_1,file_name_2]):
         new_asset = Asset(exchange, asset_name=str(i+1))
         new_asset.set_format("%d-%d-%d", 0, 1)
         new_asset.load_from_csv(file_name)
-        ft.exchange.register_asset(new_asset)
-
+        exchange.register_asset(new_asset)
+        
     ft.build()
+    
     return exchange, broker, ft
+
+def setup_multi_exchange(logging = False, margin = False, debug = False):
+    exchange1 = Exchange(exchange_name="exchange1")
+    exchange2 = Exchange(exchange_name="exchange2")
+    broker = Broker(exchange1,logging=logging, margin=margin)
+    ft = FastTest(broker, logging, debug)
+    
+    ft.register_exchange(exchange1) 
+    ft.register_exchange(exchange2)
+
+    new_asset1 = Asset(exchange1, asset_name=str(1))
+    new_asset2 = Asset(exchange2, asset_name=str(2))
+
+    new_asset1.set_format("%d-%d-%d", 0, 1)
+    new_asset1.load_from_csv(file_name_1)
+    
+    new_asset2.set_format("%d-%d-%d", 0, 1)
+    new_asset2.load_from_csv(file_name_2)
+    
+    exchange1.register_asset(new_asset1)
+    exchange2.register_asset(new_asset2)
+       
+
+    broker.register_exchange(exchange2)
+    
+    ft.build()
+        
+    return broker, ft
+
+
 
 

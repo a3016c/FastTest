@@ -2,6 +2,7 @@
 /src/__pycache__
 /src/wrapper/__pycache__
 /src/wrapper/.vscode
+/src/wrapper/scripts
 /build
 /notebooks
 /env

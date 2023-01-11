@@ -66,6 +66,7 @@ public:
 	std::vector<std::unique_ptr<Order>> order_history;
 	std::vector<Position> position_history;
 
+	unsigned int current_index = 0;
 	std::vector<float> cash_history;
 	std::vector<float> nlv_history;
 	std::vector<float> margin_history;
@@ -83,7 +84,8 @@ public:
 	float margin_req = REG_T_REQ;
 	float short_margin_req = REG_T_SHORT_REQ;
 
-	__Exchange &__exchange;
+	//exchanges visable to the broker;
+	std::unordered_map<unsigned int, __Exchange*> exchanges;
 
 	//counters to keep track of the IDs for orders and positions
 	unsigned int position_counter = 1;
@@ -109,16 +111,20 @@ public:
 	//logging functions
 	char time[28]{};
 	bool logging;
+	bool debug;
 	void log_open_position(Position &position);
 	void log_close_position(Position &position);
 
+	//functions for managing which exchanges are visable to the broker
+	void broker_register_exchange(__Exchange* exchange_ptr);
+
 	//functions for managing orders on the exchange
 	OrderState send_order(std::unique_ptr<Order> new_order);
-	bool cancel_order(std::unique_ptr<Order>& order_cancel);
+	bool cancel_order(std::unique_ptr<Order>& order_cancel, unsigned int exchange_id = 0);
 	void log_canceled_orders(std::vector<std::unique_ptr<Order>> cleared_orders);
 	bool cancel_orders(unsigned int asset_id);
 	void clear_child_orders(Position& existing_position);
-	std::deque<std::unique_ptr<Order>>& open_orders();
+	std::deque<std::unique_ptr<Order>>& open_orders(unsigned int exchange_id = 0);
 	void process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled);
 
 	//functions for order management
@@ -135,25 +141,37 @@ public:
 	#endif
 
 	//order wrapers exposed to strategy
-	OrderState _place_market_order(unsigned int asset_id, float units, bool cheat_on_close = false);
-	OrderState _place_limit_order(unsigned int asset_id, float units, float limit, bool cheat_on_close = false);
+	OrderState _place_market_order(unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0);
+	OrderState _place_limit_order(unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
 	bool _position_exists(unsigned int asset_id);
 	
 	inline void evaluate_portfolio(bool on_close = false) noexcept {
+
 		float nlv = 0;
 		float collateral = 0;
 		float margin_req_mid;
 		unsigned int asset_id;
 		float market_price;
 
+		__Exchange *exchange;
+
+		if(this->debug){
+			printf("EVALUATING PORTFOLIO\n");
+		}
+
 		for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
 			//update portfolio net liquidation value
+
 			asset_id = it->first;
 			Position& position =  it->second;
-			market_price = this->__exchange._get_market_price(asset_id, on_close);
+
+			unsigned int exchange_id = position.exchange_id;
+			exchange = this->exchanges[exchange_id];
+			market_price = exchange->_get_market_price(asset_id, on_close);
+
 
 			//if no market price is available at the time then position cannot be evaluated
 			if(market_price == NAN){
@@ -162,7 +180,7 @@ public:
 
 			//check to see if the underlying asset of the position has finished streaming
 			//if so we have to close the current position on close of the current step
-			if (this->__exchange.market[asset_id].is_last_view()) {
+			if (exchange->market[asset_id].is_last_view()) {
 				if(this->margin){
 					if(position.units < 0){
 						margin_req_mid = this->short_margin_req;
@@ -181,7 +199,7 @@ public:
 					}
 					position.collateral = new_collateral;
 				}
-				this->close_position(this->portfolio[asset_id], market_price, this->__exchange.current_time);
+				this->close_position(this->portfolio[asset_id], market_price, exchange->current_time);
 				it = this->portfolio.erase(it);
 			}
 			else {
@@ -216,11 +234,17 @@ public:
 			}
 		}
 		this->net_liquidation_value = nlv + this->cash - collateral;
+
+		if(this->debug){
+			printf("FINISHED PORTFOLIO EVALUATION\n");
+		}
 	}
 
-	__Broker(__Exchange &exchangeObj, bool logging = false, bool margin = false) : __exchange(exchangeObj) {
+	__Broker(__Exchange *exchange_ptr, bool logging = false, bool margin = false, bool debug = false) {
+		this->exchanges[exchange_ptr->exchange_id] = exchange_ptr;
 		this->logging = logging;
 		this->margin = margin;
+		this->debug = debug;
 	};
 
 	template <class T>
@@ -249,10 +273,12 @@ private:
 };
 
 extern "C" {
-	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true, bool margin = false);
+	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true, bool margin = false, bool debug = false);
 	BROKER_API void DeleteBrokerPtr(void *ptr);
 	BROKER_API void reset_broker(void *broker_ptr);
 	BROKER_API void build_broker(void *broker_ptr);
+
+	BROKER_API void broker_register_exchange(void *broker_ptr, void *exchange_ptr);
 
 	BROKER_API size_t broker_get_history_length(void *broker_ptr);
 	BROKER_API float* broker_get_nlv_history(void *broker_ptr);
@@ -269,17 +295,17 @@ extern "C" {
 	BROKER_API void get_positions(void *broker_ptr, PositionArray *positions);
 	BROKER_API void get_position(void *broker_ptr, unsigned int asset_id, PositionStruct *position);
 	BROKER_API void * get_position_ptr(void *broker_ptr, unsigned int asset_id);
-	BROKER_API void get_orders(void *broker_ptr, OrderArray *orders);
+	BROKER_API void get_orders(void *broker_ptr, OrderArray *orders, unsigned int exchange_id = 0);
 
 	BROKER_API float get_cash(void *broker_ptr);
 	BROKER_API float get_unrealied_pl(void *broker_ptr);
 	BROKER_API float get_realied_pl(void *broker_ptr);
 	BROKER_API float get_nlv(void *broker_ptr);
 
-	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false);
-	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false);
+	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0);
+	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0);
 	BROKER_API OrderState position_add_stoploss(void *broker_ptr, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false);
-	BROKER_API OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false);
+	BROKER_API OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0);
 
 }
 

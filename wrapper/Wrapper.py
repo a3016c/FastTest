@@ -121,7 +121,7 @@ class PositionArrayStruct(Structure):
 
 """FastTest wrapper"""
 _new_fastTest_ptr = FastTest.CreateFastTestPtr
-_new_fastTest_ptr.argtypes = [c_void_p, c_void_p, c_bool]
+_new_fastTest_ptr.argtypes = [c_void_p, c_bool, c_bool]
 _new_fastTest_ptr.restype = c_void_p
 
 _free_fastTest_ptr = FastTest.DeleteFastTestPtr
@@ -144,7 +144,7 @@ _fastTest_register_benchmark = FastTest.register_benchmark
 _fastTest_register_benchmark.argtypes = [c_void_p, c_void_p]
 
 _fastTest_register_exchange = FastTest.register_exchange
-_fastTest_register_exchange.argtypes = [c_void_p, c_void_p]
+_fastTest_register_exchange.argtypes = [c_void_p, c_void_p, c_uint]
 
 _get_benchmark_ptr = FastTest.get_benchmark_ptr
 _get_benchmark_ptr.argtypes = [c_void_p]
@@ -160,7 +160,7 @@ _rows.argtypes = [c_void_p]
 _rows.restype = c_size_t
 
 _new_asset_ptr = FastTest.CreateAssetPtr
-_new_asset_ptr.argtypes = [c_uint]
+_new_asset_ptr.argtypes = [c_uint, c_uint]
 _new_asset_ptr.restype = c_void_p
 
 _free_asset_ptr = FastTest.DeleteAssetPtr
@@ -192,7 +192,7 @@ _get_asset_data.restype = POINTER(c_float)
 
 """BROKER WRAPPER"""
 _new_broker_ptr = FastTest.CreateBrokerPtr
-_new_broker_ptr.argtypes =[c_void_p, c_bool, c_bool]
+_new_broker_ptr.argtypes =[c_void_p, c_bool, c_bool, c_bool]
 _new_broker_ptr.restype = c_void_p
 
 _free_broker_ptr = FastTest.DeleteBrokerPtr
@@ -203,6 +203,9 @@ _reset_broker.argtypes = [c_void_p]
 
 _build_broker = FastTest.build_broker
 _build_broker.argtypes = [c_void_p]
+
+_broker_register_exchange = FastTest.broker_register_exchange
+_broker_register_exchange.argtypes = [c_void_p, c_void_p]
 
 _get_order_count = FastTest.get_order_count
 _get_order_count.argtypes = [c_void_p]
@@ -251,11 +254,11 @@ _get_position_history = FastTest.get_position_history
 _get_position_history.argtypes = [c_void_p,POINTER(PositionArrayStruct)]
 
 _place_market_order = FastTest.place_market_order
-_place_market_order.argtypes = [c_void_p, c_uint, c_float, c_bool]
+_place_market_order.argtypes = [c_void_p, c_uint, c_float, c_bool, c_uint]
 _place_market_order.restype = c_uint
 
 _place_limit_order = FastTest.place_limit_order
-_place_limit_order.argtypes = [c_void_p, c_uint, c_float, c_float, c_bool]
+_place_limit_order.argtypes = [c_void_p, c_uint, c_float, c_float, c_bool, c_uint]
 _place_limit_order.restype = c_uint
 
 _get_position_ptr = FastTest.get_position_ptr
