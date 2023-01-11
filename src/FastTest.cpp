@@ -164,7 +164,8 @@ void backward_pass(void * fastTest_ptr) {
 	__fastTest_ref->canceled_orders.clear();
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
 		__fastTest_ref->canceled_orders_mid = exchange->clean_up_market();
-		__fastTest_ref->canceled_orders = combineVectors(__fastTest_ref->canceled_orders, __fastTest_ref->canceled_orders_mid);
+		if(__fastTest_ref->canceled_orders_mid.size() == 0){continue;}
+		__fastTest_ref->canceled_orders = combine_order_vectors(__fastTest_ref->canceled_orders, __fastTest_ref->canceled_orders_mid);
 	}
 
 	if (!__fastTest_ref->canceled_orders.empty()) {

@@ -52,7 +52,7 @@ public:
 	__FastTest(__Exchange *exchange, __Broker &broker, Strategy *Strategy, bool logging = false);
 	__FastTest(__Exchange *exchange, __Broker &broker, bool logging = false);
 };
-std::vector<std::unique_ptr<Order>> combineVectors(std::vector<std::unique_ptr<Order>> &v1, std::vector<std::unique_ptr<Order>> &v2) {
+std::vector<std::unique_ptr<Order>> combine_order_vectors(std::vector<std::unique_ptr<Order>> &v1, std::vector<std::unique_ptr<Order>> &v2) {
     std::vector<std::unique_ptr<Order>> combined;
     combined.reserve(v1.size() + v2.size());
     for(auto& p: v1)

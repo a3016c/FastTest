@@ -247,6 +247,7 @@ private:
 	void open_position(std::unique_ptr<Order>& order_filled);
 	void close_position(Position &existing_position, float fill_price, timeval order_fill_time);
 };
+
 extern "C" {
 	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true, bool margin = false);
 	BROKER_API void DeleteBrokerPtr(void *ptr);
