@@ -146,6 +146,25 @@ public:
 		this->stop_loss = stop_loss;
 	}
 };
+class TakeProfitOrder : public Order
+{
+public:
+	OrderParent order_parent;
+	float take_profit;
+	TakeProfitOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false)
+		: Order(TAKE_PROFIT_ORDER, parent_order->asset_id, units, cheat_on_close) {
+		this->order_parent.member.parent_order = parent_order;
+		this->order_parent.type = ORDER;
+		this->take_profit = stop_loss;
+	}
+	TakeProfitOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false)
+		: Order(TAKE_PROFIT_ORDER, parent_position->asset_id, units, cheat_on_close) {
+		this->order_parent.member.parent_position = parent_position;
+		this->order_parent.type = POSITION;
+		this->take_profit = stop_loss;
+	}
+};
+
 extern "C" {
 	ORDER_API OrderType order_type(void *order_ptr);
 	ORDER_API bool order_compare(void *order_ptr1, void *order_ptr2);

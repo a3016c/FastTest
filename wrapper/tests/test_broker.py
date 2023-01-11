@@ -179,6 +179,65 @@ class BrokerTestMethods(unittest.TestCase):
         assert((broker.get_cash_history()==np.array([100000,  95150,  95450,  94775,  94775,  100400])).all())
 
 
+    def test_position_increase(self):
+        orders = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 0,
+                    units = 100
+                ),
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 1,
+                    units = 100
+                )
+         ]
+        exchange, broker, ft = setup_multi(logging=False, margin=False)
+        
+        strategy = TestStrategy(orders, broker, exchange)
+        ft.add_strategy(strategy)
+        ft.run()
+        
+        order_history = broker.get_order_history()
+        position_history = broker.get_position_history()
+        assert(len(order_history) == 2)
+        assert(len(position_history) == 1)
+        
+        assert((broker.get_nlv_history()==np.array([100000,  99900,  99600, 100500, 100500,  99400])).all())
+        assert((broker.get_cash_history()==np.array([100000,  90000,  80200,  80200,  80200,  99400])).all())
+
+    def test_position_reduce(self):
+        orders = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 0,
+                    units = 100
+                ),
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 2,
+                    units = -50
+                )
+         ]
+        exchange, broker, ft = setup_multi(logging=False, margin=False)
+        
+        strategy = TestStrategy(orders, broker, exchange)
+        ft.add_strategy(strategy)
+        ft.run()
+        
+        order_history = broker.get_order_history()
+        position_history = broker.get_position_history()
+        assert(len(order_history) == 2)
+        assert(len(position_history) == 1)
+        
+        assert((broker.get_cash_history()==np.array([100000,  90000,  90000,  95050,  95050,  99850])).all())
+        assert((broker.get_nlv_history()==np.array([100000,  99900,  99700, 100125, 100125,  99850])).all())
+
+
 if __name__ == '__main__':
     unittest.main()
 

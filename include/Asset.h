@@ -62,14 +62,16 @@ public:
 	 
 	unsigned int asset_id; // unique identifier of the asset
 	int asset_index; // current position on a asset's datetime index
-	bool streaming = false;
+	bool streaming = false; //is the asset finished streaming data
 
-	__AssetDataFormat format;
-	const char *digit_datetime_format;
-	const char *datetime_format;
-	unsigned int frequency;
-	size_t open_col;
-	size_t close_col;
+	__Asset* benchmark; 
+
+	__AssetDataFormat format; //define the format of the asset
+	const char *digit_datetime_format; //the digit sequence used to parse datetime index
+	const char *datetime_format; //format of the datetime index
+	unsigned int frequency; //frequency of the datettime index
+	size_t open_col; //the index of the open column
+	size_t close_col; //the index of the close column
 
 	std::unordered_map<std::string, unsigned int> headers;
 	std::vector<timeval> datetime_index;

@@ -125,6 +125,7 @@ public:
 	#ifdef CHECK_ORDER
 	ORDER_CHECK check_order(const std::unique_ptr<Order>& new_order);
 	ORDER_CHECK check_stop_loss_order(const StopLossOrder* new_order);
+	ORDER_CHECK check_take_profit_order(const TakeProfitOrder* new_order);
 	ORDER_CHECK check_market_order(const MarketOrder* new_order);
 	#endif
 
@@ -146,12 +147,18 @@ public:
 		float collateral = 0;
 		float margin_req_mid;
 		unsigned int asset_id;
+		float market_price;
 
 		for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
 			//update portfolio net liquidation value
 			asset_id = it->first;
 			Position& position =  it->second;
-			float market_price = this->__exchange._get_market_price(asset_id, on_close);
+			market_price = this->__exchange._get_market_price(asset_id, on_close);
+
+			//if no market price is available at the time then position cannot be evaluated
+			if(market_price == NAN){
+				continue;
+			}
 
 			//check to see if the underlying asset of the position has finished streaming
 			//if so we have to close the current position on close of the current step

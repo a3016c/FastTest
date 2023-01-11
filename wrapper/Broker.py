@@ -35,6 +35,9 @@ class Broker():
     def get_nlv(self):
         return Wrapper._get_nlv(self.ptr)
     
+    def get_cash(self):
+        return Wrapper._get_cash(self.ptr)
+    
     def get_positions(self):
         position_count = self.get_open_position_count()
         open_positions = Wrapper.PositionArrayStruct(position_count)

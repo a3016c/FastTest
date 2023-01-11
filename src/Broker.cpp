@@ -226,6 +226,20 @@ void __Broker::clear_child_orders(Position& existing_position) {
 	}
 }
 
+MARGIN_CHECK __Broker::check_margin() noexcept{
+	if(!margin){
+		return VALID_ACCOUNT_STATUS;
+	}
+	//check to see if nlv is below broker's margin account requirment 
+	if(this->net_liquidation_value < this->minimum_nlv){
+		return NLV_BELOW_BROKER_REQ;
+	}
+	if(this->cash < 0){
+		return MARGIN_CALL;
+	}
+	return VALID_ACCOUNT_STATUS;
+}
+
 #ifdef CHECK_ORDER
 ORDER_CHECK __Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order) {
 	OrderParent parent = stop_loss_order->order_parent;
@@ -239,6 +253,22 @@ ORDER_CHECK __Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order
 		Position* parent_position = parent.member.parent_position;
 		if (parent_position->asset_id != stop_loss_order->asset_id) { return INVALID_ASSET; }
 		if (parent_position->units*stop_loss_order->units > 0) { return INVALID_ORDER_SIDE; }
+	}
+	return VALID_ORDER;
+}
+
+ORDER_CHECK __Broker::check_take_profit_order(const TakeProfitOrder* take_profit_order){
+	OrderParent parent = take_profit_order->order_parent;
+	if (parent.type == ORDER) {
+		Order* parent_order = parent.member.parent_order;
+		if (parent_order->asset_id != take_profit_order->asset_id) { return INVALID_ASSET; }
+		if (parent_order->order_type > 1) { return INVALID_PARENT_ORDER; }
+		if (parent_order->units*take_profit_order->units > 0) { return INVALID_ORDER_SIDE; }
+	}
+	else {
+		Position* parent_position = parent.member.parent_position;
+		if (parent_position->asset_id != take_profit_order->asset_id) { return INVALID_ASSET; }
+		if (parent_position->units*take_profit_order->units > 0) { return INVALID_ORDER_SIDE; }
 	}
 	return VALID_ORDER;
 }
@@ -260,16 +290,6 @@ ORDER_CHECK __Broker::check_market_order(const MarketOrder* market_order) {
 	return VALID_ORDER;
 }
 
-MARGIN_CHECK __Broker::check_margin() noexcept{
-	if(!margin){
-		return VALID_ACCOUNT_STATUS;
-	}
-	//check to see if nlv is below broker's margin account requirment 
-	if(this->net_liquidation_value < this->minimum_nlv){
-		return NLV_BELOW_BROKER_REQ;
-	}
-}
-
 ORDER_CHECK __Broker::check_order(const std::unique_ptr<Order>& new_order) {
 	//check to see if the asset exsists on the exchange
 	if (this->__exchange.market.count(new_order->asset_id) == 0) { return INVALID_ASSET; }
@@ -279,20 +299,25 @@ ORDER_CHECK __Broker::check_order(const std::unique_ptr<Order>& new_order) {
 
 	ORDER_CHECK order_code;
 	switch (new_order->order_type) {
-	case MARKET_ORDER: {
-		MarketOrder* market_order = static_cast <MarketOrder*>(new_order.get());
-		order_code = check_market_order(market_order);
-		break;
-	}
-	case LIMIT_ORDER: {
-		order_code = VALID_ORDER;
-		break;
-	}
-	case STOP_LOSS_ORDER: {
-		StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(new_order.get());
-		order_code = check_stop_loss_order(stop_loss_order);
-		break;
-	}
+		case MARKET_ORDER: {
+			MarketOrder* market_order = static_cast <MarketOrder*>(new_order.get());
+			order_code = check_market_order(market_order);
+			break;
+		}
+		case LIMIT_ORDER: {
+			order_code = VALID_ORDER;
+			break;
+		}
+		case STOP_LOSS_ORDER: {
+			StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(new_order.get());
+			order_code = check_stop_loss_order(stop_loss_order);
+			break;
+		}
+		case TAKE_PROFIT_ORDER: {
+			TakeProfitOrder* take_profit_order = static_cast <TakeProfitOrder*>(new_order.get());
+			order_code = check_take_profit_order(take_profit_order);
+			break;
+		}
 	}
 	if (order_code != VALID_ORDER) { return order_code; }
 	for (auto& order_on_fill : new_order->orders_on_fill) {

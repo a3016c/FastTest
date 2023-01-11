@@ -31,13 +31,6 @@ class Agis_Strategy(Strategy):
             if position.bars_held == self.lookahead:
                 asset_name = self.exchange.id_map[position.asset_id]
                 self.broker.place_market_order(asset_name, -1*position.units)
-                
-    def close_positions(self):
-        positions = self.broker.get_positions()
-        for i in range(positions.number_positions):
-            position = positions.POSITION_ARRAY[i].contents
-            asset_name = self.exchange.id_map[position.asset_id]
-            self.broker.place_market_order(asset_name, -1*position.units)
         
     def build(self):
         self.asset_names = self.exchange.id_map.values()
@@ -54,7 +47,7 @@ class Agis_Strategy(Strategy):
             #return
         
         nlv = broker.get_nlv()
-        position_size = (nlv) / (self.position_count * self.lookahead) * .90
+        position_size = (nlv) / (self.position_count * self.lookahead) * .5
      
         keys = list(predicted_returns.keys())
         counts = 0
@@ -83,7 +76,7 @@ class Agis_Strategy(Strategy):
         asset_names = [_file[0:-4] for _file in file_names]
         
         _file = file_names[0]
-        
+        self.count = 0
         for index, _file in enumerate(file_names):
             f = z.open(_file)
             file_string = io.StringIO(f.read().decode("utf-8"))
@@ -97,6 +90,7 @@ class Agis_Strategy(Strategy):
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_df(df, nano=True)
             ft.exchange.register_asset(new_asset)
+            self.count += df.shape[0]
                 
 if __name__ == "__main__":
 
@@ -119,10 +113,6 @@ if __name__ == "__main__":
 
     ft.add_strategy(strategy)
     ft.run()
-
-    positions = broker.get_position_history().to_df()
-    positions["asset_id"] = positions["asset_id"].map(exchange.id_map)
-    print(positions)
     strategy.plot(benchmark)
 
     

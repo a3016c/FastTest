@@ -214,6 +214,10 @@ _get_nlv = FastTest.get_nlv
 _get_nlv.argtypes = [c_void_p]
 _get_nlv.restype = c_float
 
+_get_cash = FastTest.get_cash
+_get_cash.argtypes = [c_void_p]
+_get_cash.restype = c_float
+
 _position_exists = FastTest.position_exists
 _position_exists.argtypes = [c_void_p, c_uint]
 _position_exists.restype = c_bool

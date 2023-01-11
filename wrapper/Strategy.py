@@ -26,6 +26,14 @@ class Strategy():
     def next(self):
         return 
     
+                    
+    def close_positions(self):
+        positions = self.broker.get_positions()
+        for i in range(positions.number_positions):
+            position = positions.POSITION_ARRAY[i].contents
+            asset_name = self.exchange.id_map[position.asset_id]
+            self.broker.place_market_order(asset_name, -1*position.units)
+    
     def get_sharpe(self, nlvs, N = 255, rf = .01):
         returns = np.diff(nlvs) / nlvs[:-1]
         sharpe = returns.mean() / returns.std()
