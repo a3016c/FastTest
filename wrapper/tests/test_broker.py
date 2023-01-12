@@ -285,7 +285,7 @@ class BrokerTestMethods(unittest.TestCase):
                 )
          ]
         
-        broker, ft = setup_multi_exchange(logging=True, debug=False)
+        broker, ft = setup_multi_exchange(logging=False, debug=False)
         strategy = TestStrategy(orders, broker, exchange=None)
         ft.add_strategy(strategy)
         ft.run()

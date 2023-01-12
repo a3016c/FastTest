@@ -89,14 +89,16 @@ class Agis_Strategy(Strategy):
             new_asset = Asset(exchange, asset_name=asset_name)
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_df(df, nano=True)
-            ft.exchange.register_asset(new_asset)
+            exchange.register_asset(new_asset)
             self.count += df.shape[0]
                 
 if __name__ == "__main__":
 
     exchange = Exchange()
     broker = Broker(exchange)
-    ft = FastTest(exchange, broker, False)
+    ft = FastTest(broker, False)
+    
+    ft.register_exchange(exchange)
     
     strategy = Agis_Strategy(broker, exchange)
     
