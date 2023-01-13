@@ -142,20 +142,6 @@ public:
 	bool _get_market_view();
 
 	/**
-	 *Function to get the current market price of an asset.
-	 *@param asset_name A referece to the name of the Asset for which to get the market price.
-	 *@param on_close Wether or not to return the market price on close or open for the current market view.
-	*/
-	float _get_market_price(unsigned int &asset_name, bool on_close = false);
-
-	/**
-	 *Function to get the current value of a given column from an asset
-	 *@param asset A referece to the name of the Asset for which to get the value.
-	 *@param column The column to get the value of.
-	*/
-	float _get_market_feature(unsigned int asset_id, std::string &column, int index = 0);
-
-	/**
 	 *Function to log orders being placed onto the exchange. Only runs if logging is set to true.
 	 *@param order Reference to a unique pointer of the Order that has been placed.
 	*/
@@ -173,6 +159,35 @@ public:
 	*/
 	__Exchange(bool logging = false) { this->logging = logging; };
 
+
+	/**
+	 *Function to get the current value of a given column from an asset
+	 *@param asset A referece to the name of the Asset for which to get the value.
+	 *@param column The column to get the value of.
+	*/
+	inline float _get_market_feature(unsigned int asset_id, std::string column, int index) noexcept{
+		if (this->market_view.count(asset_id) == 0){return NAN;}
+		return this->market_view[asset_id]->get(column, index);
+	}
+
+	/**
+	 *Function to get the current market price of an asset.
+	 *@param asset_name A referece to the name of the Asset for which to get the market price.
+	 *@param on_close Wether or not to return the market price on close or open for the current market view.
+	*/
+	inline float _get_market_price(unsigned int &asset_id, bool on_close = false) noexcept {
+	if (this->market_view.count(asset_id) == 0) {
+		return NAN;
+	}
+	this->asset = this->market_view[asset_id];
+	if (on_close) {
+		return asset->get(asset->close_col);
+	}
+	else {
+		return asset->get(asset->open_col);
+	}
+}
+
 private:
 	/**
 	 *Function for processing Market Orders that are currently open. Private function to prevent others from accessing raw pointer to Order.
@@ -189,6 +204,7 @@ private:
 	 *@param open_order A pointer to a StopLoss currently open on the Exchange. Raw pointer of Order in open Orders container.
 	*/
 	void process_stoploss_order(StopLossOrder * const stoploss_order, bool on_close);
+
 };
 
 extern "C" {

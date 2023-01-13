@@ -70,7 +70,7 @@ bool __Exchange::_get_market_view() {
 	}
 	timeval next_time = this->datetime_index[this->current_index];
 	for (auto& _asset_pair : this->market) {
-		__Asset * const _asset = &_asset_pair.second;
+		__Asset * _asset = &_asset_pair.second;
 		if ((_asset->asset_time() == next_time)
 			&(_asset->current_index >= _asset->minimum_warmup)) {
 			_asset->current_index++;
@@ -106,22 +106,7 @@ std::vector<std::unique_ptr<Order>> __Exchange::clean_up_market() {
 	this->asset_counter--;
 	return std::move(cleared_orders);
 }
-float __Exchange::_get_market_price(unsigned int &asset_id, bool on_close) {
-	if (this->market_view.count(asset_id) == 0) {
-		return NAN;
-	}
-	this->asset = this->market_view[asset_id];
-	if (on_close) {
-		return asset->get(asset->close_col);
-	}
-	else {
-		return asset->get(asset->open_col);
-	}
-}
-float __Exchange::_get_market_feature(unsigned int asset_id, std::string &column, int index){
-	if (this->market_view.count(asset_id) == 0){return NAN;}
-	return this->market_view[asset_id]->get(column, index);
-}
+
 void __Exchange::process_market_order(MarketOrder * const open_order) {
 	float market_price = _get_market_price(open_order->asset_id, open_order->cheat_on_close);
 	if (isnan(market_price)) { 

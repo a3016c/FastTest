@@ -34,7 +34,11 @@ class FastTest:
             pass
         
     def profile(self):
-        cProfile.runctx('self.run()', globals(), locals())
+        pr = cProfile.Profile()
+        pr.enable()
+        self.run()
+        pr.disable()
+        pr.print_stats(sort='time')
 
     def reset(self):
         Wrapper._fastTest_reset(self.ptr)

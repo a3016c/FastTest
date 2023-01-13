@@ -112,36 +112,7 @@ float __Broker::get_net_liquidation_value() {
 	return nlv;
 }
 
-void __Broker::open_position(std::unique_ptr<Order> &order) {
-	float order_fill_price = order->fill_price;
-	float fill_price;
-
-	if(this->has_slippage){
-		if(order->units > 0){
-			fill_price = order_fill_price * (1 + this->slippage);
-			this->total_slippage += ((fill_price - order_fill_price) * order->units);
-			order_fill_price = fill_price;
-		}
-		else if (order->units < 0){
-			fill_price = order_fill_price * (1 - this->slippage);
-			this->total_slippage += ((fill_price - order_fill_price) * order->units);
-			order_fill_price = fill_price;
-		}
-	}
-
-	Position new_position = Position{
-		this->position_counter,
-		order->asset_id,
-		order->units,
-		order_fill_price,
-		order->order_fill_time,
-		order->exchange_id
-	};
-
-	if(!this->margin){
-		this->cash -= order->units*order_fill_price;
-	}
-	else {
+void __Broker::margin_on_increase(Position &new_position, std::unique_ptr<Order> &order){
 		//set the appropriate margin requirment for the position
 		float margin_req_mid;
 		if(new_position.units < 0){
@@ -150,6 +121,7 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 		else{
 			margin_req_mid = this->margin_req;
 		}
+		float order_fill_price = order->fill_price;
 		//if is margin account, calculate the colateral needed to maintain the trade and the 
 		//margin loan provided by the broker. Subtract collateral from the cash available.
 		float collateral = abs(margin_req_mid * order->units*order_fill_price);
@@ -164,18 +136,73 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 		}
 		this->margin_loan += loan;
 
-		new_position.collateral = collateral;
-		new_position.margin_loan = loan;
-	}
+		new_position.collateral += collateral;
+		new_position.margin_loan += loan;
+}
+
+void __Broker::margin_on_reduce(Position &existing_position, float order_fill_price, float units){
 	
+	float pct_reduce = abs(units/existing_position.units);
+	float collateral_free = existing_position.collateral*pct_reduce;
+
+	//free the collateral from the position and remove the margin loan
+	this->cash += collateral_free;
+	existing_position.collateral -= collateral_free;
+
+	this->margin_loan -= (existing_position.margin_loan*pct_reduce);
+
+	//if closing a short position have to buy back the position at the filled price
+	if(existing_position.units < 0){
+		this->cash += units * order_fill_price;
+	}
+}
+
+void __Broker::open_position(std::unique_ptr<Order> &order) {
+	float order_fill_price = order->fill_price;
+	float fill_price;
+
+	//if slippage is turned on calculate the fills accordingly
+	if(this->has_slippage){
+		if(order->units > 0){
+			fill_price = order_fill_price * (1 + this->slippage);
+			this->total_slippage += ((fill_price - order_fill_price) * order->units);
+			order_fill_price = fill_price;
+		}
+		else if (order->units < 0){
+			fill_price = order_fill_price * (1 - this->slippage);
+			this->total_slippage += ((fill_price - order_fill_price) * order->units);
+			order_fill_price = fill_price;
+		}
+	}
+
+	//build new position from the order informtion
+	Position new_position = Position{
+		this->position_counter,
+		order->asset_id,
+		order->units,
+		order_fill_price,
+		order->order_fill_time,
+		order->exchange_id
+	};
+	
+	//adjust account's cash and margin balance accoringly
+	if(!this->margin){
+		this->cash -= order->units*order_fill_price;
+	}
+	else {
+		this->margin_on_increase(new_position, order);
+	}
+
+	//reflect any commissions on the account's cash 
 	if(this->has_commission){
 		this->cash -= this->commission;
 		this->total_commission += this->commission;
 	}
 
 	this->position_counter++;
-
 	if (this->logging) { log_open_position(new_position); }
+
+	//insert the new postion into the account's portfolio
 	this->portfolio[order->asset_id] = new_position;
 }
 
@@ -184,6 +211,7 @@ void __Broker::close_position(Position &existing_position, float order_fill_pric
 	//be called directly in order to close a position. Close position through a appropriate order.
 	float fill_price;
 
+	//if slippage is turned on calculate the fills accordingly
 	if(this->has_slippage){
 		if(existing_position.units < 0){
 			fill_price = order_fill_price * (1 + this->slippage);
@@ -197,28 +225,27 @@ void __Broker::close_position(Position &existing_position, float order_fill_pric
 		}
 	}
 	
+	//close the position at the order fill price and order fill time
 	existing_position.close(order_fill_price, order_fill_time);
 	if (this->logging) { log_close_position(existing_position); }
-	this->position_history.push_back(existing_position);
-	this->realized_pl += existing_position.realized_pl;
 
+	//move the position to the position history vector to keep track of historical positions
+	this->position_history.push_back(existing_position);
+
+	//calculate stats from the position 
+	this->realized_pl += existing_position.realized_pl;
 	this->perfomance.average_time_in_market += existing_position.position_close_time - existing_position.position_create_time;
 	if(existing_position.realized_pl > 0){this->perfomance.winrate++;}
 
+	//if commissions are turned on subtract from account's cash
 	if(this->has_commission){
 		this->cash -= this->commission;
 		this->total_commission += this->commission;
 	}
 
+	//adjust the accounts cash and margin status if needed
 	if(this->margin){
-		//free the collateral from the position and remove the margin loan
-		this->cash += existing_position.collateral;
-		this->margin_loan -= existing_position.margin_loan;
-
-		//if closing a short position have to buy back the position at the filled price
-		if(existing_position.units < 0){
-			this->cash += existing_position.units * order_fill_price;
-		}
+		this->margin_on_reduce(existing_position, order_fill_price, existing_position.units);
 	}
 	else{
 		this->cash += existing_position.units * order_fill_price;
@@ -227,12 +254,23 @@ void __Broker::close_position(Position &existing_position, float order_fill_pric
 
 void __Broker::reduce_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.reduce(order->fill_price, order->units);
-	this->cash += abs(order->units) * order->fill_price;
+	if(this->margin){
+		this->margin_on_reduce(existing_position, order->fill_price, order->units);
+	}
+	else{
+		this->cash += abs(order->units) * order->fill_price;
+	}
 }
 
 void __Broker::increase_position(Position &existing_position, std::unique_ptr<Order>& order) {
 	existing_position.increase(order->fill_price, order->units);
-	this->cash -= order->units * order->fill_price;
+
+	if(this->margin){
+		this->margin_on_increase(existing_position, order);
+	}
+	else{
+		this->cash -= order->units * order->fill_price;
+	}
 }
 
 bool __Broker::cancel_order(std::unique_ptr<Order>& order_cancel, unsigned int exchange_id) {
@@ -586,9 +624,10 @@ OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float uni
 	__Exchange *exchange = __broker_ref->exchanges[exchange_id];
 	for (auto& order : exchange->orders){
 		if(order->order_id == order_id){
-			order->add_stop_loss(stop_loss, units);
+			return order->add_stop_loss(stop_loss, units);
 		}
 	}
+	return FAILED_TO_PLACE;
 }
 size_t broker_get_history_length(void *broker_ptr){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

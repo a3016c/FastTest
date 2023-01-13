@@ -115,6 +115,10 @@ public:
 	void log_open_position(Position &position);
 	void log_close_position(Position &position);
 
+	//functions for managing margin balance 
+	void margin_on_reduce(Position &existing_position, float order_fill_price, float units);
+	void margin_on_increase(Position &new_position,std::unique_ptr<Order>& order);
+
 	//functions for managing which exchanges are visable to the broker
 	void broker_register_exchange(__Exchange* exchange_ptr);
 

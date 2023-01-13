@@ -52,7 +52,9 @@ public:
 		return data[n*M + m];
 	}
 	size_t row_start(size_t n) {
+#if RANGE_CHECK
 		if (n >= N) throw std::out_of_range("Asset Matrix row out of range");
+#endif
 		return n * M;
 	}
 
@@ -114,8 +116,9 @@ public:
 	}
 	//if a column is provided as a string then lookup appropriate column index. Index param is used 
 	//as a row offset when querying the data.
+	unsigned int i;
 	inline float get(std::string &s, int index = 0){
-		size_t i = this->headers[s];
+		i = this->headers[s];
 		return AM(this->current_index - 1 + index, i);
 	}
 	inline const timeval & asset_time() {

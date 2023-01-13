@@ -11,7 +11,7 @@ import numpy as np
 from Exchange import Exchange, Asset
 from Broker import Broker
 from Strategy import *
-from FastTest import FastTest
+from FastTest import FastTest, run_jit
 import Wrapper
 
 class Agis_Strategy(Strategy):
@@ -34,17 +34,15 @@ class Agis_Strategy(Strategy):
         
     def build(self):
         self.asset_names = self.exchange.id_map.values()
+        self.asset_ids = self.exchange.asset_map.values()
         
     def next(self):
         self.check_positions()
         predicted_returns = {asset_name : self.exchange.get(asset_name, "Next Return") 
-                             for asset_name in self.asset_names if not isnan(self.exchange.get(asset_name, "Next Return"))}
+                             for asset_name in self.asset_names}
+        predicted_returns = {k: v for k, v in predicted_returns.items() if not isnan(v)}
         predicted_returns = {k: v for k, v in sorted(predicted_returns.items(), key=lambda item: item[1], reverse = True)}
         _avg_predicted_return = sum(predicted_returns.values()) / len(predicted_returns)
-        
-        #if _avg_predicted_return <= 0:
-            #self.close_positions()
-            #return
         
         nlv = broker.get_nlv()
         position_size = (nlv) / (self.position_count * self.lookahead) * .5
@@ -95,8 +93,8 @@ class Agis_Strategy(Strategy):
 if __name__ == "__main__":
 
     exchange = Exchange()
-    broker = Broker(exchange)
-    ft = FastTest(broker, False)
+    broker = Broker(exchange, margin=False, logging=False)
+    ft = FastTest(broker, logging=False)
     
     ft.register_exchange(exchange)
     
@@ -114,7 +112,13 @@ if __name__ == "__main__":
     ft.register_benchmark(benchmark)
 
     ft.add_strategy(strategy)
+    
+    st = time.time()
     ft.run()
+    et = time.time()
+    
+    print(strategy.count / (et-st))
+    
     strategy.plot(benchmark)
 
     

@@ -48,7 +48,6 @@ class Exchange():
         )
         
     def get(self, asset_name : str, column : str, index = 0):
-        if index > 0: raise Exception("invalid index passed to get_market_feature")
         asset_id = self.asset_map[asset_name]
         return Wrapper._get_market_feature(
             self.ptr, 

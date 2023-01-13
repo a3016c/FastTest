@@ -21,7 +21,8 @@ enum OrderState {
 	OPEN,
 	FILLED,
 	CANCELED,
-	BROKER_REJECTED
+	BROKER_REJECTED,
+	FAILED_TO_PLACE
 };
 enum OrderType {
 	MARKET_ORDER,
@@ -82,7 +83,7 @@ public:
 	const char* get_order_type();
 	void create(timeval order_create_time);
 	void fill(float market_price, timeval fill_time);
-	void add_stop_loss(float price, float units = NAN);
+	OrderState add_stop_loss(float price, float units = NAN);
 
 	void to_struct(OrderStruct &order_struct);
 
