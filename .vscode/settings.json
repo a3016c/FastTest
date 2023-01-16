@@ -85,5 +85,5 @@
         "__verbose_abort": "cpp",
         "algorithm": "cpp"
     },
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
 }
