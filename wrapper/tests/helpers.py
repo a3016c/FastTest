@@ -26,7 +26,7 @@ df1 = pd.DataFrame(index = get_unix_time(test1_index),data = np.vstack((test1_op
 df2 = pd.DataFrame(index = get_unix_time(test2_index),data = np.vstack((test2_open,test2_close)).T, columns=["OPEN","CLOSE"])
 
 def setup_simple(logging = False):
-    exchange = Exchange()
+    exchange = Exchange(logging=logging)
     broker = Broker(exchange)
     ft = FastTest(broker, logging=logging)
     
@@ -43,7 +43,7 @@ def setup_simple(logging = False):
     return exchange, broker, ft
 
 def setup_multi(logging = False, margin = False, debug = False):
-    exchange = Exchange()
+    exchange = Exchange(logging = logging)
     broker = Broker(exchange,logging=logging, margin=margin, debug=debug)
     ft = FastTest(broker, logging=logging, debug=debug)
     
@@ -60,8 +60,8 @@ def setup_multi(logging = False, margin = False, debug = False):
     return exchange, broker, ft
 
 def setup_multi_exchange(logging = False, margin = False, debug = False):
-    exchange1 = Exchange(exchange_name="exchange1")
-    exchange2 = Exchange(exchange_name="exchange2")
+    exchange1 = Exchange(exchange_name="exchange1", logging = logging)
+    exchange2 = Exchange(exchange_name="exchange2", logging=logging)
     broker = Broker(exchange1,logging=logging, margin=margin)
     ft = FastTest(broker, logging, debug)
     

@@ -70,7 +70,7 @@ bool __Exchange::_get_market_view() {
 	}
 	timeval next_time = this->datetime_index[this->current_index];
 	for (auto& _asset_pair : this->market) {
-		__Asset * _asset = &_asset_pair.second;
+		__Asset * const _asset = &_asset_pair.second;
 		if ((_asset->asset_time() == next_time)
 			&(_asset->current_index >= _asset->minimum_warmup)) {
 			_asset->current_index++;
@@ -138,21 +138,25 @@ void __Exchange::process_stoploss_order(StopLossOrder *const open_order, bool on
 void __Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close) {
 	try {
 		switch (open_order->order_type) {
-		case MARKET_ORDER:
-		{
-			MarketOrder* order_market = static_cast <MarketOrder*>(open_order.get());
-			this->process_market_order(order_market);
-			break;
-		}
-		case LIMIT_ORDER: {
-			LimitOrder* order_limit = static_cast <LimitOrder*>(open_order.get());
-			this->process_limit_order(order_limit, on_close);
-			break;
-		}
-		case STOP_LOSS_ORDER:
-			StopLossOrder* order_stoploss = static_cast <StopLossOrder*>(open_order.get());
-			this->process_stoploss_order(order_stoploss, on_close);
-			break;
+			case MARKET_ORDER:
+			{
+				MarketOrder* order_market = static_cast <MarketOrder*>(open_order.get());
+				this->process_market_order(order_market);
+				break;
+			}
+			case LIMIT_ORDER: {
+				LimitOrder* order_limit = static_cast <LimitOrder*>(open_order.get());
+				this->process_limit_order(order_limit, on_close);
+				break;
+			}
+			case STOP_LOSS_ORDER: {
+				StopLossOrder* order_stoploss = static_cast <StopLossOrder*>(open_order.get());
+				this->process_stoploss_order(order_stoploss, on_close);
+				break;
+			}
+			case TAKE_PROFIT_ORDER: {
+				break;
+			}
 		}
 	}
 	catch (const std::exception& e) {

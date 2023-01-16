@@ -142,6 +142,7 @@ public:
 	//functions for managing margin 
 	#ifdef MARGIN
 	MARGIN_CHECK check_margin() noexcept;
+	void margin_adjustment(Position &new_position, float market_price);
 	#endif
 
 	//order wrapers exposed to strategy
@@ -184,7 +185,7 @@ public:
 
 			//check to see if the underlying asset of the position has finished streaming
 			//if so we have to close the current position on close of the current step
-			if (exchange->market[asset_id].is_last_view()) {
+			if (exchange->market[asset_id].is_last_view() & on_close) {
 				if(this->margin){
 					if(position.units < 0){
 						margin_req_mid = this->short_margin_req;
@@ -207,38 +208,33 @@ public:
 				it = this->portfolio.erase(it);
 			}
 			else {
-				position.evaluate(market_price);
+				position.evaluate(market_price, on_close);
 				nlv += position.liquidation_value();
 
 				if(this->margin){
+					float old_collateral = position.collateral;
+					this->margin_adjustment(position, market_price);
+
 					//update the margin required to maintain the position. 
-					if(position.units < 0){
-						margin_req_mid = this->short_margin_req;
-					}
-					else{
-						margin_req_mid = this->margin_req;
-					}
-					float new_collateral = abs(margin_req_mid* position.units*market_price);
-					float adjustment = (new_collateral - position.collateral);
-					position.collateral = new_collateral;
+					float adjustment = (position.collateral - old_collateral);
 
 					//if long position, add collateral to subtract off later to prevent double counting the
 					//value of the security 
 					if(position.units > 0){
 						this->cash += adjustment;
-						collateral += new_collateral;
+						collateral += position.collateral;
 					}
 					//if short position, add the collateral back into nlv to maintain balanced counting
 					else{
 						this->cash -= adjustment;
-						nlv += new_collateral;
+						nlv += position.collateral;
 					}
 				}
 				it++;
 			}
+
 		}
 		this->net_liquidation_value = nlv + this->cash - collateral;
-
 		if(this->debug){
 			printf("FINISHED PORTFOLIO EVALUATION\n");
 		}

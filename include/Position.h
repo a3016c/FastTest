@@ -59,11 +59,13 @@ public:
 	Position(unsigned int position_id, unsigned int asset_id, float units, float average_price, timeval position_create_time, unsigned int exchange_id);
 	Position() = default;
 
-	inline void evaluate(float market_price) noexcept {
+	inline void evaluate(float market_price, bool update_bars = false) noexcept {
 		this->last_price = market_price;
 		this->unrealized_pl = this->units * (market_price - this->average_price);
-		this->bars_held++;
-		this->bars_since_change++;
+		if(update_bars){
+			this->bars_held++;
+			this->bars_since_change++;
+		}
 	}
 
 	friend bool operator==(const Position& lhs, const Position& rhs)

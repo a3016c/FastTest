@@ -9,6 +9,7 @@ g_asset_counter = 0
 
 class Exchange():
     def __init__(self, logging = False, exchange_name = "default") -> None:
+        self.logging = logging
         self.exchange_name = exchange_name
         self.exchange_id = None
         self.ptr = Wrapper._new_exchange_ptr(logging)

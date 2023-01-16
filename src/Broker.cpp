@@ -112,6 +112,19 @@ float __Broker::get_net_liquidation_value() {
 	return nlv;
 }
 
+void __Broker::margin_adjustment(Position &position, float market_price){
+	float margin_req_mid;
+	if(position.units < 0){
+		margin_req_mid = this->short_margin_req;
+	}
+	else{
+		margin_req_mid = this->margin_req;
+	}
+	float new_collateral = abs(margin_req_mid* position.units*market_price);
+	float adjustment = (new_collateral - position.collateral);
+	position.collateral = new_collateral;
+}
+
 void __Broker::margin_on_increase(Position &new_position, std::unique_ptr<Order> &order){
 		//set the appropriate margin requirment for the position
 		float margin_req_mid;
@@ -141,7 +154,6 @@ void __Broker::margin_on_increase(Position &new_position, std::unique_ptr<Order>
 }
 
 void __Broker::margin_on_reduce(Position &existing_position, float order_fill_price, float units){
-	
 	float pct_reduce = abs(units/existing_position.units);
 	float collateral_free = existing_position.collateral*pct_reduce;
 
@@ -253,24 +265,23 @@ void __Broker::close_position(Position &existing_position, float order_fill_pric
 }
 
 void __Broker::reduce_position(Position &existing_position, std::unique_ptr<Order>& order) {
-	existing_position.reduce(order->fill_price, order->units);
 	if(this->margin){
 		this->margin_on_reduce(existing_position, order->fill_price, order->units);
 	}
 	else{
 		this->cash += abs(order->units) * order->fill_price;
 	}
+	existing_position.reduce(order->fill_price, order->units);
 }
 
 void __Broker::increase_position(Position &existing_position, std::unique_ptr<Order>& order) {
-	existing_position.increase(order->fill_price, order->units);
-
 	if(this->margin){
 		this->margin_on_increase(existing_position, order);
 	}
 	else{
 		this->cash -= order->units * order->fill_price;
 	}
+	existing_position.increase(order->fill_price, order->units);
 }
 
 bool __Broker::cancel_order(std::unique_ptr<Order>& order_cancel, unsigned int exchange_id) {

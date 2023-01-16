@@ -152,6 +152,10 @@ bool forward_pass(void *fastTest_ptr){
 	__fastTest_ref->broker.check_margin();
 	#endif
 
+	//evaluate the portfolio
+	__fastTest_ref->broker.evaluate_portfolio(false);
+
+
 	//allow exchange to process open orders from previous steps
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
 		if (!exchange->orders.empty()) {
