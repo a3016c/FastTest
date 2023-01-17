@@ -149,8 +149,8 @@ public:
 	#endif
 
 	//order wrapers exposed to strategy
-	OrderState _place_market_order(unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0);
-	OrderState _place_limit_order(unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0);
+	OrderState _place_market_order(unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	OrderState _place_limit_order(unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
@@ -305,8 +305,8 @@ extern "C" {
 	BROKER_API float get_realied_pl(void *broker_ptr);
 	BROKER_API float get_nlv(void *broker_ptr);
 
-	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0);
-	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0);
+	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
 	BROKER_API OrderState position_add_stoploss(void *broker_ptr, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false);
 	BROKER_API OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0);
 

@@ -92,11 +92,12 @@ class Agis_Strategy(Strategy):
                 
 if __name__ == "__main__":
 
-    exchange = Exchange()
-    broker = Broker(exchange, margin=True, logging=False)
-    ft = FastTest(broker, logging=False)
-    
+    ft = FastTest(logging=False)
+    exchange = Exchange()    
     ft.register_exchange(exchange)
+    
+    broker = Broker(exchange, margin=True, logging=False)
+    ft.register_broker(broker)
     
     strategy = Agis_Strategy(broker, exchange)
     

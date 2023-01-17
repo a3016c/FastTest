@@ -55,7 +55,7 @@ class BrokerTestMethods(unittest.TestCase):
             position_history = broker.get_position_history()
             assert(len(order_history) == 1)
             assert(len(position_history) == 1)
-            
+                        
             assert(order_history.ORDER_ARRAY[0].contents.fill_price == 97)
             assert(position_history.POSITION_ARRAY[0].contents.average_price == 97)
             assert(position_history.POSITION_ARRAY[0].contents.close_price == 96)
@@ -63,7 +63,7 @@ class BrokerTestMethods(unittest.TestCase):
             assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_create_time,"s") == test2_index[2])
             assert(np.datetime64(position_history.POSITION_ARRAY[0].contents.position_close_time,"s") == test2_index[-1])
         print("TESTING: test_limit_order passed")
-        
+
     def test_limit_sell(self):
         print("TESTING test_limit_sell...")
         orders = [

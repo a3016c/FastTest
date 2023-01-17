@@ -17,8 +17,11 @@ class FastTest:
     def __init__(self, logging = False, debug = False) -> None:
         self.logging = logging
         self.debug = debug
+        
         self.exchange_counter = 0
         self.broker_counter = 0
+        self.strategy_counter = 0
+        
         self.benchmark = None
         self.broker = None
         self.strategies = np.array([], dtype="O")
@@ -67,6 +70,8 @@ class FastTest:
     
     def add_strategy(self, strategy : Strategy):
         strategy.broker_ptr = self.broker.ptr
+        strategy.strategy_id = self.strategy_counter
+        self.strategy_counter += 1
         self.strategies = np.append(self.strategies,(strategy))
 
     def run(self):

@@ -234,9 +234,11 @@ std::vector<std::unique_ptr<Order>> __Exchange::cancel_orders(unsigned int asset
 void __Exchange::log_order_placed(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_create_time, this->time, sizeof(this->time));
-	printf("%s: %s PLACED: asset_id: %i, units: %f\n",
+	printf("%s: %s PLACED: strategy_id: %i exchange_id: %i, asset_id: %i, units: %f\n",
 		this->time,
 		order->get_order_type(),
+		order->strategy_id,
+		order->exchange_id,
 		order->asset_id,
 		order->units
 	);

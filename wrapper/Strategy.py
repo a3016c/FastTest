@@ -16,17 +16,18 @@ from Order import OrderSchedule, OrderType
 import Wrapper
 
 class Strategy():
-    def __init__(self, broker : Broker, exchange : Exchange) -> None:
+    def __init__(self, broker : Broker, exchange : Exchange, strategy_name = "default") -> None:
         self.broker = broker 
         self.exchange = exchange
+        self.strategy_name = strategy_name
+        self.strategy_id = None
         
     def build(self):
         return
 
     def next(self):
         return 
-    
-                    
+                     
     def close_positions(self):
         positions = self.broker.get_positions()
         for i in range(positions.number_positions):
@@ -91,8 +92,8 @@ class Strategy():
         plt.show()
 
 class TestStrategy(Strategy):
-    def __init__(self, order_schedule, broker = None, exchange = None) -> None:
-        super().__init__(broker,exchange)
+    def __init__(self, order_schedule, broker = None, exchange = None, strategy_name = "default") -> None:
+        super().__init__(broker,exchange, strategy_name)
         self.order_schedule = order_schedule
         self.i = 0
         
@@ -103,9 +104,9 @@ class TestStrategy(Strategy):
         for order in self.order_schedule:
             if order.i == self.i:
                 if order.order_type == OrderType.MARKET_ORDER:
-                    res = self.broker.place_market_order(order.asset_name,order.units,order.cheat_on_close, order.exchange_name)
+                    res = self.broker.place_market_order(order.asset_name,order.units,order.cheat_on_close, order.exchange_name, self.strategy_id)
                 elif order.order_type == OrderType.LIMIT_ORDER:
-                    res = self.broker.place_limit_order(order.asset_name,order.units,order.limit,order.cheat_on_close, order.exchange_name)
+                    res = self.broker.place_limit_order(order.asset_name,order.units,order.limit,order.cheat_on_close, order.exchange_name, self.strategy_id)
                 elif order.order_type == OrderType.STOP_LOSS_ORDER:
                     res = self.broker.place_stoploss_order(units = order.units,stop_loss = order.limit,asset_name = order.asset_name)
                 assert(res != OrderState.BROKER_REJECTED)

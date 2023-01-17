@@ -94,7 +94,7 @@ class Broker():
         Wrapper._get_position_history(self.ptr, order_struct_pointer)
         return position_history
 
-    def place_market_order(self, asset_name : str, units : float, cheat_on_close = False, exchange_name = "default"):
+    def place_market_order(self, asset_name : str, units : float, cheat_on_close = False, exchange_name = "default", strategy_id = 0):
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id
         asset_id = exchange.asset_map[asset_name]
@@ -104,11 +104,12 @@ class Broker():
             asset_id,
             units,
             cheat_on_close,
-            exchange_id
+            exchange_id,
+            strategy_id
             )
         )
         
-    def place_limit_order(self, asset_name : str, units : float, limit : float, cheat_on_close = False, exchange_name = "default"):
+    def place_limit_order(self, asset_name : str, units : float, limit : float, cheat_on_close = False, exchange_name = "default", strategy_id = 0):
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id
         asset_id = exchange.asset_map[asset_name]
@@ -119,11 +120,12 @@ class Broker():
             units,
             limit,
             cheat_on_close,
-            exchange_id
+            exchange_id,
+            strategy_id
             )
         )
         
-    def place_stoploss_order(self, units : float, stop_loss : float, asset_name = None, order_id = None, cheat_on_close = False, exchange_name = "default"):
+    def place_stoploss_order(self, units : float, stop_loss : float, asset_name = None, order_id = None, cheat_on_close = False, exchange_name = "default", strategy_id = 0):
 
         if asset_name != None:
             

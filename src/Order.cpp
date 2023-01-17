@@ -37,16 +37,21 @@ const char* Order::get_order_type() {
 	return "";
 }
 void order_ptr_to_struct(std::unique_ptr<Order> &open_order, OrderStruct &order_struct){
-	order_struct.asset_id = open_order->asset_id;
+	order_struct.order_type = open_order->order_type;
 	order_struct.order_state = open_order->order_state;
+	order_struct.order_id = open_order->order_id;
+	order_struct.asset_id = open_order->asset_id;
+	order_struct.exchange_id = open_order->exchange_id;
+	order_struct.strategy_id = open_order->strategy_id;
 	order_struct.units = open_order->units;
 	order_struct.fill_price = open_order->fill_price;
-	order_struct.asset_id = open_order->asset_id;
 	order_struct.order_create_time = open_order->order_create_time.tv_sec + open_order->order_create_time.tv_usec/1e6;
 	order_struct.order_fill_time = open_order->order_fill_time.tv_sec + open_order->order_fill_time.tv_usec / 1e6;
 }
 void Order::to_struct(OrderStruct &order_struct){
 	order_struct.asset_id = this->asset_id;
+	order_struct.exchange_id = this->exchange_id;
+	order_struct.strategy_id = this->strategy_id;
 	order_struct.order_state = this->order_state;
 	order_struct.units = this->units;
 	order_struct.fill_price = this->fill_price;

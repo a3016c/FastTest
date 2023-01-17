@@ -13,24 +13,28 @@ class OrderStruct(Structure):
     _fields_ = [
         ('order_type',c_uint),
         ('order_state',c_uint),
-        ('units',c_float),
-        ('fill_price',c_float),
         ('order_id',c_uint),
         ('asset_id',c_uint),
+        ('strategy_id',c_uint),
+        ('exchange_id',c_uint),
+        ('units',c_float),
+        ('fill_price',c_float),
         ('order_create_time',c_long),
         ('order_fill_time',c_long)
     ]
     
     def to_list(self):
         return [
+            self.order_id,
+            self.asset_id,
+            self.exchange_id,
+            self.strategy_id,
             self.order_create_time,
             self.order_fill_time,
             OrderType(self.order_type),
             OrderState(self.order_state),
             self.units,
-            self.fill_price,
-            self.order_id,
-            self.asset_id
+            self.fill_price,            
         ]
     
 class OrderHistoryStruct(Structure):
@@ -51,14 +55,14 @@ class OrderHistoryStruct(Structure):
     
     def to_df(self):
         orders = [self.ORDER_ARRAY[i].contents.to_list() for i in range(self.number_orders)]
-        df = pd.DataFrame(orders, columns = ["order_create_time","order_fill_time","order_type",
-                                "order_state","units","fill_price","order_id",'asset_id'])
+        df = pd.DataFrame(orders, columns = ["order_id","asset_id","exchange_id","strategy_id",
+                                "order_create_time","order_fill_time","order_type",
+                                "order_state","units","fill_price"])
         df["order_create_time"] = df["order_create_time"]  * 1e9
         df["order_fill_time"] = df["order_fill_time"]  * 1e9
         df["order_create_time"]= df["order_create_time"].astype('datetime64[ns]')
         df["order_fill_time"]= df["order_fill_time"].astype('datetime64[ns]')
         return df
-        
         
 class PositionStruct(Structure):
     
@@ -257,11 +261,11 @@ _get_position_history = FastTest.get_position_history
 _get_position_history.argtypes = [c_void_p,POINTER(PositionArrayStruct)]
 
 _place_market_order = FastTest.place_market_order
-_place_market_order.argtypes = [c_void_p, c_uint, c_float, c_bool, c_uint]
+_place_market_order.argtypes = [c_void_p, c_uint, c_float, c_bool, c_uint, c_uint]
 _place_market_order.restype = c_uint
 
 _place_limit_order = FastTest.place_limit_order
-_place_limit_order.argtypes = [c_void_p, c_uint, c_float, c_float, c_bool, c_uint]
+_place_limit_order.argtypes = [c_void_p, c_uint, c_float, c_float, c_bool, c_uint, c_uint]
 _place_limit_order.restype = c_uint
 
 _get_position_ptr = FastTest.get_position_ptr

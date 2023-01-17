@@ -38,10 +38,12 @@ enum OrderParentType {
 struct OrderStruct {
 	OrderType order_type;
 	OrderState order_state;
-	float units;
-	float fill_price;
 	unsigned int order_id;
 	unsigned int asset_id;
+	unsigned int strategy_id;
+	unsigned int exchange_id;
+	float units;
+	float fill_price;
 	long order_create_time;
 	long order_fill_time;
 };
@@ -73,7 +75,7 @@ public:
 	unsigned int order_id;    //unique identifier for the order
 	unsigned int asset_id;    //underlying asset for the order
 	unsigned int exchange_id; //id of the exchange the order was placed on
-
+	unsigned int strategy_id; //id of the strategy that placed the order
 
 	timeval order_create_time; //the time the order was placed on the exchange
 	timeval order_fill_time;   //the time that the order was filled by the exchange
