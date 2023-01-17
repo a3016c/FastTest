@@ -29,4 +29,4 @@ IF( NOT CMAKE_BUILD_TYPE )
    message("RELEASE BUILD...")
 ENDIF()
 
-target_compile_options(FastTest PRIVATE -std=c++20 -fdeclspec -O2)
+target_compile_options(FastTest PRIVATE -std=c++20 -fdeclspec -O3)

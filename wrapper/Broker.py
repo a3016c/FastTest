@@ -9,6 +9,7 @@ from Order import OrderState
 class Broker():
     def __init__(self, exchange : Exchange, logging = True, margin = False, debug = False) -> None:
         self.exchange_map = {exchange.exchange_name : exchange} 
+        self.id = None
         self.logging = logging 
         self.debug = debug
         self.margin = margin

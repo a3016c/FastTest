@@ -14,18 +14,18 @@ from Order import OrderSchedule, OrderType
 import Wrapper
 
 class FastTest:
-    def __init__(self, broker : Broker, logging = False, debug = False) -> None:
+    def __init__(self, logging = False, debug = False) -> None:
         self.logging = logging
         self.debug = debug
         self.exchange_counter = 0
-        self.broker = broker
-        self.broker_ptr = broker.ptr
+        self.broker_counter = 0
         self.benchmark = None
+        self.broker = None
         self.strategies = np.array([], dtype="O")
         
         g_asset_counter = 0 
         
-        self.ptr = Wrapper._new_fastTest_ptr(self.broker_ptr,self.logging,self.debug)
+        self.ptr = Wrapper._new_fastTest_ptr(self.logging,self.debug)
         
     def __del__(self):
         try:
@@ -56,11 +56,17 @@ class FastTest:
         self.exchange_counter += 1
         if register: Wrapper._fastTest_register_exchange(self.ptr, exchange.ptr, exchange.exchange_id)
         
+    def register_broker(self, broker : Broker, register = True):
+        self.broker = broker
+        broker.broker_id = self.broker_counter
+        self.exchange_counter += 1
+        if register: Wrapper._fastTest_register_broker(self.ptr, broker.ptr, broker.broker_id)
+        
     def get_benchmark_ptr(self):
         return Wrapper._get_benchmark_ptr(self.ptr)
     
     def add_strategy(self, strategy : Strategy):
-        strategy.broker_ptr = self.broker_ptr
+        strategy.broker_ptr = self.broker.ptr
         self.strategies = np.append(self.strategies,(strategy))
 
     def run(self):

@@ -13,11 +13,15 @@ from helpers import *
 class ExchangeTestMethods(unittest.TestCase):
 
     def test_exchange_build(self):
-        exchange = Exchange()
-        broker = Broker(exchange)
-        ft = FastTest(broker)
+        ft = FastTest()
         
+        exchange = Exchange()
         ft.register_exchange(exchange)
+        
+        broker = Broker(exchange)
+        ft.register_broker(broker)
+        
+        
         
         for i in range (0,6):
             new_asset = Asset(exchange, asset_name=str(i))

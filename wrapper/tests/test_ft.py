@@ -80,11 +80,13 @@ class FTTestMethods(unittest.TestCase):
         STOCKS = 10
         dateindex = pd.date_range(start='2010-01-01', periods=CANDLES, freq='15Min')
 
-        exchange = Exchange()
-        broker = Broker(exchange)
-        ft = FastTest(broker, False)
+        ft = FastTest(debug = False)
         
+        exchange = Exchange()
         ft.register_exchange(exchange)
+        
+        broker = Broker(exchange)
+        ft.register_broker(broker)
         
         for i in range(STOCKS):
 

@@ -15,19 +15,18 @@
 #include "Broker.h"
 #include "FastTest.h"
 
-__FastTest::__FastTest(__Broker &brokerObj, Strategy *StrategyObj, bool logging, bool debug) :
-	broker(brokerObj), strategy(StrategyObj){
+__FastTest::__FastTest(Strategy *StrategyObj, bool logging, bool debug) :
+	strategy(StrategyObj){
 	this->logging = logging;
 	this->debug = debug;
 }
-__FastTest::__FastTest(__Broker &brokerObj, bool logging, bool debug) :
-	broker(brokerObj) {
+__FastTest::__FastTest(bool logging, bool debug) {
 	this->logging = logging;
 	this->debug = debug;
 }
 void __FastTest::reset() {
 	this->current_index = 0;
-	this->broker.reset();
+	this->broker->reset();
 	this->filled_orders.clear();
 	this->canceled_orders.clear();
 
@@ -41,11 +40,12 @@ void __FastTest::build(){
 		printf("BUILDING FASTTEST \n");
 	}
 
-	this->broker.debug = this->debug;
-
-	for(auto const & pair : this->broker.exchanges){
-		__Exchange *exchange = pair.second;
+	for(auto const & exchange : this->__exchanges){
 		exchange->build();
+	}
+
+	if(this->debug){
+		printf("EXCHANGES BUILT \n");
 	}
 
 	this->epoch_index = this->__exchanges[0]->epoch_index;
@@ -54,10 +54,18 @@ void __FastTest::build(){
 			this->epoch_index = getUnion(this->epoch_index, this->__exchanges[i]->epoch_index);
 		}
 	}
+	
+	if(this->debug){
+		printf("FASTTEST BUILT \n");
+	}
 }
 
 void __FastTest::_register_benchmark(__Asset new_benchmark){
 	this->benchmark = new_benchmark;
+}
+
+void __FastTest::_register_broker(__Broker *new_broker){
+	this->broker = new_broker;
 }
 
 void __FastTest::_register_exchange(__Exchange *new_exchange){
@@ -69,7 +77,7 @@ void __FastTest::run() {
 	for(__Exchange* exchange : this->__exchanges){
 		exchange->logging = this->logging;
 	}
-	this->broker.logging = this->logging;
+	this->broker->logging = this->logging;
 	this->reset();
 	/*
 	while (this->__exchange._get_market_view()) {
@@ -103,13 +111,11 @@ void __FastTest::run() {
 	}
 	*/
 }
-void * CreateFastTestPtr(void *broker_ptr, bool logging, bool debug) {
-	__Broker *__broker_ref = static_cast<__Broker *>(broker_ptr);
-	__FastTest* fastTest_ptr = new __FastTest(*__broker_ref, logging, debug);
-	fastTest_ptr->broker.logging = logging;
-	fastTest_ptr->broker.debug = debug;
+void * CreateFastTestPtr(bool logging, bool debug) {
+	__FastTest* fastTest_ptr = new __FastTest(logging, debug);
 	return fastTest_ptr;
 }
+
 void DeleteFastTestPtr(void *ptr){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(ptr);
 	delete __fastTest_ref;
@@ -149,18 +155,18 @@ bool forward_pass(void *fastTest_ptr){
 	__fastTest_ref->current_index++;
 
 	#ifdef MARGIN
-	__fastTest_ref->broker.check_margin();
+	__fastTest_ref->broker->check_margin();
 	#endif
 
 	//evaluate the portfolio
-	__fastTest_ref->broker.evaluate_portfolio(false);
+	__fastTest_ref->broker->evaluate_portfolio(false);
 
 
 	//allow exchange to process open orders from previous steps
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
 		if (!exchange->orders.empty()) {
 			__fastTest_ref->filled_orders = exchange->process_orders();
-			__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
+			__fastTest_ref->broker->process_filled_orders(std::move(__fastTest_ref->filled_orders));
 		}
 	}
 
@@ -178,10 +184,10 @@ void backward_pass(void * fastTest_ptr) {
 	}
 
 	//evaluate the portfolio
-	__fastTest_ref->broker.evaluate_portfolio(true);
+	__fastTest_ref->broker->evaluate_portfolio(true);
 
 	//evaluate strategy portfolio
-	__fastTest_ref->broker.analyze_step();
+	__fastTest_ref->broker->analyze_step();
 
 	//allow the exchange to clean up assets that are done streaming
 	__fastTest_ref->canceled_orders.clear();
@@ -193,14 +199,14 @@ void backward_pass(void * fastTest_ptr) {
 
 	if (!__fastTest_ref->canceled_orders.empty()) {
 		//Any orders for assets that have expired are canceled
-		__fastTest_ref->broker.log_canceled_orders(std::move(__fastTest_ref->canceled_orders));
+		__fastTest_ref->broker->log_canceled_orders(std::move(__fastTest_ref->canceled_orders));
 	}
 
 	//allow exchange to process cheat on close orders
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
 		if (!exchange->orders.empty()) {
 			__fastTest_ref->filled_orders = exchange->process_orders(true);
-			__fastTest_ref->broker.process_filled_orders(std::move(__fastTest_ref->filled_orders));
+			__fastTest_ref->broker->process_filled_orders(std::move(__fastTest_ref->filled_orders));
 		}
 	}
 
@@ -221,6 +227,13 @@ void register_exchange(void * fastTest_ptr, void *exchange_ptr, unsigned int exc
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->exchange_id = exchange_id;
 	__fastTest_ref->_register_exchange(__exchange_ref);
+}
+
+void register_broker(void * fastTest_ptr, void *broker_ptr, unsigned int broker_id){
+	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	__broker_ref->broker_id = broker_id;
+	__fastTest_ref->_register_broker(__broker_ref);
 }
 
 void* get_benchmark_ptr(void* fastTest_ptr){

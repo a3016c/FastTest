@@ -20,7 +20,7 @@
 class __Exchange
 {
 public:
-
+	bool is_built = false; 
 	unsigned int exchange_id /**<unique id of the exchange*/; 
 
 	bool logging; /**<wether or not to log events*/

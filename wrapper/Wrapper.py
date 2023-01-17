@@ -121,7 +121,7 @@ class PositionArrayStruct(Structure):
 
 """FastTest wrapper"""
 _new_fastTest_ptr = FastTest.CreateFastTestPtr
-_new_fastTest_ptr.argtypes = [c_void_p, c_bool, c_bool]
+_new_fastTest_ptr.argtypes = [c_bool, c_bool]
 _new_fastTest_ptr.restype = c_void_p
 
 _free_fastTest_ptr = FastTest.DeleteFastTestPtr
@@ -145,6 +145,9 @@ _fastTest_register_benchmark.argtypes = [c_void_p, c_void_p]
 
 _fastTest_register_exchange = FastTest.register_exchange
 _fastTest_register_exchange.argtypes = [c_void_p, c_void_p, c_uint]
+
+_fastTest_register_broker = FastTest.register_broker
+_fastTest_register_broker.argtypes = [c_void_p, c_void_p, c_uint]
 
 _get_benchmark_ptr = FastTest.get_benchmark_ptr
 _get_benchmark_ptr.argtypes = [c_void_p]

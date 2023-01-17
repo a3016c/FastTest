@@ -47,6 +47,7 @@ void __Broker::build(){
 
 	if(this->debug){
 		printf("BUILDING BROKER\n");
+		printf("BUILDING %lu EXCHANGES\n", this->exchanges.size());
 	}
 
 	size_t size;
@@ -62,8 +63,12 @@ void __Broker::build(){
 		}
 		size = epoch_index.size();
 	}
-	else{
+	else if(this->exchanges.size() == 1) {
 		size = this->exchanges[0]->datetime_index.size();
+	}
+	else{
+		std::cerr << "NO EXCHANGES TO BUILD" << std::endl;
+		return;
 	}
 
 	this->cash_history.resize(size);

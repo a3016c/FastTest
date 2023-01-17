@@ -14,12 +14,13 @@ class BrokerTestMethods(unittest.TestCase):
 
     def test_broker_load(self):
         print("TESTING test_broker_load...")
+        ft = FastTest(debug=False)
         exchange = Exchange()
-        broker = Broker(exchange)
-        ft = FastTest(broker)
-        
         ft.register_exchange(exchange)
         
+        broker = Broker(exchange, debug=False)
+        ft.register_broker(broker)
+         
         new_asset = Asset(exchange, asset_name="1")
         new_asset.set_format("%d-%d-%d", 0, 1)
         new_asset.load_from_csv(file_name_2)
@@ -31,7 +32,7 @@ class BrokerTestMethods(unittest.TestCase):
         ft.add_strategy(strategy)
         ft.run()
         print("TESTING: test_broker_load passed")
-        
+
     def test_limit_order(self):
         print("TESTING: test_limit_order...")
         exchange, broker, ft = setup_multi(logging=False, debug=False)
@@ -319,7 +320,7 @@ class BrokerTestMethods(unittest.TestCase):
         
         assert(np.array_equal(broker.get_cash_history(),np.array([100000,   94950,   94850,   97587.5,  97587.5, 99850])))
         assert(np.array_equal(broker.get_nlv_history(),np.array([100000,  99900,  99700, 100125, 100125,  99850])))
-    
+
 if __name__ == '__main__':
     unittest.main()
 

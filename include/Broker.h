@@ -16,8 +16,9 @@
 
 #define REG_T_REQ .5
 #define REG_T_SHORT_REQ 1.5
-
 #define CHECK_ORDER
+#define MARGIN
+
 #ifdef CHECK_ORDER
 enum ORDER_CHECK {
 	VALID_ORDER,
@@ -29,7 +30,6 @@ enum ORDER_CHECK {
 };
 #endif
 
-#define MARGIN
 #ifdef MARGIN
 enum MARGIN_CHECK{
 	VALID_ACCOUNT_STATUS,
@@ -62,6 +62,9 @@ struct PerformanceStruct {
 class __Broker
 {
 public:
+
+	unsigned int broker_id;
+
 	PerformanceStruct perfomance;
 	std::vector<std::unique_ptr<Order>> order_history;
 	std::vector<Position> position_history;

@@ -26,11 +26,12 @@ df1 = pd.DataFrame(index = get_unix_time(test1_index),data = np.vstack((test1_op
 df2 = pd.DataFrame(index = get_unix_time(test2_index),data = np.vstack((test2_open,test2_close)).T, columns=["OPEN","CLOSE"])
 
 def setup_simple(logging = False):
+    ft = FastTest(logging=logging)
     exchange = Exchange(logging=logging)
-    broker = Broker(exchange)
-    ft = FastTest(broker, logging=logging)
-    
+        
     ft.register_exchange(exchange)
+    broker = Broker(exchange)
+    ft.register_broker(broker)
 
     new_asset = Asset(exchange, asset_name="1")
     new_asset.set_format("%d-%d-%d", 0, 1)
@@ -43,11 +44,13 @@ def setup_simple(logging = False):
     return exchange, broker, ft
 
 def setup_multi(logging = False, margin = False, debug = False):
-    exchange = Exchange(logging = logging)
-    broker = Broker(exchange,logging=logging, margin=margin, debug=debug)
-    ft = FastTest(broker, logging=logging, debug=debug)
     
+    ft = FastTest(logging=logging, debug=debug)
+    exchange = Exchange(logging = logging)
     ft.register_exchange(exchange)
+    
+    broker = Broker(exchange,logging=logging, margin=margin, debug=debug)
+    ft.register_broker(broker)
 
     for i, file_name in enumerate([file_name_1,file_name_2]):
         new_asset = Asset(exchange, asset_name=str(i+1))
@@ -62,11 +65,13 @@ def setup_multi(logging = False, margin = False, debug = False):
 def setup_multi_exchange(logging = False, margin = False, debug = False):
     exchange1 = Exchange(exchange_name="exchange1", logging = logging)
     exchange2 = Exchange(exchange_name="exchange2", logging=logging)
-    broker = Broker(exchange1,logging=logging, margin=margin)
-    ft = FastTest(broker, logging, debug)
+    ft = FastTest(logging, debug)
     
     ft.register_exchange(exchange1) 
     ft.register_exchange(exchange2)
+    
+    broker = Broker(exchange1,logging=logging, margin=margin)
+    ft.register_broker(broker)
 
     new_asset1 = Asset(exchange1, asset_name=str(1))
     new_asset2 = Asset(exchange2, asset_name=str(2))
