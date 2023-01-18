@@ -96,6 +96,7 @@ class Broker():
         return position_history
 
     def place_market_order(self, asset_name : str, units : float, 
+                           asset_id = None,
                            stop_loss_on_fill = 0,
                            stop_loss_limit_pct = False,
                            cheat_on_close = False, 

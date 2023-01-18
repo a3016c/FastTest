@@ -11,7 +11,7 @@ from Strategy import *
 from helpers import *
 
 class ExchangeTestMethods(unittest.TestCase):
-
+    
     def test_exchange_build(self):
         print("TESTING test_exchange_build...")
         ft = FastTest()
@@ -65,6 +65,23 @@ class ExchangeTestMethods(unittest.TestCase):
         assert((order_history.ORDER_ARRAY[0].contents.fill_price - (98*1.01)) < .001)
         assert((order_history.ORDER_ARRAY[1].contents.fill_price - (101*.99)) < .001)
         print("TESTING: test_exchange_slippage passed")
+        
+    def test_get_id_max(self):
+        print("TESTING test_get_id_max...")
+        orders = []
+        exchange, broker, ft = setup_multi(logging=False)
+        strategy = TestStrategy(orders, broker, exchange)
+        ft.add_strategy(strategy)
+        
+        ft.step()
+        ft.step()
+        ids = exchange.get_id_max("CLOSE", 1)
+        assert(exchange.id_map[ids[0]] == "2")
+        ft.step()
+        ids = exchange.get_id_max("CLOSE", 1)
+        assert(exchange.id_map[ids[0]] == "1")
+        
+        print("TESTING: test_get_id_max passed")
         
 if __name__ == '__main__':
     unittest.main()

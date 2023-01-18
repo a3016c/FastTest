@@ -369,4 +369,20 @@ float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *
 	std::string column_str(column);
 	return __exchange_ref->_get_market_feature(asset_id,column_str, index);
 }
+void get_id_max_market_feature(void *exchange_ptr, const char *column, unsigned int *res_ids, unsigned int count, bool max){
+	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	std::string column_str(column);
+	std::map<unsigned int, float> id_feature_map;
+
+	for(auto const & pair : __exchange_ref->market_view){
+		unsigned int asset_id = pair.first;
+		id_feature_map[asset_id] = __exchange_ref->_get_market_feature(asset_id,column_str, 0);
+	}
+	std::vector<unsigned int> ids = n_biggest_elements(id_feature_map, count);
+
+	for(int i = 0; i < count; i++){
+		res_ids[i] = ids[i]; 
+	}
+}
+
 

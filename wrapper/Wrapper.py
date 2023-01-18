@@ -325,6 +325,10 @@ _get_market_feature = FastTest.get_market_feature
 _get_market_feature.argtypes = [c_void_p,c_uint,c_char_p, c_int]
 _get_market_feature.restype = c_float
 
+_get_id_max_market_feature = FastTest.get_id_max_market_feature
+_get_id_max_market_feature.argtypes = [c_void_p,c_char_p,POINTER(c_uint),c_uint,c_bool]
+_get_id_max_market_feature.restype = c_float
+
 _get_market_view = FastTest.get_market_view
 _get_market_view.argtypes = [c_void_p]
 

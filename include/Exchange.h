@@ -17,6 +17,56 @@
 #include "Asset.h"
 #include "utils_time.h"
 
+#include <map>
+#include <vector>
+#include <algorithm>
+
+template<typename map_iter_t>
+struct compare_map_iters_by_value
+{
+	bool operator()(map_iter_t const a, map_iter_t const b) const{
+		return a->second < b->second;
+	}
+};
+
+template<typename map_t>
+std::vector<typename map_t::key_type> const
+n_biggest_elements(map_t const& map, std::size_t n){
+	typedef typename map_t::const_iterator map_iter_t;
+	typedef compare_map_iters_by_value<map_iter_t> compare_t;
+	typedef std::vector<map_iter_t> map_iters_t;
+
+	// make a list of iterators into the map
+
+	map_iters_t map_iters;
+	map_iters.reserve(map.size());
+
+	for (map_iter_t p = map.begin(); p != map.end(); ++p)
+	{
+	map_iters.push_back(p);
+	}
+
+	// arrange for just the last n items to be the largest-valued ones
+	// (this should be significantly quicker than std::sort() and friends)
+
+	std::nth_element(map_iters.begin(),
+	map_iters.end() - n,
+	map_iters.end(),
+	compare_t());
+
+	// extract the keys for those largest n items
+
+	std::vector<typename map_t::key_type> results;
+	results.reserve(n);
+
+	for (typename map_iters_t::const_iterator p = map_iters.end(); n > 0; --n)
+	{
+		results.push_back((*--p)->first);
+	}
+
+	return results;
+}
+
 class __Exchange
 {
 public:
@@ -243,6 +293,7 @@ extern "C" {
 	EXCHANGE_API void get_market_view(void *exchange_ptr);
 	EXCHANGE_API float get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close = false);
 	EXCHANGE_API float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index = 0);
+	EXCHANGE_API void get_id_max_market_feature(void *exchange_ptr, const char *column, unsigned int *res_ids, unsigned int count = 0, bool max = true);
 
 	EXCHANGE_API void* get_asset_ptr(void *exchange_ptr, unsigned int asset_name);
 }

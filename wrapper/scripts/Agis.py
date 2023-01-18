@@ -120,9 +120,9 @@ if __name__ == "__main__":
     ft.add_strategy(strategy)
     
     st = time.time()
-    ft.run()
+    ft.profile()
     et = time.time()
     
     print(strategy.count / (et-st))
     
-    strategy.plot(benchmark)
+    #strategy.plot(benchmark)

@@ -45,6 +45,9 @@ class Exchange():
         index_ptr = Wrapper._get_exchange_datetime_index(self.ptr)
         length = self.get_exchange_index_length()
         return np.ctypeslib.as_array(index_ptr, shape=(length,))
+    
+    def get_asset_name(self, asset_id):
+        return self.id_map[asset_id]
 
     def get_market_price(self, asset_name : str, on_close = True):
         asset_id = self.asset_map[asset_name]
@@ -62,6 +65,18 @@ class Exchange():
             c_char_p(column.encode("utf-8")),
             index
         )
+        
+    def get_id_max(self, column : str, count : int, max = True):
+        ids = (c_uint * count)()
+        Wrapper._get_id_max_market_feature(
+            self.ptr,
+            c_char_p(column.encode("utf-8")),
+            cast(ids,POINTER(c_uint)),
+            count,
+            max
+        )
+        ids = np.ctypeslib.as_array(ids, shape=(count,))
+        return ids
         
     def get_asset_data(self, asset_name : str):
         asset_id = self.asset_map[asset_name]
