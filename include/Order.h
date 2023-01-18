@@ -22,17 +22,25 @@ enum OrderState {
 	FILLED,
 	CANCELED,
 	BROKER_REJECTED,
-	FAILED_TO_PLACE
+	FAILED_TO_PLACE,
+	INVALID_PARENT_ORDER_ID
 };
+
 enum OrderType {
 	MARKET_ORDER,
 	LIMIT_ORDER,
 	STOP_LOSS_ORDER,
 	TAKE_PROFIT_ORDER
 };
+
 enum OrderParentType {
 	POSITION = 0,
 	ORDER = 1
+};
+
+struct OrderResponse {
+	unsigned int order_id;
+	OrderState order_state;
 };
 
 struct OrderStruct {
@@ -84,7 +92,7 @@ public:
 	const char* get_order_type();
 	void create(timeval order_create_time);
 	void fill(float market_price, timeval fill_time);
-	OrderState add_stop_loss(float price, float units = NAN);
+	void add_stop_loss(float price, float units = NAN);
 
 	void to_struct(OrderStruct &order_struct);
 

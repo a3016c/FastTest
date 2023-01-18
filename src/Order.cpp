@@ -59,7 +59,7 @@ void Order::to_struct(OrderStruct &order_struct){
 	order_struct.order_create_time = this->order_create_time.tv_sec + this->order_create_time.tv_usec/1e6;
 	order_struct.order_fill_time = this->order_fill_time.tv_sec + this->order_fill_time.tv_usec / 1e6;
 }
-OrderState Order::add_stop_loss(float stop_loss, float units) {
+void Order::add_stop_loss(float stop_loss, float units) {
 	if (std::isnan(units)) {
 		units = this->units;
 	}
@@ -69,8 +69,8 @@ OrderState Order::add_stop_loss(float stop_loss, float units) {
 		stop_loss
 	));
 	this->orders_on_fill.push_back(std::move(order));
-	return ACCEPETED;
 }
+
 OrderType order_type(void *order_ptr) {
 	Order * __order_ref = static_cast<Order *>(order_ptr);
 	return __order_ref->order_type;

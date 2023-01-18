@@ -107,7 +107,9 @@ if __name__ == "__main__":
     ft.build()
 
     df = pd.read_csv("/Users/nathantormaschy/Downloads/SPY.csv")
-    df["DATE"] = pd.to_datetime(pd.to_datetime(df["DATE"], format = "%Y-%m-%d"))
+    df["DATE"] = pd.to_datetime(df["DATE"], format = "%Y-%m-%d")
+    df["DATE"] = df['DATE'].apply(lambda x: x.replace(tzinfo=None))
+    df["DATE"] = pd.to_datetime(df["DATE"])
     df.set_index("DATE",inplace=True)
     
     benchmark = Asset(exchange, asset_name=str("Benchmark"))

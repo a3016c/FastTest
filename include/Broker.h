@@ -131,7 +131,7 @@ public:
 	void broker_register_exchange(__Exchange* exchange_ptr);
 
 	//functions for managing orders on the exchange
-	OrderState send_order(std::unique_ptr<Order> new_order);
+	void send_order(std::unique_ptr<Order> new_order, OrderResponse *order_response);
 	bool cancel_order(std::unique_ptr<Order>& order_cancel, unsigned int exchange_id = 0);
 	void log_canceled_orders(std::vector<std::unique_ptr<Order>> cleared_orders);
 	bool cancel_orders(unsigned int asset_id);
@@ -154,8 +154,8 @@ public:
 	#endif
 
 	//order wrapers exposed to strategy
-	OrderState _place_market_order(unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
-	OrderState _place_limit_order(unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	OrderState _place_market_order(OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	OrderState _place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
@@ -256,7 +256,7 @@ public:
 	};
 
 	template <class T>
-	OrderState place_stoploss_order(T* parent, float units, float stop_loss, bool cheat_on_close = false) {
+	void place_stoploss_order(T* parent, OrderResponse *order_response, float units, float stop_loss, bool cheat_on_close = false) {
 		std::unique_ptr<Order> order(new StopLossOrder(
 			parent,
 			units,
@@ -267,10 +267,11 @@ public:
 		if (check_order(order) != VALID_ORDER) {
 			order->order_state = BROKER_REJECTED;
 			this->order_history.push_back(std::move(order));
-			return BROKER_REJECTED;
+			order_response->order_state = BROKER_REJECTED;
+			return;
 		}
 #endif
-		return this->send_order(std::move(order));
+		this->send_order(std::move(order), order_response);
 	}
 
 private:
@@ -310,10 +311,10 @@ extern "C" {
 	BROKER_API float get_realied_pl(void *broker_ptr);
 	BROKER_API float get_nlv(void *broker_ptr);
 
-	BROKER_API OrderState place_market_order(void *broker_ptr, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
-	BROKER_API OrderState place_limit_order(void *broker_ptr, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
-	BROKER_API OrderState position_add_stoploss(void *broker_ptr, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false);
-	BROKER_API OrderState order_add_stoploss(void *broker_ptr, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0);
+	BROKER_API void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	BROKER_API void place_limit_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	BROKER_API void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false);
+	BROKER_API void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0);
 
 }
 

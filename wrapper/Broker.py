@@ -91,8 +91,8 @@ class Broker():
     def get_position_history(self):
         position_count = self.get_total_position_count()
         position_history = Wrapper.PositionArrayStruct(position_count)
-        order_struct_pointer = pointer(position_history)
-        Wrapper._get_position_history(self.ptr, order_struct_pointer)
+        position_struct_pointer = pointer(position_history)
+        Wrapper._get_position_history(self.ptr, position_struct_pointer)
         return position_history
 
     def place_market_order(self, asset_name : str, units : float, 
@@ -104,23 +104,29 @@ class Broker():
         exchange_id = exchange.exchange_id
         asset_id = exchange.asset_map[asset_name]
         
-        return OrderState(Wrapper._place_market_order(
+        order_response = Wrapper.OrderResponse()
+        order_response_pointer = pointer(order_response)
+        Wrapper._place_market_order(
             self.ptr,
+            order_response_pointer,
             asset_id,
             units,
             cheat_on_close,
             exchange_id,
             strategy_id
             )
-        )
+        return order_response
         
     def place_limit_order(self, asset_name : str, units : float, limit : float, cheat_on_close = False, exchange_name = "default", strategy_id = 0):
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id
         asset_id = exchange.asset_map[asset_name]
 
-        return OrderState(Wrapper._place_limit_order(
+        order_response = Wrapper.OrderResponse()
+        order_response_pointer = pointer(order_response)
+        Wrapper._place_limit_order(
             self.ptr,
+            order_response_pointer,
             asset_id,
             units,
             limit,
@@ -128,10 +134,12 @@ class Broker():
             exchange_id,
             strategy_id
             )
-        )
+        return order_response
         
     def place_stoploss_order(self, units : float, stop_loss : float, asset_name = None, order_id = None, cheat_on_close = False, exchange_name = "default", strategy_id = 0):
 
+        order_response = Wrapper.OrderResponse()
+        order_response_pointer = pointer(order_response)
         if asset_name != None:
             
             exchange = self.exchange_map[exchange_name]
@@ -139,23 +147,26 @@ class Broker():
             asset_id = exchange.asset_map[asset_name]
             position_ptr = Wrapper._get_position_ptr(self.ptr, asset_id)
             
-            return OrderState(Wrapper._position_place_stoploss_order(
+            Wrapper._position_place_stoploss_order(
                 self.ptr,
+                order_response_pointer,
                 position_ptr,
                 units,
                 stop_loss,
                 cheat_on_close
                 )
-            )
+    
         elif order_id != None:
-            return OrderState(Wrapper._order_place_stoploss_order(
+            Wrapper._order_place_stoploss_order(
                 self.ptr,
+                order_response_pointer,
                 order_id,
                 units,
                 stop_loss,
                 cheat_on_close
                 )
-            )
+
+        return order_response
         
     def reset(self):
         Wrapper._reset_broker(self.ptr)

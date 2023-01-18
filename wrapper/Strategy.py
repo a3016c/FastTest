@@ -86,14 +86,14 @@ class Strategy():
             rowvar = False)[0][1],3)
         
         metrics = f"Sharpe: {sharpe} \n Benchmark Corr: {corr}"
-        anchored_text = AnchoredText(metrics, loc=1)
+        anchored_text = AnchoredText(metrics, loc=3)
         ax2.add_artist(anchored_text)
         
         plt.show()
 
 class TestStrategy(Strategy):
     def __init__(self, order_schedule, broker = None, exchange = None, strategy_name = "default") -> None:
-        super().__init__(broker,exchange, strategy_name)
+        super().__init__(broker,exchange,strategy_name)
         self.order_schedule = order_schedule
         self.i = 0
         
@@ -109,7 +109,7 @@ class TestStrategy(Strategy):
                     res = self.broker.place_limit_order(order.asset_name,order.units,order.limit,order.cheat_on_close, order.exchange_name, self.strategy_id)
                 elif order.order_type == OrderType.STOP_LOSS_ORDER:
                     res = self.broker.place_stoploss_order(units = order.units,stop_loss = order.limit,asset_name = order.asset_name)
-                assert(res != OrderState.BROKER_REJECTED)
+                assert(res.order_state != OrderState.BROKER_REJECTED)
 
         self.i += 1
 

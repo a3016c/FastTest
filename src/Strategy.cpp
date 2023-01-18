@@ -18,19 +18,20 @@ void TestStrategy::register_test_map(std::vector<order_schedule>orders) {
 
 void TestStrategy::next() {
 	for (auto it = this->order_scheduler.begin(); it != this->order_scheduler.end();) {
+		OrderResponse order_response;
 		if (it->i == i) {
 			switch (it->order_type) {
 			case MARKET_ORDER: {
-				this->__broker._place_market_order(it->asset_id, it->units);
+				this->__broker._place_market_order(&order_response, it->asset_id, it->units);
 				break;
 			}
 			case LIMIT_ORDER: {
-				this->__broker._place_limit_order(it->asset_id, it->units, it->limit);
+				this->__broker._place_limit_order(&order_response, it->asset_id, it->units, it->limit);
 				break;
 			}
 			case STOP_LOSS_ORDER: {
 				Position* existing_position = &this->__broker.portfolio[it->asset_id];
-				this->__broker.place_stoploss_order(existing_position, it->units, it->limit);
+				this->__broker.place_stoploss_order(existing_position, &order_response, it->units, it->limit);
 				break;
 			}
 			case TAKE_PROFIT_ORDER: {
