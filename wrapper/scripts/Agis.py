@@ -18,7 +18,7 @@ class Agis_Strategy(Strategy):
     def __init__(self, broker: Broker, exchange: Exchange, lookahead : int) -> None:
         super().__init__(broker, exchange)
         self.zip_path = "/Users/nathantormaschy/Downloads/preds_test.zip"
-        self.load()
+        self.load(exchange)
         self.i = 0
         self.lookahead = lookahead
         self.position_size = .025
@@ -68,7 +68,7 @@ class Agis_Strategy(Strategy):
                 counts += 1
                 if counts == self.position_count: break
            
-    def load(self):
+    def load(self,exchange):
         z = zipfile.ZipFile(self.zip_path)
         file_names = z.namelist()
         asset_names = [_file[0:-4] for _file in file_names]
@@ -93,13 +93,16 @@ class Agis_Strategy(Strategy):
 if __name__ == "__main__":
 
     ft = FastTest(logging=False)
-    exchange = Exchange()    
+    
+    exchange = Exchange()
     ft.register_exchange(exchange)
     
     broker = Broker(exchange, margin=True, logging=False)
     ft.register_broker(broker)
     
     strategy = Agis_Strategy(broker, exchange, lookahead=20)
+    
+    exchange.set_slippage(.0025)
     
     ft.build()
 
