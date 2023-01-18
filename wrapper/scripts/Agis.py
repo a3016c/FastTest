@@ -15,12 +15,12 @@ from FastTest import FastTest, run_jit
 import Wrapper
 
 class Agis_Strategy(Strategy):
-    def __init__(self, broker: Broker, exchange: Exchange) -> None:
+    def __init__(self, broker: Broker, exchange: Exchange, lookahead : int) -> None:
         super().__init__(broker, exchange)
         self.zip_path = "/Users/nathantormaschy/Downloads/preds_test.zip"
         self.load()
         self.i = 0
-        self.lookahead = 20
+        self.lookahead = lookahead
         self.position_size = .025
         self.position_count = 2
         
@@ -54,7 +54,7 @@ class Agis_Strategy(Strategy):
                 #if self.broker.position_exists(asset_name): continue
                 market_price = self.exchange.get_market_price(asset_name)
                 units = position_size / market_price
-                self.broker.place_market_order(asset_name, units)
+                self.broker.place_market_order(asset_name, units, strategy_id=self.strategy_id)
                 counts += 1
                 if counts == self.position_count: break
         
@@ -64,7 +64,7 @@ class Agis_Strategy(Strategy):
                 #if self.broker.position_exists(asset_name): continue
                 market_price = self.exchange.get_market_price(asset_name)
                 units = -1 * (position_size / market_price)
-                self.broker.place_market_order(asset_name, units)
+                self.broker.place_market_order(asset_name, units, strategy_id=self.strategy_id)
                 counts += 1
                 if counts == self.position_count: break
            
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     broker = Broker(exchange, margin=True, logging=False)
     ft.register_broker(broker)
     
-    strategy = Agis_Strategy(broker, exchange)
+    strategy = Agis_Strategy(broker, exchange, lookahead=20)
     
     ft.build()
 
@@ -121,5 +121,3 @@ if __name__ == "__main__":
     print(strategy.count / (et-st))
     
     strategy.plot(benchmark)
-
-    

@@ -24,6 +24,11 @@ bool __Asset::is_last_view() {
 void __Asset::_register_header(std::string header, unsigned int column_index){
 	this->headers[header] = column_index;
 }
+
+void __Asset::_set_asset_slippage(float _slippage){
+	this->slippage = _slippage;
+}
+
 void __Asset::_load_from_pointer(float *datetime_index, float *data, size_t rows, size_t columns) {
 	size_t size = rows * columns;
 
@@ -167,6 +172,10 @@ void set_format(void *ptr, const char * dformat, size_t open_col, size_t close_c
 	__asset_ref->open_col = open_col;
 	__asset_ref->close_col = close_col;
 	__asset_ref->format = format;
+}
+void set_asset_slippage(void *asset_ptr, float slippage) {
+	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
+	__asset_ref->_set_asset_slippage(slippage);
 }
 float * get_asset_index(void *asset_ptr) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);

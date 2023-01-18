@@ -59,6 +59,14 @@ struct PerformanceStruct {
 
 };
 
+struct cash_transfer {
+	unsigned int source_broker_id;
+	unsigned int destination_broker_id;
+	timeval transfer_create_time; 
+	timeval transfer_recieved_time; 
+	float cash_amount;
+};
+
 class __Broker
 {
 public:
@@ -75,11 +83,8 @@ public:
 	std::vector<float> margin_history;
 
 	//friction settings for the broker
-	bool has_slippage = false;
 	bool has_commission = false;
-	float slippage = 0.0f;
 	float commission = 0.0f;
-	float total_slippage = 0;
 	float total_commission = 0; 
 
 	//margin settings

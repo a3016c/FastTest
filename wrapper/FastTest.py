@@ -55,6 +55,10 @@ class FastTest:
         Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
         
     def register_exchange(self, exchange : Exchange, register = True):
+        
+        if(exchange.is_registered()):
+            raise Exception("Attempted to register an existing exchange")
+        
         exchange.exchange_id = self.exchange_counter
         self.exchange_counter += 1
         if register: Wrapper._fastTest_register_exchange(self.ptr, exchange.ptr, exchange.exchange_id)

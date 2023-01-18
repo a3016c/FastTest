@@ -69,7 +69,6 @@ public:
 	//be executed at time after
 	bool alive = false;
 
-
 	float units;			  //number of units to buy/sell
 	float fill_price;		  //price the order was filled at
 	unsigned int order_id;    //unique identifier for the order

@@ -189,6 +189,9 @@ _columns = FastTest.columns
 _columns.argtypes = [c_void_p]
 _columns.restype = c_size_t
 
+_set_asset_slippage = FastTest.set_asset_slippage
+_set_asset_slippage.argtypes = [c_void_p, c_float]
+
 _get_asset_index = FastTest.get_asset_index
 _get_asset_index.argtypes = [c_void_p]
 _get_asset_index.restype = POINTER(c_float)
@@ -301,6 +304,13 @@ _free_exchange_ptr.argtypes = [c_void_p]
 
 _build_exchange = FastTest.build_exchange
 _build_exchange.argtypes = [c_void_p]
+
+_exchange_is_registered = FastTest._is_registered
+_exchange_is_registered.argtypes = [c_void_p]
+_exchange_is_registered.restype = c_bool
+
+_exchange_set_slippage = FastTest.set_slippage
+_exchange_set_slippage.argtypes = [c_void_p, c_float]
 
 _register_asset = FastTest.register_asset 
 _register_asset.argtypes = [c_void_p,c_void_p]

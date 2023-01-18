@@ -32,6 +32,14 @@ void __Exchange::reset() {
 	this->orders.clear();
 }
 void __Exchange::build() {
+
+	for (auto& kvp : this->market) {
+		if(kvp.second.slippage > 0){
+			this->has_slippage = true;
+			break;
+		}
+	}
+
 	while (true) {
 		timeval next_time = MAX_TIME;
 		bool update = false;
@@ -107,34 +115,69 @@ std::vector<std::unique_ptr<Order>> __Exchange::clean_up_market() {
 	return std::move(cleared_orders);
 }
 
+void __Exchange::_set_slippage(float _slippage){
+	for(auto& pair : this->market){
+		pair.second.slippage = _slippage;
+	}
+	this->has_slippage = true;
+}
+
+float __Exchange::apply_slippage(unsigned int asset_id, float market_price, float units){
+	float asset_slippage = this->market[asset_id].slippage;
+	if(asset_slippage == 0){
+		return market_price;
+	}
+	float fill_price;
+	if(units > 0){
+		fill_price = market_price * (1 + asset_slippage);
+		this->total_slippage += ((fill_price - market_price) * units);
+		return fill_price;
+	}
+	else{
+		fill_price = market_price * (1 - asset_slippage);
+		this->total_slippage += ((fill_price - market_price) * units);
+		return fill_price;
+	}
+}
+
 void __Exchange::process_market_order(MarketOrder * const open_order) {
 	float market_price = _get_market_price(open_order->asset_id, open_order->cheat_on_close);
 	if (isnan(market_price)) { 
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
+	if(this->has_slippage){
+		market_price = this->apply_slippage(open_order->asset_id,market_price,open_order->units);
+	}
 	open_order->fill(market_price, this->current_time);
 }
+
 void __Exchange::process_limit_order(LimitOrder *const open_order, bool on_close) {
 	float market_price = _get_market_price(open_order->asset_id, on_close);
 	if (isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
 	if ((open_order->units > 0) & (market_price <= open_order->limit)) {
+		if(this->has_slippage){market_price = this->apply_slippage(open_order->asset_id,market_price,open_order->units);}
 		open_order->fill(market_price, this->current_time);
 	}
 	else if ((open_order->units < 0) & (market_price >= open_order->limit)) {
+		if(this->has_slippage){market_price = this->apply_slippage(open_order->asset_id,market_price,open_order->units);}
 		open_order->fill(market_price, this->current_time);
 	}
 }
+
 void __Exchange::process_stoploss_order(StopLossOrder *const open_order, bool on_close){
 	float market_price = _get_market_price(open_order->asset_id, on_close);
 	if ((open_order->units < 0) & (market_price <= open_order->stop_loss)) {
+		if(this->has_slippage){market_price = this->apply_slippage(open_order->asset_id,market_price,open_order->units);}
 		open_order->fill(market_price, this->current_time);
 	}
 	else if ((open_order->units > 0) & (market_price >= open_order->stop_loss)) {
+		if(this->has_slippage){market_price = this->apply_slippage(open_order->asset_id,market_price,open_order->units);}
 		open_order->fill(market_price, this->current_time);
 	}
 }
+
 void __Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close) {
 	try {
 		switch (open_order->order_type) {
@@ -163,6 +206,7 @@ void __Exchange::process_order(std::unique_ptr<Order> &open_order, bool on_close
 		throw e;
 	}
 }
+
 std::vector<std::unique_ptr<Order>> __Exchange::process_orders(bool on_close) {
 	std::vector<std::unique_ptr<Order>> orders_filled;
 	std::deque<std::unique_ptr<Order>> orders_open;
@@ -207,11 +251,13 @@ std::vector<std::unique_ptr<Order>> __Exchange::process_orders(bool on_close) {
 	this->orders = std::move(orders_open);
 	return orders_filled;
 }
+
 bool __Exchange::place_order(std::unique_ptr<Order> new_order) {
 	if (this->logging) { (this->log_order_placed(new_order)); }
 	this->orders.push_back(std::move(new_order));
 	return true;
 }
+
 std::unique_ptr<Order> __Exchange::cancel_order(std::unique_ptr<Order>& order_cancel) {
 	std::unique_ptr<Order> order;
 	for (size_t i = 0; i < this->orders.size(); i++) {
@@ -223,6 +269,7 @@ std::unique_ptr<Order> __Exchange::cancel_order(std::unique_ptr<Order>& order_ca
 	}
 	return order;
 }
+
 std::vector<std::unique_ptr<Order>> __Exchange::cancel_orders(unsigned int asset_id) {
 	std::vector<std::unique_ptr<Order>> canceled_orders;
 	for (auto& order : this->orders) {
@@ -231,6 +278,7 @@ std::vector<std::unique_ptr<Order>> __Exchange::cancel_orders(unsigned int asset
 	}
 	return canceled_orders;
 }
+
 void __Exchange::log_order_placed(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_create_time, this->time, sizeof(this->time));
@@ -243,6 +291,7 @@ void __Exchange::log_order_placed(std::unique_ptr<Order>& order) {
 		order->units
 	);
 }
+
 void __Exchange::log_order_filled(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_fill_time, this->time, sizeof(this->time));
@@ -254,6 +303,7 @@ void __Exchange::log_order_filled(std::unique_ptr<Order>& order) {
 		order->fill_price
 	);
 }
+
 void * CreateExchangePtr(bool logging){
 	__Exchange *new_exchange = new __Exchange;
 	new_exchange->logging = logging;
@@ -266,6 +316,14 @@ void DeleteExchangePtr(void *ptr){
 void reset_exchange(void *exchange_ptr) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->reset();
+}
+bool _is_registered(void *exchange_ptr) {
+	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	return __exchange_ref->is_registered;
+}
+void set_slippage(void *exchange_ptr, float slippage) {
+	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
+	__exchange_ref->_set_slippage(slippage);
 }
 void register_asset(void *asset_ptr, void *exchange_ptr) {
 	__Asset * __asset_ref = static_cast<__Asset *>(asset_ptr);

@@ -20,8 +20,12 @@
 class __Exchange
 {
 public:
-	bool is_built = false; 
-	unsigned int exchange_id /**<unique id of the exchange*/; 
+	bool has_slippage = false;
+	float total_slippage = 0;
+
+	bool is_built = false;      /**<is the exchange built*/
+	bool is_registered = false; /**<is the exchange registered to a FastTest*/ 
+	unsigned int exchange_id;   /**<unique id of the exchange*/ 
 
 	bool logging; /**<wether or not to log events*/
 	char time[28]{}; /**<char array used for datetimes of log events*/
@@ -79,6 +83,19 @@ public:
 	 *assets in the market. Resets the current index and clears all open orders.
 	*/
 	void reset();
+
+	/**
+	 *@brief Set the slippage for assets listed on the exchange
+	 *@param slippage The slippage amount 
+	*/
+	void _set_slippage(float slippage);
+
+	/**
+	 *@brief Apply slippage to a order fill
+	 *@param asset_id id of the asset (to look up slippage)
+	 *@param market_price the actual fill price
+	*/
+	float apply_slippage(unsigned int asset_id, float market_price, float units);
 
 	/**
 	 *@brief Register a new Asset to the FastTest.
@@ -210,6 +227,9 @@ private:
 extern "C" {
 	EXCHANGE_API void * CreateExchangePtr(bool logging = false);
 	EXCHANGE_API void DeleteExchangePtr(void *ptr);
+
+	EXCHANGE_API bool _is_registered(void *exchange_ptr);
+	EXCHANGE_API void set_slippage(void *exchange_ptr, float slippage);
 
 	EXCHANGE_API void register_asset(void *asset_ptr, void *exchange_ptr);
 	EXCHANGE_API int asset_count(void *exchange_ptr);

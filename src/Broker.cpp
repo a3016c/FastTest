@@ -176,21 +176,6 @@ void __Broker::margin_on_reduce(Position &existing_position, float order_fill_pr
 
 void __Broker::open_position(std::unique_ptr<Order> &order) {
 	float order_fill_price = order->fill_price;
-	float fill_price;
-
-	//if slippage is turned on calculate the fills accordingly
-	if(this->has_slippage){
-		if(order->units > 0){
-			fill_price = order_fill_price * (1 + this->slippage);
-			this->total_slippage += ((fill_price - order_fill_price) * order->units);
-			order_fill_price = fill_price;
-		}
-		else if (order->units < 0){
-			fill_price = order_fill_price * (1 - this->slippage);
-			this->total_slippage += ((fill_price - order_fill_price) * order->units);
-			order_fill_price = fill_price;
-		}
-	}
 
 	//build new position from the order informtion
 	Position new_position = Position{
@@ -226,21 +211,6 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 void __Broker::close_position(Position &existing_position, float order_fill_price, timeval order_fill_time) {
 	//note: this function does not remove the position from the portfolio so this should not
 	//be called directly in order to close a position. Close position through a appropriate order.
-	float fill_price;
-
-	//if slippage is turned on calculate the fills accordingly
-	if(this->has_slippage){
-		if(existing_position.units < 0){
-			fill_price = order_fill_price * (1 + this->slippage);
-			this->total_slippage += ((fill_price - order_fill_price) * existing_position.units);
-			order_fill_price = fill_price;
-		}
-		else if (existing_position.units > 0){
-			fill_price = order_fill_price * (1 - this->slippage);
-			this->total_slippage += ((fill_price - order_fill_price) * existing_position.units);
-			order_fill_price = fill_price;
-		}
-	}
 	
 	//close the position at the order fill price and order fill time
 	existing_position.close(order_fill_price, order_fill_time);

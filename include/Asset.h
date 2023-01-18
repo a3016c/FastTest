@@ -68,20 +68,19 @@ public:
 };
 class __Asset {
 public:
-	 
-	unsigned int asset_id; // unique identifier of the asset
-	ASSET_TYPE asset_type; //type of asset
-	int asset_index; // current position on a asset's datetime index
-	bool streaming = false; //is the asset finished streaming data
-
+	float slippage = 0;
+	ASSET_TYPE asset_type;    //type of asset
+	unsigned int asset_id;    // unique identifier of the asset
 	unsigned int exchange_id; //the id of the exchange the asset is listed on
 
-	__AssetDataFormat format; //define the format of the asset
+	__AssetDataFormat format;          //define the format of the asset
 	const char *digit_datetime_format; //the digit sequence used to parse datetime index
-	const char *datetime_format; //format of the datetime index
-	unsigned int frequency; //frequency of the datettime index
-	size_t open_col; //the index of the open column
-	size_t close_col; //the index of the close column
+	const char *datetime_format;       //format of the datetime index
+	unsigned int frequency;            //frequency of the datettime index
+	size_t open_col;                   //the index of the open column
+	size_t close_col;                  //the index of the close column
+
+	bool streaming = false; //is the asset finished streaming data
 
 	std::unordered_map<std::string, unsigned int> headers;
 	std::vector<timeval> datetime_index;
@@ -104,6 +103,9 @@ public:
 
 	//function to load an asset from a float pointer using specified dims
 	void _load_from_pointer(float *datetime_index,float *data, size_t rows, size_t columns);
+
+	//function to set the slippage rate of an asset
+	void _set_asset_slippage(float slippage);
 
 	//function to print the asset data to standard out  (used for debuging mainly)
 	void print_data();
@@ -152,7 +154,8 @@ extern "C" {
 	ASSET_API size_t columns(void *ptr);
 
 	ASSET_API void set_format(void *ptr, const char * dformat = "%d-%d-%d", size_t open = 0, size_t close = 1);
-
+	ASSET_API void set_asset_slippage(void *ptr, float slippage);
+	
 	ASSET_API float* get_asset_index(void *ptr);
 	ASSET_API float* get_asset_data(void *ptr);
 }

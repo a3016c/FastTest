@@ -69,6 +69,7 @@ void __FastTest::_register_broker(__Broker *new_broker){
 }
 
 void __FastTest::_register_exchange(__Exchange *new_exchange){
+	new_exchange->is_registered = true;
 	this->__exchanges.push_back(new_exchange);
 }
 

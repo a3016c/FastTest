@@ -22,8 +22,9 @@ class Broker():
         Wrapper._build_broker(self.ptr)
         
     def register_exchange(self, exchange : Exchange):
-        if(exchange.exchange_id == None):
-            raise Exception("broker not registered to FastTest")
+        if(not exchange.is_registered()):
+            raise Exception("Exchange is not yet registered to the FastTest")
+        
         self.exchange_map[exchange.exchange_name] = exchange
         Wrapper._broker_register_exchange(self.ptr, exchange.ptr)
         
@@ -73,8 +74,8 @@ class Broker():
         return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
     
     def get_nlv_history(self):
-        cash_ptr = Wrapper._broker_get_nlv_history(self.ptr)
-        return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
+        nlv_ptr = Wrapper._broker_get_nlv_history(self.ptr)
+        return np.ctypeslib.as_array(nlv_ptr, shape=(self.get_history_length(),))
     
     def get_margin_history(self):
         cash_ptr = Wrapper._broker_get_margin_history(self.ptr)
@@ -94,7 +95,11 @@ class Broker():
         Wrapper._get_position_history(self.ptr, order_struct_pointer)
         return position_history
 
-    def place_market_order(self, asset_name : str, units : float, cheat_on_close = False, exchange_name = "default", strategy_id = 0):
+    def place_market_order(self, asset_name : str, units : float, 
+                           cheat_on_close = False, 
+                           exchange_name = "default",
+                           strategy_id = 0):
+        
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id
         asset_id = exchange.asset_map[asset_name]

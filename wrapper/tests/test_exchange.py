@@ -13,6 +13,7 @@ from helpers import *
 class ExchangeTestMethods(unittest.TestCase):
 
     def test_exchange_build(self):
+        print("TESTING test_exchange_build...")
         ft = FastTest()
         
         exchange = Exchange()
@@ -35,9 +36,36 @@ class ExchangeTestMethods(unittest.TestCase):
             asset_data = exchange.get_asset_data(str(i))
             assert((asset_data[:,0] == test2_open).all())
             assert((asset_data[:,1] == test2_close).all())
-
+            
+        print("TESTING test_exchange_build passed")
+            
+    def test_exchange_slippage(self):
+        print("TESTING test_exchange_slippage...")
+        orders = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 1,
+                    units = 100
+                ),
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 3,
+                    units = -100
+                )
+            ]
+        exchange, broker, ft = setup_multi(logging=False)
+        exchange.set_slippage(.01)
+        strategy = TestStrategy(orders, broker, exchange)
+        ft.add_strategy(strategy)
+        ft.run()
         
-
+        order_history = broker.get_order_history()
+        assert((order_history.ORDER_ARRAY[0].contents.fill_price - (98*1.01)) < .001)
+        assert((order_history.ORDER_ARRAY[1].contents.fill_price - (101*.99)) < .001)
+        print("TESTING: test_exchange_slippage passed")
+        
 if __name__ == '__main__':
     unittest.main()
 

@@ -22,6 +22,12 @@ class Exchange():
 
     def reset(self):
         Wrapper._reset_exchange(self.ptr)
+        
+    def is_registered(self):
+        return Wrapper._exchange_is_registered(self.ptr)
+    
+    def set_slippage(self, slippage : float):
+        Wrapper._exchange_set_slippage(self.ptr,slippage)
 
     def register_asset(self, asset):
         self.asset_map[asset.asset_name] = asset.asset_id
@@ -116,6 +122,9 @@ class Asset():
             open_col,
             close_col
         )
+        
+    def set_slippage(self, slippage : float):
+        Wrapper._set_asset_slippage(self.ptr, slippage)
 
     def rows(self):
         return Wrapper._rows(self.ptr)

@@ -33,6 +33,9 @@ void TestStrategy::next() {
 				this->__broker.place_stoploss_order(existing_position, it->units, it->limit);
 				break;
 			}
+			case TAKE_PROFIT_ORDER: {
+				break;
+			}
 			}
 			it = this->order_scheduler.erase(it);
 		}
