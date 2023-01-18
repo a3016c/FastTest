@@ -291,7 +291,6 @@ void __Exchange::log_order_placed(std::unique_ptr<Order>& order) {
 		order->units
 	);
 }
-
 void __Exchange::log_order_filled(std::unique_ptr<Order>& order) {
 	memset(this->time, 0, sizeof this->time);
 	timeval_to_char_array(&order->order_fill_time, this->time, sizeof(this->time));
