@@ -26,6 +26,41 @@ void Order::fill(float market_price, timeval fill_time) {
 	this->order_fill_time = fill_time;
 	this->fill_price = market_price;
 	this->order_state = FILLED;
+
+	if(this->orders_on_fill.size() == 0){
+		return;
+	}
+	
+	for(auto & order : this->orders_on_fill){
+		switch (order->order_type) {
+			case STOP_LOSS_ORDER: {
+				StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(order.get());
+				if(stop_loss_order->limit_pct == true){
+					if(this->units > 0){
+						float pct = (1-stop_loss_order->stop_loss);
+						stop_loss_order->stop_loss = pct * market_price;
+					}
+					else{
+						float pct = (1+stop_loss_order->stop_loss);
+						stop_loss_order->stop_loss = pct * market_price;
+					}
+				}
+				break;
+			}
+			case TAKE_PROFIT_ORDER: {
+				TakeProfitOrder* take_profit_order = static_cast <TakeProfitOrder*>(order.get());
+				if(take_profit_order->limit_pct == true){
+					if(this->units > 0){
+						take_profit_order->take_profit = (1+take_profit_order->limit_pct) * market_price;
+					}
+					else{
+						take_profit_order->take_profit = (1-take_profit_order->limit_pct) * market_price;
+					}
+				}
+				break;
+			}
+		}
+	}
 }
 const char* Order::get_order_type() {
 	switch (this->order_type) {
@@ -53,20 +88,24 @@ void Order::to_struct(OrderStruct &order_struct){
 	order_struct.exchange_id = this->exchange_id;
 	order_struct.strategy_id = this->strategy_id;
 	order_struct.order_state = this->order_state;
+	order_struct.order_type = this->order_type;
 	order_struct.units = this->units;
 	order_struct.fill_price = this->fill_price;
 	order_struct.asset_id = this->asset_id;
 	order_struct.order_create_time = this->order_create_time.tv_sec + this->order_create_time.tv_usec/1e6;
 	order_struct.order_fill_time = this->order_fill_time.tv_sec + this->order_fill_time.tv_usec / 1e6;
 }
-void Order::add_stop_loss(float stop_loss, float units) {
+void Order::add_stop_loss(float stop_loss, float units, bool limit_pct) {
 	if (std::isnan(units)) {
 		units = this->units;
 	}
 	std::unique_ptr<Order> order(new StopLossOrder(
 		this,
 		units,
-		stop_loss
+		stop_loss,
+		false,
+		this->exchange_id,
+		limit_pct
 	));
 	this->orders_on_fill.push_back(std::move(order));
 }

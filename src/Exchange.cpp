@@ -171,10 +171,12 @@ void __Exchange::process_stoploss_order(StopLossOrder *const open_order, bool on
 	if ((open_order->units < 0) & (market_price <= open_order->stop_loss)) {
 		if(this->has_slippage){market_price = this->apply_slippage(open_order->asset_id,market_price,open_order->units);}
 		open_order->fill(market_price, this->current_time);
+		return;
 	}
 	else if ((open_order->units > 0) & (market_price >= open_order->stop_loss)) {
 		if(this->has_slippage){market_price = this->apply_slippage(open_order->asset_id,market_price,open_order->units);}
 		open_order->fill(market_price, this->current_time);
+		return;
 	}
 }
 

@@ -24,6 +24,12 @@ class OrderSchedule():
         self.limit = kwargs.get("limit")
         self.cheat_on_close = kwargs.get("cheat_on_close") if kwargs.get("cheat_on_close") != None else False
         
+        self.stop_loss_on_fill = kwargs.get("stop_loss_on_fill")
+        if self.stop_loss_on_fill == None: self.stop_loss_on_fill = 0
+        self.stop_loss_limit_pct = kwargs.get("stop_loss_limit_pct")
+        if self.stop_loss_limit_pct == None: self.stop_loss_limit_pct = 0
+        
+        
         if kwargs.get("exchange_name") == None:
             self.exchange_name = "default"
         else:

@@ -133,6 +133,35 @@ class BrokerTestMethods(unittest.TestCase):
 
         print("TESTING: test_stoploss passed")
         
+    def test_stoploss_on_fill(self):
+        print("TESTING test_stoploss_on_fill...")
+        orders = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 0,
+                    units = 100,
+                    stop_loss_on_fill = .025,
+                    stop_loss_limit_pct = True
+                )
+            ]
+        exchange, broker, ft = setup_multi(logging=False)
+        strategy = TestStrategy(orders, broker, exchange)
+        ft.add_strategy(strategy)
+        ft.run()
+        
+        order_history = broker.get_order_history()
+        position_history = broker.get_position_history()
+        
+        assert(len(order_history) == 2)
+        assert(len(position_history) == 1)
+
+        assert(order_history.ORDER_ARRAY[0].contents.fill_price == 100)
+        assert(order_history.ORDER_ARRAY[1].contents.fill_price == 97)
+        assert(OrderType(order_history.ORDER_ARRAY[1].contents.order_type) == OrderType.STOP_LOSS_ORDER)
+                
+        print("TESTING: test_stoploss_on_fill passed")
+        
     def test_short(self):
         print("TESTING test_short...")
 

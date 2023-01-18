@@ -104,9 +104,19 @@ class TestStrategy(Strategy):
         for order in self.order_schedule:
             if order.i == self.i:
                 if order.order_type == OrderType.MARKET_ORDER:
-                    res = self.broker.place_market_order(order.asset_name,order.units,order.cheat_on_close, order.exchange_name, self.strategy_id)
+                    res = self.broker.place_market_order(order.asset_name,order.units,
+                                                        cheat_on_close = order.cheat_on_close,
+                                                        stop_loss_on_fill= order.stop_loss_on_fill,
+                                                        stop_loss_limit_pct = order.stop_loss_limit_pct,
+                                                        exchange_name = order.exchange_name,
+                                                        strategy_id = self.strategy_id)
                 elif order.order_type == OrderType.LIMIT_ORDER:
-                    res = self.broker.place_limit_order(order.asset_name,order.units,order.limit,order.cheat_on_close, order.exchange_name, self.strategy_id)
+                    res = self.broker.place_limit_order(order.asset_name,order.units,order.limit,
+                                                        cheat_on_close = order.cheat_on_close,
+                                                        stop_loss_on_fill= order.stop_loss_on_fill,
+                                                        stop_loss_limit_pct = order.stop_loss_limit_pct,
+                                                        exchange_name = order.exchange_name,
+                                                        strategy_id = self.strategy_id)
                 elif order.order_type == OrderType.STOP_LOSS_ORDER:
                     res = self.broker.place_stoploss_order(units = order.units,stop_loss = order.limit,asset_name = order.asset_name)
                 assert(res.order_state != OrderState.BROKER_REJECTED)

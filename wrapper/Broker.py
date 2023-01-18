@@ -96,6 +96,8 @@ class Broker():
         return position_history
 
     def place_market_order(self, asset_name : str, units : float, 
+                           stop_loss_on_fill = 0,
+                           stop_loss_limit_pct = False,
                            cheat_on_close = False, 
                            exchange_name = "default",
                            strategy_id = 0):
@@ -115,9 +117,24 @@ class Broker():
             exchange_id,
             strategy_id
             )
+        
+        if(stop_loss_on_fill > 0):
+            self.place_stoploss_order(
+                units = -1*units,
+                order_id = order_response.order_id,
+                stop_loss = stop_loss_on_fill,
+                limit_pct = stop_loss_limit_pct
+            )
+        
         return order_response
         
-    def place_limit_order(self, asset_name : str, units : float, limit : float, cheat_on_close = False, exchange_name = "default", strategy_id = 0):
+    def place_limit_order(self, asset_name : str, units : float, limit : float,
+                        stop_loss_on_fill = 0,
+                        stop_loss_limit_pct = False,
+                        cheat_on_close = False,
+                        exchange_name = "default",
+                        strategy_id = 0):
+        
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id
         asset_id = exchange.asset_map[asset_name]
@@ -134,16 +151,32 @@ class Broker():
             exchange_id,
             strategy_id
             )
+        
+        if(stop_loss_on_fill > 0):
+            self.place_stoploss_order(
+                units = -1*units,
+                order_id = order_response.order_id,
+                stop_loss = stop_loss_on_fill,
+                limit_pct = stop_loss_limit_pct
+            )
+            
         return order_response
         
-    def place_stoploss_order(self, units : float, stop_loss : float, asset_name = None, order_id = None, cheat_on_close = False, exchange_name = "default", strategy_id = 0):
+    def place_stoploss_order(self, units : float, stop_loss : float, 
+                             limit_pct = False,
+                             asset_name = None,
+                             order_id = None,
+                             cheat_on_close = False,
+                             exchange_name = "default",
+                             strategy_id = 0):
+        
+        exchange = self.exchange_map[exchange_name]
+        exchange_id = exchange.exchange_id
 
         order_response = Wrapper.OrderResponse()
         order_response_pointer = pointer(order_response)
+        
         if asset_name != None:
-            
-            exchange = self.exchange_map[exchange_name]
-            exchange_id = exchange.exchange_id
             asset_id = exchange.asset_map[asset_name]
             position_ptr = Wrapper._get_position_ptr(self.ptr, asset_id)
             
@@ -153,7 +186,9 @@ class Broker():
                 position_ptr,
                 units,
                 stop_loss,
-                cheat_on_close
+                cheat_on_close,
+                exchange_id,
+                limit_pct
                 )
     
         elif order_id != None:
@@ -163,8 +198,13 @@ class Broker():
                 order_id,
                 units,
                 stop_loss,
-                cheat_on_close
+                cheat_on_close,
+                exchange_id,
+                limit_pct
                 )
+            
+        else:
+            raise Exception("Must pass in order id or asset name")
 
         return order_response
         

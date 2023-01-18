@@ -286,10 +286,10 @@ _get_position = FastTest.get_position
 _get_position.argtypes = [c_void_p,c_uint,POINTER(PositionStruct)]
 
 _position_place_stoploss_order = FastTest.position_add_stoploss
-_position_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_void_p, c_float, c_float, c_bool]
+_position_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_void_p, c_float, c_float, c_bool, c_bool]
 
 _order_place_stoploss_order = FastTest.order_add_stoploss
-_order_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool]
+_order_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_bool]
 
 """ORDER WRAPPER"""
 _order_type = FastTest.order_type

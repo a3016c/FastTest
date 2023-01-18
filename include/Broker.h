@@ -154,8 +154,8 @@ public:
 	#endif
 
 	//order wrapers exposed to strategy
-	OrderState _place_market_order(OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
-	OrderState _place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	void _place_market_order(OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	void _place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
@@ -256,12 +256,13 @@ public:
 	};
 
 	template <class T>
-	void place_stoploss_order(T* parent, OrderResponse *order_response, float units, float stop_loss, bool cheat_on_close = false) {
+	void place_stoploss_order(T* parent, OrderResponse *order_response, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false) {
 		std::unique_ptr<Order> order(new StopLossOrder(
 			parent,
 			units,
 			stop_loss,
-			cheat_on_close
+			cheat_on_close,
+			limit_pct
 		));
 #ifdef CHECK_ORDER
 		if (check_order(order) != VALID_ORDER) {
@@ -313,8 +314,9 @@ extern "C" {
 
 	BROKER_API void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
 	BROKER_API void place_limit_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
-	BROKER_API void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false);
-	BROKER_API void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0);
+
+	BROKER_API void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false);
+	BROKER_API void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0, bool limit_pct = false);
 
 }
 

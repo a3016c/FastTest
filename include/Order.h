@@ -92,7 +92,7 @@ public:
 	const char* get_order_type();
 	void create(timeval order_create_time);
 	void fill(float market_price, timeval fill_time);
-	void add_stop_loss(float price, float units = NAN);
+	void add_stop_loss(float price, float units = NAN, bool limit_pct = false);
 
 	void to_struct(OrderStruct &order_struct);
 
@@ -145,17 +145,21 @@ class StopLossOrder : public Order
 public:
 	OrderParent order_parent;
 	float stop_loss;
-	StopLossOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0)
+	bool limit_pct;
+	StopLossOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0, bool limit_pct = false)
 		: Order(STOP_LOSS_ORDER, parent_order->asset_id, units, cheat_on_close, exchange_id) {
 		this->order_parent.member.parent_order = parent_order;
 		this->order_parent.type = ORDER;
 		this->stop_loss = stop_loss;
+		this->limit_pct = limit_pct;
 	}
-	StopLossOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false)
+	StopLossOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false)
 		: Order(STOP_LOSS_ORDER, parent_position->asset_id, units, cheat_on_close) {
 		this->order_parent.member.parent_position = parent_position;
 		this->order_parent.type = POSITION;
 		this->stop_loss = stop_loss;
+		this->limit_pct = limit_pct;
+
 	}
 };
 class TakeProfitOrder : public Order
@@ -163,17 +167,20 @@ class TakeProfitOrder : public Order
 public:
 	OrderParent order_parent;
 	float take_profit;
-	TakeProfitOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false)
+	bool limit_pct;
+	TakeProfitOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false)
 		: Order(TAKE_PROFIT_ORDER, parent_order->asset_id, units, cheat_on_close) {
 		this->order_parent.member.parent_order = parent_order;
 		this->order_parent.type = ORDER;
 		this->take_profit = stop_loss;
+		this->limit_pct = limit_pct;
 	}
-	TakeProfitOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false)
+	TakeProfitOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false)
 		: Order(TAKE_PROFIT_ORDER, parent_position->asset_id, units, cheat_on_close) {
 		this->order_parent.member.parent_position = parent_position;
 		this->order_parent.type = POSITION;
 		this->take_profit = stop_loss;
+		this->limit_pct = limit_pct;
 	}
 };
 
