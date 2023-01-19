@@ -1,7 +1,9 @@
-from Broker import *
 from ctypes import *
 import sys 
+import os
+
 import pandas as pd
+import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
@@ -11,9 +13,13 @@ import numba
 from numba.core import types
 from numba.experimental import jitclass
 
-from Exchange import Exchange
-from Order import OrderSchedule, OrderType
-import Wrapper
+SCRIPT_DIR = os.path.dirname(__file__)
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from wrapper.Exchange import Exchange
+from wrapper.Broker import Broker
+from wrapper.Order import OrderSchedule, OrderType, OrderState
+from wrapper import Wrapper
 
 class Strategy():
     def __init__(self, broker : Broker, exchange : Exchange, strategy_name = "default") -> None:

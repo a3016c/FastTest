@@ -1,10 +1,17 @@
 import sys
 from ctypes import *
-import numpy as np
 from enum import Enum
-import Wrapper
-from Exchange import Exchange, Asset
-from Order import OrderState
+import os
+import sys
+
+import numpy as np
+
+SCRIPT_DIR = os.path.dirname(__file__)
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from wrapper import Wrapper
+from wrapper.Exchange import Exchange, Asset
+from wrapper.Order import OrderState
 
 class Broker():
     def __init__(self, exchange : Exchange, logging = True, margin = False, debug = False) -> None:

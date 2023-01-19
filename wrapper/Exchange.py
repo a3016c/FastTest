@@ -1,8 +1,14 @@
 import sys
+import os
 from ctypes import *
-import Wrapper
+
 import numpy as np
 import pandas as pd
+
+SCRIPT_DIR = os.path.dirname(__file__)
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from wrapper import  Wrapper
 
 global g_asset_counter 
 g_asset_counter = 0

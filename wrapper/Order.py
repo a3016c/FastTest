@@ -1,6 +1,12 @@
 from enum import Enum
 import ctypes
-import Wrapper
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(__file__)
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from wrapper import Wrapper
 
 class OrderState(Enum):
 	ACCEPETED = 0

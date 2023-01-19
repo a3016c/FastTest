@@ -1,17 +1,22 @@
 import time
 from ctypes import *
 import sys
+import os
 import cProfile
+
+
 import numpy as np
 import pandas as pd
 from numba import njit, jit
 
+SCRIPT_DIR = os.path.dirname(__file__)
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from Exchange import Exchange, Asset, g_asset_counter
-from Broker import Broker
-from Strategy import Strategy, BenchMarkStrategy, TestStrategy
-from Order import OrderSchedule, OrderType
-import Wrapper
+from wrapper.Exchange import Exchange, Asset, g_asset_counter
+from wrapper.Broker import Broker
+from wrapper.Strategy import Strategy, BenchMarkStrategy, TestStrategy
+from wrapper.Order import OrderSchedule, OrderType
+from wrapper import Wrapper
 
 class FastTest:
     def __init__(self, logging = False, debug = False) -> None:

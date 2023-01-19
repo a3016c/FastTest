@@ -1,8 +1,15 @@
 import time
 from ctypes import *
+import os 
+import sys
+
 import pandas as pd
 from numpy.ctypeslib import ndpointer
-from Order import OrderState, OrderType
+
+SCRIPT_DIR = os.path.dirname(__file__)
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from wrapper.Order import OrderState, OrderType
 import sys
 
 lib_path = r"/Users/nathantormaschy/Desktop/C++/FastTest/build/build/libFastTest.dylib"
