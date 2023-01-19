@@ -10,7 +10,7 @@ import numpy as np
 from Exchange import Exchange, Asset
 from Broker import Broker
 from Strategy import *
-from FastTest import FastTest, run_jit
+from FastTest import FastTest
 
 class Agis_Strategy(Strategy):
     def __init__(self, broker: Broker, exchange: Exchange, lookahead : int) -> None:
