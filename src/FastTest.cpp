@@ -214,7 +214,7 @@ void backward_pass(void * fastTest_ptr) {
 	__fastTest_ref->step_count++;
 
 	if(__fastTest_ref->debug){
-		printf("EXITING BACKWARD PASS\n\n\n");
+		printf("EXITING BACKWARD PASS\n");
 	}
 }
 void register_benchmark(void* fastTest_ptr, void *asset_ptr){

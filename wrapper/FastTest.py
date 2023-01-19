@@ -84,6 +84,8 @@ class FastTest:
             strategy.build()
         while self.step():
             pass
+        
+        self.metrics = Metrics(self)
     
     def step(self):
         if not Wrapper._fastTest_forward_pass(self.ptr):
@@ -92,7 +94,63 @@ class FastTest:
             strategy.next()
         Wrapper._fastTest_backward_pass(self.ptr)
         return True
+    
+class Metrics():
+    def __init__(self, ft : FastTest) -> None:
+        self.broker = ft.broker
+        self.positions = self.broker.get_position_history().to_df()
+        
+    def total_return(self):
+        nlv = self.broker.get_nlv_history()
+        return (nlv[-1] - nlv[0])/nlv[0]
+        
+    def position_count(self):
+        return len(self.positions)
+        
+    def win_rate(self):
+        wins_long = len(self.positions[(self.positions["units"] > 0) & (self.positions['realized_pl'] > 0)])
+        win_pct_long = wins_long / len(self.positions[self.positions["units"] > 0])
+        
+        wins_short = len(self.positions[(self.positions["units"] > 0) & (self.positions['realized_pl'] > 0)])
+        win_pct_short= wins_short / len(self.positions[self.positions["units"] < 0])
+        
+        win_pct = len(self.positions[self.positions["realized_pl"] > 0])/ len(self.positions)
+        
+        return win_pct*100, win_pct_long*100, win_pct_short*100
+    
+    def average_win(self):
+        longs = self.positions[self.positions["units"] > 0]["realized_pl"].mean()
+        shorts = self.positions[self.positions["units"] < 0]["realized_pl"].mean()
+        return longs, shorts
+    
+    def position_duration(self):
+        shorts = self.positions[self.positions["units"] < 0]
+        longs = self.positions[self.positions["units"] > 0]
+        
+        avg_short_durations = (shorts["position_close_time"] - shorts["position_create_time"]).mean()
+        avg_long_durations = (longs["position_close_time"] - longs["position_create_time"]).mean()
+        avg_total_durations = (self.positions["position_close_time"] - self.positions["position_create_time"]).mean()
 
+        return avg_total_durations, avg_long_durations, avg_short_durations
+    
+    def get_stats(self):
+        win_pct, win_pct_long, win_pct_short = self.win_rate()
+        avg_total_durations, avg_long_durations, avg_short_durations = self.position_duration()
+        avg_pl_long, avg_pl_short = self.average_win()
+        
+        return (
+            f"Number of Trades: {len(self.positions)}\n"
+            f"Win Rate: {win_pct:.2f}\n"
+            f"Long Win Rate: {win_pct_long:.2f}\n"
+            f"Short Win Rate: {win_pct_short:.2f}\n"
+            f"Average Long PL: {avg_pl_long:.2f}\n"
+            f"Average Short PL: {avg_pl_short:.2f}\n"
+            f"Average Trade Duration: {avg_total_durations}\n"
+            f"Average Long Trade Duration {avg_long_durations}\n"
+            f"Average Short Trade Duration: {avg_short_durations}\n\n"
+            
+        )
+        
 @jit(forceobj=True)
 def run_jit(fast_test_ptr : c_void_p, strategy):
     Wrapper._fastTest_reset(fast_test_ptr)

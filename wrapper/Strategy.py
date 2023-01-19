@@ -88,7 +88,7 @@ class Strategy():
         metrics = f"Sharpe: {sharpe} \n Benchmark Corr: {corr}"
         anchored_text = AnchoredText(metrics, loc=3)
         ax2.add_artist(anchored_text)
-        
+                
         plt.show()
 
 class TestStrategy(Strategy):

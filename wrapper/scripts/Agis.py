@@ -102,7 +102,7 @@ if __name__ == "__main__":
     
     strategy = Agis_Strategy(broker, exchange, lookahead=20)
     
-    exchange.set_slippage(.0025)
+    #exchange.set_slippage(.0025)
     
     ft.build()
 
@@ -120,9 +120,10 @@ if __name__ == "__main__":
     ft.add_strategy(strategy)
     
     st = time.time()
-    ft.profile()
+    ft.run()
     et = time.time()
     
     print(strategy.count / (et-st))
+    print(ft.metrics.get_stats())
     
-    #strategy.plot(benchmark)
+    strategy.plot(benchmark)
