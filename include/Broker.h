@@ -67,6 +67,11 @@ struct cash_transfer {
 	float cash_amount;
 };
 
+struct Account {
+	unsigned int account_id;
+	std::unordered_map<unsigned int, Position> portfolio;
+};
+
 class __Broker
 {
 public:
