@@ -277,10 +277,10 @@ _get_position_history = FastTest.get_position_history
 _get_position_history.argtypes = [c_void_p,POINTER(PositionArrayStruct)]
 
 _place_market_order = FastTest.place_market_order
-_place_market_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_bool, c_uint, c_uint]
+_place_market_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_bool, c_uint, c_uint, c_uint]
 
 _place_limit_order = FastTest.place_limit_order
-_place_limit_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_uint, c_uint]
+_place_limit_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_uint, c_uint, c_uint]
 
 _get_position_ptr = FastTest.get_position_ptr
 _get_position_ptr.argtypes = [c_void_p, c_uint]
@@ -297,6 +297,18 @@ _position_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_v
 
 _order_place_stoploss_order = FastTest.order_add_stoploss
 _order_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_bool]
+
+
+"""ACCOUNT WRAPPER"""
+_new_account_ptr = FastTest.CreateAccountPtr
+_new_account_ptr.argtypes =[c_uint]
+_new_account_ptr.restype = c_void_p
+
+_free_account_ptr = FastTest.DeleteAccountPtr
+_free_account_ptr.argtypes = [c_void_p]
+
+_reset_account = FastTest.reset_account
+_reset_account.argtypes = [c_void_p]
 
 """ORDER WRAPPER"""
 _order_type = FastTest.order_type

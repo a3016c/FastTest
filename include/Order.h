@@ -83,6 +83,7 @@ public:
 	unsigned int asset_id;    //underlying asset for the order
 	unsigned int exchange_id; //id of the exchange the order was placed on
 	unsigned int strategy_id; //id of the strategy that placed the order
+	unsigned int account_id;  //id of the account the order was placed for
 
 	timeval order_create_time; //the time the order was placed on the exchange
 	timeval order_fill_time;   //the time that the order was filled by the exchange
@@ -96,12 +97,16 @@ public:
 
 	void to_struct(OrderStruct &order_struct);
 
-	Order(OrderType _OrderType, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0) {
+	Order(OrderType _OrderType, unsigned int asset_id, float units,
+				bool cheat_on_close = false,
+				unsigned int exchange_id = 0,
+				unsigned int account_id = 0) {
 		this->order_type = _OrderType;
 		this->asset_id = asset_id;
 		this->units = units;
 		this->cheat_on_close = cheat_on_close;
 		this->exchange_id = exchange_id;
+		this->account_id = account_id;
 	}
 	Order() = default;
 	virtual ~Order() {};
@@ -120,16 +125,22 @@ void order_ptr_to_struct(std::unique_ptr<Order> &open_order, OrderStruct &order_
 class MarketOrder : public Order
 {
 public:
-	MarketOrder(unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0)
-		: Order(MARKET_ORDER, asset_id, units, cheat_on_close, exchange_id)
+	MarketOrder(unsigned int asset_id, float units,
+			bool cheat_on_close = false,
+			unsigned int exchange_id = 0,
+			unsigned int account_id = 0)
+		: Order(MARKET_ORDER, asset_id, units, cheat_on_close, exchange_id, account_id)
 	{}
 };
 class LimitOrder : public Order
 {
 public:
 	float limit;
-	LimitOrder(unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0)
-		: Order(LIMIT_ORDER, asset_id, units, cheat_on_close, exchange_id) {
+	LimitOrder(unsigned int asset_id, float units, float limit,
+			bool cheat_on_close = false,
+			unsigned int exchange_id = 0,
+			unsigned int account_id = 0)
+		: Order(LIMIT_ORDER, asset_id, units, cheat_on_close, exchange_id, account_id) {
 		this->limit = limit;
 	}
 };
@@ -146,15 +157,22 @@ public:
 	OrderParent order_parent;
 	float stop_loss;
 	bool limit_pct;
-	StopLossOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0, bool limit_pct = false)
-		: Order(STOP_LOSS_ORDER, parent_order->asset_id, units, cheat_on_close, exchange_id) {
+	StopLossOrder(Order *parent_order, float units, float stop_loss,
+			bool cheat_on_close = false,
+			unsigned int exchange_id = 0,
+			bool limit_pct = false,
+			unsigned int account_id = 0)
+		: Order(STOP_LOSS_ORDER, parent_order->asset_id, units, cheat_on_close, exchange_id, account_id) {
 		this->order_parent.member.parent_order = parent_order;
 		this->order_parent.type = ORDER;
 		this->stop_loss = stop_loss;
 		this->limit_pct = limit_pct;
 	}
-	StopLossOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false)
-		: Order(STOP_LOSS_ORDER, parent_position->asset_id, units, cheat_on_close) {
+	StopLossOrder(Position *parent_position, float units, float stop_loss,
+			bool cheat_on_close = false,
+			bool limit_pct = false,
+			unsigned int account_id = 0)
+		: Order(STOP_LOSS_ORDER, parent_position->asset_id, units, cheat_on_close, parent_position->exchange_id, account_id) {
 		this->order_parent.member.parent_position = parent_position;
 		this->order_parent.type = POSITION;
 		this->stop_loss = stop_loss;
@@ -168,15 +186,17 @@ public:
 	OrderParent order_parent;
 	float take_profit;
 	bool limit_pct;
-	TakeProfitOrder(Order *parent_order, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false)
-		: Order(TAKE_PROFIT_ORDER, parent_order->asset_id, units, cheat_on_close) {
+	TakeProfitOrder(Order *parent_order, float units, float stop_loss,
+			bool cheat_on_close = false,
+			bool limit_pct = false)
+		: Order(TAKE_PROFIT_ORDER, parent_order->asset_id, units, cheat_on_close, parent_order->exchange_id, parent_order->account_id) {
 		this->order_parent.member.parent_order = parent_order;
 		this->order_parent.type = ORDER;
 		this->take_profit = stop_loss;
 		this->limit_pct = limit_pct;
 	}
 	TakeProfitOrder(Position *parent_position, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false)
-		: Order(TAKE_PROFIT_ORDER, parent_position->asset_id, units, cheat_on_close) {
+		: Order(TAKE_PROFIT_ORDER, parent_position->asset_id, units, cheat_on_close, parent_position->exchange_id, parent_position->account_id) {
 		this->order_parent.member.parent_position = parent_position;
 		this->order_parent.type = POSITION;
 		this->take_profit = stop_loss;

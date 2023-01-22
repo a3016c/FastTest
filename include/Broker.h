@@ -13,6 +13,7 @@
 #include "Position.h"
 #include "Asset.h"
 #include "Exchange.h"
+#include "Account.h"
 
 #define REG_T_REQ .5
 #define REG_T_SHORT_REQ 1.5
@@ -67,11 +68,6 @@ struct cash_transfer {
 	float cash_amount;
 };
 
-struct Account {
-	unsigned int account_id;
-	std::unordered_map<unsigned int, Position> portfolio;
-};
-
 class __Broker
 {
 public:
@@ -112,6 +108,7 @@ public:
 	float unrealized_pl = 0;
 	float realized_pl = 0;
 	std::unordered_map<unsigned int, Position> portfolio;
+	std::unordered_map<unsigned int, __Account> accounts;
 
 	void set_cash(float cash);
 	void reset();
@@ -159,8 +156,16 @@ public:
 	#endif
 
 	//order wrapers exposed to strategy
-	void _place_market_order(OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
-	void _place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	void _place_market_order(OrderResponse *order_response, unsigned int asset_id, float units,
+			bool cheat_on_close = false,
+			unsigned int exchange_id = 0,
+			unsigned int strategy_id = 0,
+			unsigned int account_id = 0);
+	void _place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit,
+			bool cheat_on_close = false,
+			unsigned int exchange_id = 0,
+			unsigned int strategy_id = 0,
+			unsigned int account_id = 0);
 
 	//functions for managing positions
 	float get_net_liquidation_value();
@@ -317,8 +322,16 @@ extern "C" {
 	BROKER_API float get_realied_pl(void *broker_ptr);
 	BROKER_API float get_nlv(void *broker_ptr);
 
-	BROKER_API void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
-	BROKER_API void place_limit_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close = false, unsigned int exchange_id = 0, unsigned int strategy_id = 0);
+	BROKER_API void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units,
+			bool cheat_on_close = false,
+			unsigned int exchange_id = 0,
+			unsigned int strategy_id = 0,
+			unsigned int account_id = 0);
+	BROKER_API void place_limit_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, float limit,
+			bool cheat_on_close = false,
+			unsigned int exchange_id = 0,
+			unsigned int strategy_id = 0,
+			unsigned int account_id = 0);
 
 	BROKER_API void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false);
 	BROKER_API void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0, bool limit_pct = false);

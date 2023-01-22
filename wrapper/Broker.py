@@ -110,7 +110,8 @@ class Broker():
                            stop_loss_limit_pct = False,
                            cheat_on_close = False, 
                            exchange_name = "default",
-                           strategy_id = 0):
+                           strategy_id = 0,
+                           account_id = 0):
         
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id
@@ -125,7 +126,8 @@ class Broker():
             units,
             cheat_on_close,
             exchange_id,
-            strategy_id
+            strategy_id,
+            account_id
             )
         
         if(stop_loss_on_fill > 0):
@@ -143,7 +145,8 @@ class Broker():
                         stop_loss_limit_pct = False,
                         cheat_on_close = False,
                         exchange_name = "default",
-                        strategy_id = 0):
+                        strategy_id = 0,
+                        account_id = 0):
         
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id
@@ -159,7 +162,8 @@ class Broker():
             limit,
             cheat_on_close,
             exchange_id,
-            strategy_id
+            strategy_id,
+            account_id
             )
         
         if(stop_loss_on_fill > 0):

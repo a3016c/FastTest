@@ -184,7 +184,8 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 		order->units,
 		order_fill_price,
 		order->order_fill_time,
-		order->exchange_id
+		order->exchange_id,
+		order->account_id
 	};
 	
 	//adjust account's cash and margin balance accoringly
@@ -431,7 +432,7 @@ void __Broker::send_order(std::unique_ptr<Order> new_order,OrderResponse *order_
 	this->order_counter++;
 	
 }
-void __Broker::_place_market_order(OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id) {
+void __Broker::_place_market_order(OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
 	
 	if(this->debug){
 		printf("PLACING MARKER ORDER, ASSET_ID: %i TO EXCHANGE_ID: %i\n",asset_id, exchange_id);
@@ -441,7 +442,8 @@ void __Broker::_place_market_order(OrderResponse *order_response, unsigned int a
 		asset_id,
 		units,
 		cheat_on_close,
-		exchange_id
+		exchange_id,
+		account_id
 	));
 	order->strategy_id = strategy_id;
 
@@ -455,13 +457,14 @@ void __Broker::_place_market_order(OrderResponse *order_response, unsigned int a
 #endif
 	this->send_order(std::move(order), order_response);
 }
-void __Broker::_place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id) {
+void __Broker::_place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
 	std::unique_ptr<Order> order(new LimitOrder(
 		asset_id,
 		units,
 		limit,
 		cheat_on_close,
-		exchange_id
+		exchange_id,
+		account_id
 	));
 	order->strategy_id = strategy_id;
 
@@ -596,13 +599,13 @@ bool position_exists(void *broker_ptr, unsigned int asset_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->_position_exists(asset_id);
 }
-void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id) {
+void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	__broker_ref->_place_market_order(order_response, asset_id, units, cheat_on_close, exchange_id, strategy_id);
+	__broker_ref->_place_market_order(order_response, asset_id, units, cheat_on_close, exchange_id, strategy_id, account_id);
 }
-void place_limit_order(void *broker_ptr, OrderResponse *order_response,  unsigned int asset_id, float units, float limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id){
+void place_limit_order(void *broker_ptr, OrderResponse *order_response,  unsigned int asset_id, float units, float limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	__broker_ref->_place_limit_order(order_response, asset_id, units, limit, cheat_on_close, exchange_id, strategy_id);
+	__broker_ref->_place_limit_order(order_response, asset_id, units, limit, cheat_on_close, exchange_id, strategy_id, account_id);
 }
 void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void * position_ptr, float units, float stop_loss, bool cheat_on_close, bool limit_pct){
 		__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

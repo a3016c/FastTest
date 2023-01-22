@@ -36,9 +36,16 @@ class Exchange():
         Wrapper._exchange_set_slippage(self.ptr,slippage)
 
     def register_asset(self, asset):
+        
+        if self.asset_map.get(asset.asset_name) != None:
+            raise Exception("Asset already exists on exchange")
+        if asset.registered:
+            raise Exception("Asset is already registered to an exchange")
+        
         self.asset_map[asset.asset_name] = asset.asset_id
         self.id_map[asset.asset_id] = asset.asset_name
         self.asset_counter += 1
+        asset.registered = True
         Wrapper._register_asset(asset.ptr, self.ptr)
 
     def build(self):
@@ -98,6 +105,7 @@ class Exchange():
 class Asset():
     def __init__(self, exchange : Exchange, asset_name : str) -> None:
         self.asset_name = asset_name
+        self.registered = False
         global g_asset_counter
         self.asset_id = g_asset_counter
         g_asset_counter += 1
