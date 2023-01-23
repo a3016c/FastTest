@@ -161,7 +161,7 @@ class BrokerTestMethods(unittest.TestCase):
         assert(OrderType(order_history.ORDER_ARRAY[1].contents.order_type) == OrderType.STOP_LOSS_ORDER)
                 
         print("TESTING: test_stoploss_on_fill passed")
-        
+
     def test_short(self):
         print("TESTING test_short...")
 
@@ -184,6 +184,7 @@ class BrokerTestMethods(unittest.TestCase):
         assert(len(order_history) == 1)
         assert(len(position_history) == 1)
         assert(position_history.POSITION_ARRAY[0].contents.realized_pl == 400)
+        
         assert(np.array_equal(broker.get_nlv_history(),np.array([100000,  100100,  100300, 99850, 99850,  100400])))
         assert(np.array_equal(broker.get_cash_history(),np.array([100000,  110000,  110000, 110000, 110000,  100400])))
     
@@ -231,7 +232,7 @@ class BrokerTestMethods(unittest.TestCase):
         assert(np.array_equal(broker.get_cash_history(),np.array([100000,  95150,  95450,  94775,  94775,  100400])))
 
         print("TESTING: test_margin_short passed")
-        
+
     def test_position_increase(self):
         print("TESTING test_position_increase...")
         orders = [
@@ -349,7 +350,7 @@ class BrokerTestMethods(unittest.TestCase):
         
         assert(np.array_equal(broker.get_cash_history(),np.array([100000,   94950,   94850,   97587.5,  97587.5, 99850])))
         assert(np.array_equal(broker.get_nlv_history(),np.array([100000,  99900,  99700, 100125, 100125,  99850])))
-
+        
 if __name__ == '__main__':
     unittest.main()
 

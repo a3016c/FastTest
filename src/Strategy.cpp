@@ -30,8 +30,8 @@ void TestStrategy::next() {
 				break;
 			}
 			case STOP_LOSS_ORDER: {
-				Position* existing_position = &this->__broker.portfolio[it->asset_id];
-				this->__broker.place_stoploss_order(existing_position, &order_response, it->units, it->limit);
+				//Position* existing_position = &this->__broker.portfolio[it->asset_id];
+				//this->__broker.place_stoploss_order(existing_position, &order_response, it->units, it->limit);
 				break;
 			}
 			case TAKE_PROFIT_ORDER: {

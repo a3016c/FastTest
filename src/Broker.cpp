@@ -16,18 +16,18 @@
 #include "Broker.h"
 
 void __Broker::reset() {
-	this->cash = 100000;
 	this->order_history.clear();
-	this->portfolio.clear();
 	this->position_history.clear();
 	memset(&this->cash_history[0], 0, this->cash_history.size() * sizeof this->cash_history[0]);
-	memset(&this->cash_history[0], 0, this->cash_history.size() * sizeof this->cash_history[0]);
+	memset(&this->nlv_history[0], 0, this->nlv_history.size() * sizeof this->nlv_history[0]);
 	this->position_counter = 0;
 	this->order_counter = 0;
-	this->unrealized_pl = 0;
-	this->realized_pl = 0;
-	this->net_liquidation_value = 0;
 	this->current_index = 0;
+
+	for( const auto & pair : this->accounts){
+		auto account = pair.second;
+		account.reset();
+	}
 }
 
 void __Broker::clean_up(){
@@ -38,9 +38,6 @@ void __Broker::clean_up(){
 	this->perfomance.average_time_in_market /= position_count;
 
 	this->perfomance.winrate /= position_count;
-	this->perfomance.pl = this->realized_pl;
-	this->perfomance.average_return = this->realized_pl / position_count;
-
 }
 
 void __Broker::build(){
@@ -71,9 +68,9 @@ void __Broker::build(){
 		return;
 	}
 
-	this->cash_history.resize(size);
-	this->nlv_history.resize(size);
-	this->margin_history.resize(size);
+	this->cash_history.resize(size,0);
+	this->nlv_history.resize(size,0);
+	this->margin_history.resize(size,0);
 
 	if(this->debug){
 		printf("BROKER BUILT\n");
@@ -82,25 +79,35 @@ void __Broker::build(){
 }
 
 void __Broker::broker_register_exchange(__Exchange* exchange_ptr){
-
-	if(this->debug){
-		printf("REGISTERING NEW EXCHANGE, EXCHANGE_ID: %i\n",exchange_ptr->exchange_id);
-	}
-
+	if(this->debug){printf("REGISTERING NEW EXCHANGE, EXCHANGE_ID: %i\n",exchange_ptr->exchange_id);}
 	this->exchanges[exchange_ptr->exchange_id] = exchange_ptr;
 }
+
+void __Broker::broker_register_account(unsigned int account_id, float cash){
+	if(this->debug){printf("REGISTERING NEW ACCOUNT, ACCOUNT_ID: %i\n",account_id);}
+	this->accounts[account_id] = __Account(account_id, cash);
+	account = &this->accounts[account_id];
+	account->broker = this;
+	account->set_margin(this->margin);
+}
+
 void __Broker::analyze_step() {
 	if(this->debug){
 		printf("ANALYZING STEP\n");
 	}
 
-	this->cash_history[this->current_index] = this->cash;
-	this->nlv_history[this->current_index] = this->net_liquidation_value;
-	this->margin_history[this->current_index] = this->margin_loan;
-	this->current_index++;
+	bool eval = false;
+	for(const auto & pair : this->accounts){
+		auto account = pair.second;
+		this->cash_history[this->current_index] += account.cash;
+		this->nlv_history[this->current_index] += account.net_liquidation_value;
+		this->margin_history[this->current_index] += account.margin_loan;
+		this->current_index++;
 
-	if(this->portfolio.size() > 0){
-		this->perfomance.time_in_market++;
+		if((account.portfolio.size() > 0) & eval){
+			this->perfomance.time_in_market++;
+			eval = true;
+		}
 	}
 
 	if(this->debug){
@@ -110,10 +117,13 @@ void __Broker::analyze_step() {
 
 float __Broker::get_net_liquidation_value() {
 	float nlv = 0;
-	for (auto& position : this->portfolio) {
-		nlv += position.second.liquidation_value();
+	for(const auto & pair : this->accounts){
+		auto account = pair.second;
+		for (auto& position : account.portfolio) {
+			nlv += position.second.liquidation_value();
+		}
+		nlv -= account.margin_loan;
 	}
-	nlv -= this->margin_loan;
 	return nlv;
 }
 
@@ -144,15 +154,16 @@ void __Broker::margin_on_increase(Position &new_position, std::unique_ptr<Order>
 		//margin loan provided by the broker. Subtract collateral from the cash available.
 		float collateral = abs(margin_req_mid * order->units*order_fill_price);
 		float loan = abs((1-margin_req_mid) * order->units*order_fill_price);
-		
+
+		auto & account = this->accounts[new_position.account_id];
 		//remove collateral required for the position from the cash in the account
-		this->cash -= collateral;
+		account.cash -= collateral;
 
 		//if the position is short, credit the account with the cash from the sale of borrowd securities
 		if(new_position.units < 0){
-			this->cash -= order->units*order_fill_price;
+			account.cash -= order->units*order_fill_price;
 		}
-		this->margin_loan += loan;
+		account.margin_loan += loan;
 
 		new_position.collateral += collateral;
 		new_position.margin_loan += loan;
@@ -161,16 +172,17 @@ void __Broker::margin_on_increase(Position &new_position, std::unique_ptr<Order>
 void __Broker::margin_on_reduce(Position &existing_position, float order_fill_price, float units){
 	float pct_reduce = abs(units/existing_position.units);
 	float collateral_free = existing_position.collateral*pct_reduce;
+	auto & account = this->accounts[existing_position.account_id];
 
 	//free the collateral from the position and remove the margin loan
-	this->cash += collateral_free;
+	account.cash += collateral_free;
 	existing_position.collateral -= collateral_free;
 
-	this->margin_loan -= (existing_position.margin_loan*pct_reduce);
+	account.margin_loan -= (existing_position.margin_loan*pct_reduce);
 
 	//if closing a short position have to buy back the position at the filled price
 	if(existing_position.units < 0){
-		this->cash += units * order_fill_price;
+		account.cash += units * order_fill_price;
 	}
 }
 
@@ -189,8 +201,9 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 	};
 	
 	//adjust account's cash and margin balance accoringly
+	account = &this->accounts[order->account_id];
 	if(!this->margin){
-		this->cash -= order->units*order_fill_price;
+		account->cash -= order->units*order_fill_price;
 	}
 	else {
 		this->margin_on_increase(new_position, order);
@@ -198,15 +211,17 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 
 	//reflect any commissions on the account's cash 
 	if(this->has_commission){
-		this->cash -= this->commission;
+		account->cash -= this->commission;
 		this->total_commission += this->commission;
 	}
 
 	this->position_counter++;
-	if (this->logging) { log_open_position(new_position); }
+	if (this->logging) {
+		log_open_position(new_position);
+	}
 
 	//insert the new postion into the account's portfolio
-	this->portfolio[order->asset_id] = new_position;
+	account->portfolio[order->asset_id] = new_position;
 }
 
 void __Broker::close_position(Position &existing_position, float order_fill_price, timeval order_fill_time) {
@@ -221,13 +236,14 @@ void __Broker::close_position(Position &existing_position, float order_fill_pric
 	this->position_history.push_back(existing_position);
 
 	//calculate stats from the position 
-	this->realized_pl += existing_position.realized_pl;
+	account = &this->accounts[existing_position.account_id];
+	account->realized_pl += existing_position.realized_pl;
 	this->perfomance.average_time_in_market += existing_position.position_close_time - existing_position.position_create_time;
 	if(existing_position.realized_pl > 0){this->perfomance.winrate++;}
 
 	//if commissions are turned on subtract from account's cash
 	if(this->has_commission){
-		this->cash -= this->commission;
+		account->cash -= this->commission;
 		this->total_commission += this->commission;
 	}
 
@@ -236,7 +252,7 @@ void __Broker::close_position(Position &existing_position, float order_fill_pric
 		this->margin_on_reduce(existing_position, order_fill_price, existing_position.units);
 	}
 	else{
-		this->cash += existing_position.units * order_fill_price;
+		account->cash += existing_position.units * order_fill_price;
 	}
 }
 
@@ -245,7 +261,8 @@ void __Broker::reduce_position(Position &existing_position, std::unique_ptr<Orde
 		this->margin_on_reduce(existing_position, order->fill_price, order->units);
 	}
 	else{
-		this->cash += abs(order->units) * order->fill_price;
+		auto & account = this->accounts[existing_position.account_id];
+		account.cash += abs(order->units) * order->fill_price;
 	}
 	existing_position.reduce(order->fill_price, order->units);
 }
@@ -255,7 +272,8 @@ void __Broker::increase_position(Position &existing_position, std::unique_ptr<Or
 		this->margin_on_increase(existing_position, order);
 	}
 	else{
-		this->cash -= order->units * order->fill_price;
+		auto & account = this->accounts[existing_position.account_id];
+		account.cash -= order->units * order->fill_price;
 	}
 	existing_position.increase(order->fill_price, order->units);
 }
@@ -306,11 +324,15 @@ MARGIN_CHECK __Broker::check_margin() noexcept{
 		return VALID_ACCOUNT_STATUS;
 	}
 	//check to see if nlv is below broker's margin account requirment 
-	if(this->net_liquidation_value < this->minimum_nlv){
-		return NLV_BELOW_BROKER_REQ;
+	float margin = 0;
+	for(const auto & pair : this->accounts){
+		margin += pair.second.net_liquidation_value;
+		if(pair.second.cash < 0){
+			return MARGIN_CALL;
+		}
 	}
-	if(this->cash < 0){
-		return MARGIN_CALL;
+	if(margin < this->minimum_nlv){
+		return NLV_BELOW_BROKER_REQ;
 	}
 	return VALID_ACCOUNT_STATUS;
 }
@@ -356,16 +378,21 @@ ORDER_CHECK __Broker::check_market_order(const MarketOrder* market_order) {
 
 	unsigned int asset_id = market_order->asset_id;
 	float units = market_order->units;
+
 	__Exchange *exchange = this->exchanges[market_order->exchange_id];
+	auto &account = this->accounts[market_order->account_id];
+
 	float market_price = exchange->_get_market_price(asset_id);
 
 	if(!this->_position_exists(asset_id)){
-		if(market_order->units * market_price > this->cash){
+		auto & account = this->accounts[market_order->account_id];
+		if(market_order->units * market_price > account.cash){
 			return INVALID_ORDER_COLLATERAL;
 		};
 	}
-	else if (this->portfolio[asset_id].units * units > 0){
-		if(market_order->units * market_price > this->cash){
+	else if (account.portfolio[asset_id].units * units > 0){
+		auto & account = this->accounts[market_order->account_id];
+		if(market_order->units * market_price > account.cash){
 			return INVALID_ORDER_COLLATERAL;
 		};
 	}
@@ -480,7 +507,7 @@ void __Broker::_place_limit_order(OrderResponse *order_response, unsigned int as
 }
 void __Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_filled) {
 	for (auto& order : orders_filled) {
-
+		auto & account = this->accounts[order->account_id];
 		if(this->debug){
 			printf("ORDER_ID: %i FILLED\n", order->order_id);
 		}
@@ -490,11 +517,11 @@ void __Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_
 			this->open_position(order);
 		}
 		else {
-			Position &existing_position = this->portfolio[order->asset_id];
+			Position &existing_position = account.portfolio[order->asset_id];
 			//sum of existing position units and order units is 0. Close existing position
 			if (existing_position.units + order->units == 0) {
 				this->close_position(existing_position, order->fill_price, order->order_fill_time);
-				this->portfolio.erase(order->asset_id);
+				account.portfolio.erase(order->asset_id);
 			}
 			//order is same direction as existing position. Increase existing position
 			else if (existing_position.units * order->units > 0) {
@@ -507,7 +534,7 @@ void __Broker::process_filled_orders(std::vector<std::unique_ptr<Order>> orders_
 				}
 				else{
 					this->close_position(existing_position, order->fill_price, order->order_fill_time);
-					this->portfolio.erase(order->asset_id);
+					account.portfolio.erase(order->asset_id);
 					order->units = order->units + existing_position.units;
 					this->open_position(order);
 				}
@@ -521,10 +548,17 @@ std::deque<std::unique_ptr<Order>>& __Broker::open_orders(unsigned int exchange_
 	return exchange->orders;
 }
 bool __Broker::_position_exists(unsigned int asset_id) {
-	return this->portfolio.count(asset_id) > 0;
+	for (const auto & pair : this->accounts){
+		auto account = pair.second;
+		if(account.portfolio.count(asset_id) > 0){
+			return true;
+		}
+	}
+	return false;
 }
-void __Broker::set_cash(float cash) {
-	this->cash = cash;
+void __Broker::set_cash(float cash, unsigned int account_id) {
+	auto & account = this->accounts[account_id];
+	account.cash = cash;
 }
 void __Broker::log_open_position(Position &position) {
 	memset(this->time, 0, sizeof this->time);
@@ -546,9 +580,9 @@ void __Broker::log_close_position(Position &position) {
 		position.close_price
 	);
 }
-void * CreateBrokerPtr(void *exchange_ptr, bool logging, bool margin, bool debug) {
+void * CreateBrokerPtr(void *exchange_ptr, float cash, bool logging, bool margin, bool debug) {
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
-	return new __Broker(__exchange_ref, logging, margin, debug);
+	return new __Broker(__exchange_ref, cash, logging, margin, debug);
 }
 void DeleteBrokerPtr(void *ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(ptr);
@@ -567,21 +601,61 @@ void broker_register_exchange(void *broker_ptr, void *exchange_ptr){
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__broker_ref->broker_register_exchange(__exchange_ref);
 }
-float get_cash(void *broker_ptr){
+float get_cash(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return __broker_ref->cash;
+	if(account_id == -1){
+		float cash = 0;
+		for (const auto & pair : __broker_ref->accounts){
+			cash += pair.second.cash;
+		}
+		return cash;
+	}
+	else{
+		unsigned int uid = abs(account_id);
+		return __broker_ref->accounts[uid].cash;
+	}
 }
-float get_nlv(void *broker_ptr){
+float get_nlv(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return __broker_ref->net_liquidation_value;
+	if(account_id == -1){
+		float nlv = 0;
+		for (const auto & pair : __broker_ref->accounts){
+			nlv += pair.second.net_liquidation_value;
+		}
+		return nlv;
+	}
+	else{
+		unsigned int uid = abs(account_id);
+		return __broker_ref->accounts[uid].net_liquidation_value;
+	}
 }
-float get_unrealized_pl(void *broker_ptr){
+float get_unrealized_pl(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return __broker_ref->unrealized_pl;
+	if(account_id == -1){
+		float upl = 0;
+		for (const auto & pair : __broker_ref->accounts){
+			upl += pair.second.unrealized_pl;
+		}
+		return upl;
+	}
+	else{
+		unsigned int uid = abs(account_id);
+		return __broker_ref->accounts[uid].unrealized_pl;
+	}
 }
-float get_realized_pl(void *broker_ptr){
+float get_realized_pl(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return __broker_ref->realized_pl;
+	if(account_id == -1){
+		float pl = 0;
+		for (const auto & pair : __broker_ref->accounts){
+			pl += pair.second.realized_pl;
+		}
+		return pl;
+	}
+	else{
+		unsigned int uid = abs(account_id);
+		return __broker_ref->accounts[uid].realized_pl;
+	}
 }
 int get_order_count(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
@@ -593,7 +667,11 @@ int get_position_count(void *broker_ptr) {
 }
 int get_open_position_count(void *broker_ptr){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return __broker_ref->portfolio.size();
+	int count = 0;
+	for (const auto & pair : __broker_ref->accounts){
+		count += pair.second.portfolio.size();
+	}
+	return count;
 }
 bool position_exists(void *broker_ptr, unsigned int asset_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
@@ -659,21 +737,23 @@ void get_position_history(void *broker_ptr, PositionArray *position_history) {
 		__broker_ref->position_history[i].to_struct(position_struct_ref);
 	}
 }
-void get_positions(void *broker_ptr, PositionArray *positions){
+void get_positions(void *broker_ptr, PositionArray *positions, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	int number_positions = __broker_ref->portfolio.size();
+	auto & account = __broker_ref->accounts[account_id];
+	int number_positions = account.portfolio.size();
 	int i = 0;
-	for (auto &kvp : __broker_ref->portfolio){
+	for (auto &kvp : account.portfolio){
 		PositionStruct &position_struct_ref = *positions->POSITION_ARRAY[i];
-		__broker_ref->portfolio[kvp.first].to_struct(position_struct_ref);
+		account.portfolio[kvp.first].to_struct(position_struct_ref);
 		i++;
 	}
 }
-void get_position(void *broker_ptr, unsigned int assset_id, PositionStruct *position){
+void get_position(void *broker_ptr, unsigned int assset_id, PositionStruct *position, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	int number_positions = __broker_ref->portfolio.size();
-	if(__broker_ref->portfolio.count(assset_id) == 0){return;}
-	__broker_ref->portfolio[assset_id].to_struct(*position);
+	auto & account = __broker_ref->accounts[account_id];
+	int number_positions = account.portfolio.size();
+	if(account.portfolio.count(assset_id) == 0){return;}
+	account.portfolio[assset_id].to_struct(*position);
 }
 void get_orders(void *broker_ptr, OrderArray *orders, unsigned int exchange_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
@@ -685,7 +765,8 @@ void get_orders(void *broker_ptr, OrderArray *orders, unsigned int exchange_id){
 		order_ptr_to_struct(open_order, order_struct_ref);
 	}
 }
-void * get_position_ptr(void *broker_ptr, unsigned int asset_id){
+void * get_position_ptr(void *broker_ptr, unsigned int asset_id, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return &__broker_ref->portfolio[asset_id];
+	auto & account = __broker_ref->accounts[account_id];
+	return &account.portfolio[asset_id];
 }

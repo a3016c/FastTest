@@ -3,8 +3,10 @@
 #define BROKER_H
 #ifdef _WIN32
 #define BROKER_API __declspec(dllexport)
+#define ACCOUNT_API __declspec(dllexport)
 #else
 #define BROKER_API
+#define ACCOUNT_API
 #endif
 #include <deque>
 #include <unordered_map>
@@ -13,7 +15,6 @@
 #include "Position.h"
 #include "Asset.h"
 #include "Exchange.h"
-#include "Account.h"
 
 #define REG_T_REQ .5
 #define REG_T_SHORT_REQ 1.5
@@ -68,6 +69,37 @@ struct cash_transfer {
 	float cash_amount;
 };
 
+class __Broker;
+
+class __Account {
+public:
+	unsigned int account_id;
+     __Broker *broker;
+
+    bool margin;
+	float cash;
+	float net_liquidation_value;
+	float starting_cash;
+    float margin_loan = 0;
+    float unrealized_pl = 0;
+    float realized_pl = 0;
+
+	std::unordered_map<unsigned int, Position> portfolio;
+
+    void reset();
+    void build(float cash);
+	void set_margin(bool margin = false);
+    void evaluate_account(bool on_close = false);
+
+    __Account(unsigned int _account_id, float cash){
+        this->account_id = _account_id;
+        this->cash = cash;
+		this->starting_cash = cash;
+        this->net_liquidation_value = cash;
+    }
+	__Account(){};
+};
+
 class __Broker
 {
 public:
@@ -96,21 +128,18 @@ public:
 	//exchanges visable to the broker;
 	std::unordered_map<unsigned int, __Exchange*> exchanges;
 
+	//accounts contained within the broker
+	__Account * account;
+	std::unordered_map<unsigned int, __Account> accounts;
+
 	//counters to keep track of the IDs for orders and positions
 	unsigned int position_counter = 1;
 	unsigned int order_counter = 1;
 
 	//portfolio values 
 	float minimum_nlv = 2000;
-	float cash = 100000;
-	float margin_loan = 0;
-	float net_liquidation_value = cash;
-	float unrealized_pl = 0;
-	float realized_pl = 0;
-	std::unordered_map<unsigned int, Position> portfolio;
-	std::unordered_map<unsigned int, __Account> accounts;
 
-	void set_cash(float cash);
+	void set_cash(float cash, unsigned int account_id = 0);
 	void reset();
 	void clean_up();
 
@@ -131,6 +160,9 @@ public:
 
 	//functions for managing which exchanges are visable to the broker
 	void broker_register_exchange(__Exchange* exchange_ptr);
+
+	//functions for managing account of the broker 
+	void broker_register_account(unsigned int account_id, float cash);
 
 	//functions for managing orders on the exchange
 	void send_order(std::unique_ptr<Order> new_order, OrderResponse *order_response);
@@ -155,6 +187,13 @@ public:
 	void margin_adjustment(Position &new_position, float market_price);
 	#endif
 
+	//functions for managing positions
+	void increase_position(Position &existing_position, std::unique_ptr<Order>& order);
+	void reduce_position(Position &existing_position, std::unique_ptr<Order>& order);
+	void open_position(std::unique_ptr<Order>& order_filled);
+	void close_position(Position &existing_position, float fill_price, timeval order_fill_time);
+
+
 	//order wrapers exposed to strategy
 	void _place_market_order(OrderResponse *order_response, unsigned int asset_id, float units,
 			bool cheat_on_close = false,
@@ -170,99 +209,20 @@ public:
 	//functions for managing positions
 	float get_net_liquidation_value();
 	bool _position_exists(unsigned int asset_id);
-	
-	inline void evaluate_portfolio(bool on_close = false) noexcept {
 
-		float nlv = 0;
-		float collateral = 0;
-		float margin_req_mid;
-		unsigned int asset_id;
-		float market_price;
-
-		__Exchange *exchange;
-
-		if(this->debug){
-			printf("EVALUATING PORTFOLIO\n");
-		}
-
-		for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
-			//update portfolio net liquidation value
-
-			asset_id = it->first;
-			Position& position =  it->second;
-
-			unsigned int exchange_id = position.exchange_id;
-			exchange = this->exchanges[exchange_id];
-			market_price = exchange->_get_market_price(asset_id, on_close);
-
-
-			//if no market price is available at the time then position cannot be evaluated
-			if(market_price == NAN){
-				continue;
-			}
-
-			//check to see if the underlying asset of the position has finished streaming
-			//if so we have to close the current position on close of the current step
-			if (exchange->market[asset_id].is_last_view() & on_close) {
-				if(this->margin){
-					if(position.units < 0){
-						margin_req_mid = this->short_margin_req;
-					}
-					else{
-						margin_req_mid = this->margin_req;
-					}
-					float new_collateral = abs(margin_req_mid * position.units*market_price);
-					float adjustment = (new_collateral - position.collateral);
-					
-					if(position.units > 0){
-						this->cash += adjustment;
-					}
-					else{
-						this->cash -= adjustment;
-					}
-					position.collateral = new_collateral;
-				}
-				this->close_position(this->portfolio[asset_id], market_price, exchange->current_time);
-				it = this->portfolio.erase(it);
-			}
-			else {
-				position.evaluate(market_price, on_close);
-				nlv += position.liquidation_value();
-
-				if(this->margin){
-					float old_collateral = position.collateral;
-					this->margin_adjustment(position, market_price);
-
-					//update the margin required to maintain the position. 
-					float adjustment = (position.collateral - old_collateral);
-
-					//if long position, add collateral to subtract off later to prevent double counting the
-					//value of the security 
-					if(position.units > 0){
-						this->cash += adjustment;
-						collateral += position.collateral;
-					}
-					//if short position, add the collateral back into nlv to maintain balanced counting
-					else{
-						this->cash -= adjustment;
-						nlv += position.collateral;
-					}
-				}
-				it++;
-			}
-
-		}
-		this->net_liquidation_value = nlv + this->cash - collateral;
-		if(this->debug){
-			printf("FINISHED PORTFOLIO EVALUATION\n");
+	inline void evaluate_portfolio(bool on_close = false){
+		for (auto & pair : this->accounts){
+			auto & account = pair.second;
+			account.evaluate_account(on_close);
 		}
 	}
-
-	__Broker(__Exchange *exchange_ptr, bool logging = false, bool margin = false, bool debug = false) {
-		this->exchanges[exchange_ptr->exchange_id] = exchange_ptr;
+	
+	__Broker(__Exchange *exchange_ptr, float cash = 100000, bool logging = false, bool margin = false, bool debug = false) {
+		this->debug = debug;
 		this->logging = logging;
 		this->margin = margin;
-		this->debug = debug;
+		this->exchanges[exchange_ptr->exchange_id] = exchange_ptr;
+		this->broker_register_account(0, cash);
 	};
 
 	template <class T>
@@ -284,16 +244,10 @@ public:
 #endif
 		this->send_order(std::move(order), order_response);
 	}
-
-private:
-	void increase_position(Position &existing_position, std::unique_ptr<Order>& order);
-	void reduce_position(Position &existing_position, std::unique_ptr<Order>& order);
-	void open_position(std::unique_ptr<Order>& order_filled);
-	void close_position(Position &existing_position, float fill_price, timeval order_fill_time);
 };
 
 extern "C" {
-	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true, bool margin = false, bool debug = false);
+	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, float cash = 100000, bool logging = true, bool margin = false, bool debug = false);
 	BROKER_API void DeleteBrokerPtr(void *ptr);
 	BROKER_API void reset_broker(void *broker_ptr);
 	BROKER_API void build_broker(void *broker_ptr);
@@ -312,15 +266,15 @@ extern "C" {
 	BROKER_API void get_position_history(void *broker_ptr, PositionArray *position_history);
 	
 	BROKER_API bool position_exists(void *broker_ptr, unsigned int asset_id);
-	BROKER_API void get_positions(void *broker_ptr, PositionArray *positions);
-	BROKER_API void get_position(void *broker_ptr, unsigned int asset_id, PositionStruct *position);
-	BROKER_API void * get_position_ptr(void *broker_ptr, unsigned int asset_id);
+	BROKER_API void get_positions(void *broker_ptr, PositionArray *positions, unsigned int account_id = 0);
+	BROKER_API void get_position(void *broker_ptr, unsigned int asset_id, PositionStruct *position, unsigned int account_id = 0);
+	BROKER_API void * get_position_ptr(void *broker_ptr, unsigned int asset_id, unsigned int account_id = 0);
 	BROKER_API void get_orders(void *broker_ptr, OrderArray *orders, unsigned int exchange_id = 0);
 
-	BROKER_API float get_cash(void *broker_ptr);
-	BROKER_API float get_unrealied_pl(void *broker_ptr);
-	BROKER_API float get_realied_pl(void *broker_ptr);
-	BROKER_API float get_nlv(void *broker_ptr);
+	BROKER_API float get_cash(void *broker_ptr, int account_id = -1);
+	BROKER_API float get_nlv(void *broker_ptr, int account_id = -1);
+	BROKER_API float get_unrealied_pl(void *broker_ptr, int account_id = -1);
+	BROKER_API float get_realied_pl(void *broker_ptr, int account_id = -1);
 
 	BROKER_API void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units,
 			bool cheat_on_close = false,
@@ -336,6 +290,7 @@ extern "C" {
 	BROKER_API void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false);
 	BROKER_API void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0, bool limit_pct = false);
 
+    ACCOUNT_API void* GetAccountPtr(void * broker_ptr, unsigned int account_id);
 }
 
 #endif

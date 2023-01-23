@@ -215,7 +215,7 @@ _get_asset_data.restype = POINTER(c_float)
 
 """BROKER WRAPPER"""
 _new_broker_ptr = FastTest.CreateBrokerPtr
-_new_broker_ptr.argtypes =[c_void_p, c_bool, c_bool, c_bool]
+_new_broker_ptr.argtypes =[c_void_p, c_float, c_bool, c_bool, c_bool]
 _new_broker_ptr.restype = c_void_p
 
 _free_broker_ptr = FastTest.DeleteBrokerPtr
@@ -243,11 +243,11 @@ _get_open_position_count.argtypes = [c_void_p]
 _get_open_position_count.restype = c_int
 
 _get_nlv = FastTest.get_nlv
-_get_nlv.argtypes = [c_void_p]
+_get_nlv.argtypes = [c_void_p, c_int]
 _get_nlv.restype = c_float
 
 _get_cash = FastTest.get_cash
-_get_cash.argtypes = [c_void_p]
+_get_cash.argtypes = [c_void_p, c_int]
 _get_cash.restype = c_float
 
 _position_exists = FastTest.position_exists
@@ -283,14 +283,14 @@ _place_limit_order = FastTest.place_limit_order
 _place_limit_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_uint, c_uint, c_uint]
 
 _get_position_ptr = FastTest.get_position_ptr
-_get_position_ptr.argtypes = [c_void_p, c_uint]
+_get_position_ptr.argtypes = [c_void_p, c_uint, c_uint]
 _get_position_ptr.restype = c_void_p
 
 _get_positions = FastTest.get_positions
-_get_positions.argtypes = [c_void_p,POINTER(PositionArrayStruct)]
+_get_positions.argtypes = [c_void_p,POINTER(PositionArrayStruct), c_uint]
 
 _get_position = FastTest.get_position
-_get_position.argtypes = [c_void_p,c_uint,POINTER(PositionStruct)]
+_get_position.argtypes = [c_void_p,c_uint,POINTER(PositionStruct), c_uint]
 
 _position_place_stoploss_order = FastTest.position_add_stoploss
 _position_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_void_p, c_float, c_float, c_bool, c_bool]
@@ -298,17 +298,9 @@ _position_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_v
 _order_place_stoploss_order = FastTest.order_add_stoploss
 _order_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_bool]
 
-
 """ACCOUNT WRAPPER"""
-_new_account_ptr = FastTest.CreateAccountPtr
-_new_account_ptr.argtypes =[c_uint]
-_new_account_ptr.restype = c_void_p
-
-_free_account_ptr = FastTest.DeleteAccountPtr
-_free_account_ptr.argtypes = [c_void_p]
-
-_reset_account = FastTest.reset_account
-_reset_account.argtypes = [c_void_p]
+_get_account_ptr = FastTest.GetAccountPtr
+_get_account_ptr.argtypes = [c_void_p, c_uint]
 
 """ORDER WRAPPER"""
 _order_type = FastTest.order_type

@@ -83,7 +83,8 @@
         "unordered_set": "cpp",
         "variant": "cpp",
         "__verbose_abort": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "functional": "cpp"
     },
     "cmake.configureOnOpen": true,
 }

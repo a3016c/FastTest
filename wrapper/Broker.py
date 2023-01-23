@@ -14,13 +14,13 @@ from wrapper.Exchange import Exchange, Asset
 from wrapper.Order import OrderState
 
 class Broker():
-    def __init__(self, exchange : Exchange, logging = True, margin = False, debug = False) -> None:
+    def __init__(self, exchange : Exchange, cash = 100000, logging = True, margin = False, debug = False) -> None:
         self.exchange_map = {exchange.exchange_name : exchange} 
         self.id = None
         self.logging = logging 
         self.debug = debug
         self.margin = margin
-        self.ptr = Wrapper._new_broker_ptr(exchange.ptr, logging, margin, debug)
+        self.ptr = Wrapper._new_broker_ptr(exchange.ptr, cash, logging, margin, debug)
 
     def __del__(self):
         Wrapper._free_broker_ptr(self.ptr)
@@ -44,36 +44,40 @@ class Broker():
     def get_open_position_count(self):
         return Wrapper._get_open_position_count(self.ptr)
     
-    def position_exists(self, asset_name, exchange_name = "default"):
+    def position_exists(self, asset_name,
+                        exchange_name = "default",
+                        account_id = 0):
         exchange = self.exchange_map[exchange_name]
         asset_id = exchange.asset_map[asset_name]
-        return Wrapper._position_exists(self.ptr, asset_id)
+        return Wrapper._position_exists(self.ptr, asset_id, account_id)
     
-    def get_nlv(self):
-        return Wrapper._get_nlv(self.ptr)
+    def get_nlv(self, account_id = -1):
+        return Wrapper._get_nlv(self.ptr, account_id)
     
-    def get_cash(self):
-        return Wrapper._get_cash(self.ptr)
+    def get_cash(self, account_id = -1):
+        return Wrapper._get_cash(self.ptr, account_id)
     
-    def get_positions(self):
+    def get_positions(self, account_id = 0):
         position_count = self.get_open_position_count()
         open_positions = Wrapper.PositionArrayStruct(position_count)
         position_struct_pointer = pointer(open_positions)
-        Wrapper._get_positions(self.ptr, position_struct_pointer)
+        Wrapper._get_positions(self.ptr, position_struct_pointer, account_id)
         
         return open_positions
             
-    def get_position(self, asset_name : str, exchange_name = "default"):
+    def get_position(self, asset_name : str,
+                     exchange_name = "default",
+                     account_id = 0):
         exchange = self.exchange_map[exchange_name]
         asset_id = exchange.asset_map[asset_name]
         position_struct = Wrapper.PositionStruct()
         position_struct_pointer = pointer(position_struct)
-        Wrapper._get_position(self.ptr, asset_id, position_struct_pointer)
+        Wrapper._get_position(self.ptr, asset_id, position_struct_pointer, account_id)
         return position_struct
           
-    def get_position_ptr(self, asset_name : str):
+    def get_position_ptr(self, asset_name : str, account_id = 0):
         asset_id = self.exchange.asset_map[asset_name]
-        return Wrapper._get_position_ptr(self.ptr, asset_id)
+        return Wrapper._get_position_ptr(self.ptr, asset_id, account_id)
     
     def get_history_length(self):
         return Wrapper._broker_get_history_length(self.ptr)
@@ -135,7 +139,8 @@ class Broker():
                 units = -1*units,
                 order_id = order_response.order_id,
                 stop_loss = stop_loss_on_fill,
-                limit_pct = stop_loss_limit_pct
+                limit_pct = stop_loss_limit_pct,
+                account_id = account_id
             )
         
         return order_response
@@ -171,7 +176,8 @@ class Broker():
                 units = -1*units,
                 order_id = order_response.order_id,
                 stop_loss = stop_loss_on_fill,
-                limit_pct = stop_loss_limit_pct
+                limit_pct = stop_loss_limit_pct,
+                account_id = account_id
             )
             
         return order_response
@@ -182,7 +188,8 @@ class Broker():
                              order_id = None,
                              cheat_on_close = False,
                              exchange_name = "default",
-                             strategy_id = 0):
+                             strategy_id = 0,
+                             account_id = 0):
         
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id
@@ -192,7 +199,7 @@ class Broker():
         
         if asset_name != None:
             asset_id = exchange.asset_map[asset_name]
-            position_ptr = Wrapper._get_position_ptr(self.ptr, asset_id)
+            position_ptr = Wrapper._get_position_ptr(self.ptr, asset_id,account_id)
             
             Wrapper._position_place_stoploss_order(
                 self.ptr,

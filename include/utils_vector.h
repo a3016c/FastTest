@@ -13,5 +13,4 @@
 
 std::vector<long> getUnion(std::vector<long> &v1, std::vector<long> &v2);
 std::vector<std::unique_ptr<Order>> combine_order_vectors(std::vector<std::unique_ptr<Order>> &v1, std::vector<std::unique_ptr<Order>> &v2);
-
 #endif
