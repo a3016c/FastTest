@@ -72,18 +72,24 @@ void __Broker::build(){
 	this->nlv_history.resize(size,0);
 	this->margin_history.resize(size,0);
 
+	for(auto & pair : this->accounts){
+		auto & account = pair.second;
+		account.cash_history.resize(size,0);
+		account.nlv_history.resize(size,0);
+	}
+
 	if(this->debug){
 		printf("BROKER BUILT\n");
 	}
 
 }
 
-void __Broker::broker_register_exchange(__Exchange* exchange_ptr){
+void __Broker::_broker_register_exchange(__Exchange* exchange_ptr){
 	if(this->debug){printf("REGISTERING NEW EXCHANGE, EXCHANGE_ID: %i\n",exchange_ptr->exchange_id);}
 	this->exchanges[exchange_ptr->exchange_id] = exchange_ptr;
 }
 
-void __Broker::broker_register_account(unsigned int account_id, float cash){
+void __Broker::_broker_register_account(unsigned int account_id, float cash){
 	if(this->debug){printf("REGISTERING NEW ACCOUNT, ACCOUNT_ID: %i\n",account_id);}
 	this->accounts[account_id] = __Account(account_id, cash);
 	account = &this->accounts[account_id];
@@ -97,12 +103,15 @@ void __Broker::analyze_step() {
 	}
 
 	bool eval = false;
-	for(const auto & pair : this->accounts){
-		auto account = pair.second;
+	for(auto & pair : this->accounts){
+		auto & account = pair.second;
 		this->cash_history[this->current_index] += account.cash;
 		this->nlv_history[this->current_index] += account.net_liquidation_value;
 		this->margin_history[this->current_index] += account.margin_loan;
 		this->current_index++;
+
+		account.cash_history.push_back(account.cash);
+		account.nlv_history.push_back(account.net_liquidation_value);
 
 		if((account.portfolio.size() > 0) & eval){
 			this->perfomance.time_in_market++;
@@ -599,7 +608,11 @@ void build_broker(void *broker_ptr) {
 void broker_register_exchange(void *broker_ptr, void *exchange_ptr){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
-	__broker_ref->broker_register_exchange(__exchange_ref);
+	__broker_ref->_broker_register_exchange(__exchange_ref);
+}
+void broker_register_account(void *broker_ptr, unsigned int account_id, float cash){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	__broker_ref->_broker_register_account(account_id, cash);
 }
 float get_cash(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

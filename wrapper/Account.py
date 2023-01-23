@@ -10,6 +10,6 @@ from wrapper import Wrapper
 from wrapper import Broker
 
 class Account():
-    def __init__(self, broker: Broker, account_id : int) -> None:
+    def __init__(self, account_ptr : c_void_p, account_id : int) -> None:
         self.account_id = account_id
-        self.ptr = Wrapper._get_account_ptr(broker.ptr, account_id)
+        self.ptr = account_ptr

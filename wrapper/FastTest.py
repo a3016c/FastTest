@@ -14,6 +14,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from wrapper.Exchange import Exchange, Asset, g_asset_counter
 from wrapper.Broker import Broker
+from wrapper.Account import Account
 from wrapper.Strategy import Strategy, BenchMarkStrategy, TestStrategy
 from wrapper.Order import OrderSchedule, OrderType
 from wrapper import Wrapper
@@ -26,6 +27,9 @@ class FastTest:
         self.exchange_counter = 0
         self.broker_counter = 0
         self.strategy_counter = 0
+        self.account_counter = 0
+        
+        self.accounts = {}
         
         self.benchmark = None
         self.broker = None
@@ -55,6 +59,11 @@ class FastTest:
         Wrapper._build_fastTest(self.ptr)
         self.broker.build()
         
+        for i in range(0,self.account_counter):
+            self.accounts[i] = Account(
+                account_ptr = Wrapper._get_account_ptr(self.broker.ptr, i),
+                account_id = i)
+        
     def register_benchmark(self, asset : Asset):
         self.benchmark = asset
         Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
@@ -68,10 +77,20 @@ class FastTest:
         self.exchange_counter += 1
         if register: Wrapper._fastTest_register_exchange(self.ptr, exchange.ptr, exchange.exchange_id)
         
+    def register_account(self, cash : float):
+        
+        if cash < 0:
+            raise Exception("Account must start with positive cash amount")
+        
+        Wrapper._broker_register_account(self.account_counter, cash)
+        
     def register_broker(self, broker : Broker, register = True):
         self.broker = broker
         broker.broker_id = self.broker_counter
+        
         self.exchange_counter += 1
+        self.account_counter += 1
+                
         if register: Wrapper._fastTest_register_broker(self.ptr, broker.ptr, broker.broker_id)
         
     def get_benchmark_ptr(self):

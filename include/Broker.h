@@ -84,6 +84,9 @@ public:
     float unrealized_pl = 0;
     float realized_pl = 0;
 
+	std::vector<float> cash_history;
+	std::vector<float> nlv_history;
+
 	std::unordered_map<unsigned int, Position> portfolio;
 
     void reset();
@@ -159,10 +162,10 @@ public:
 	void margin_on_increase(Position &new_position,std::unique_ptr<Order>& order);
 
 	//functions for managing which exchanges are visable to the broker
-	void broker_register_exchange(__Exchange* exchange_ptr);
+	void _broker_register_exchange(__Exchange* exchange_ptr);
 
 	//functions for managing account of the broker 
-	void broker_register_account(unsigned int account_id, float cash);
+	void _broker_register_account(unsigned int account_id, float cash);
 
 	//functions for managing orders on the exchange
 	void send_order(std::unique_ptr<Order> new_order, OrderResponse *order_response);
@@ -222,7 +225,7 @@ public:
 		this->logging = logging;
 		this->margin = margin;
 		this->exchanges[exchange_ptr->exchange_id] = exchange_ptr;
-		this->broker_register_account(0, cash);
+		this->_broker_register_account(0, cash);
 	};
 
 	template <class T>
@@ -253,6 +256,8 @@ extern "C" {
 	BROKER_API void build_broker(void *broker_ptr);
 
 	BROKER_API void broker_register_exchange(void *broker_ptr, void *exchange_ptr);
+	BROKER_API void broker_register_account(void *broker_ptr, unsigned int account_id, float cash);
+
 
 	BROKER_API size_t broker_get_history_length(void *broker_ptr);
 	BROKER_API float* broker_get_nlv_history(void *broker_ptr);

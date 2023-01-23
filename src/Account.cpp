@@ -74,7 +74,6 @@ void __Account::evaluate_account(bool on_close){
             nlv += position.liquidation_value();
 
             if(this->margin){
-                printf("Margin position found\n");
                 float old_collateral = position.collateral;
                 this->broker->margin_adjustment(position, market_price);
 
@@ -100,6 +99,5 @@ void __Account::evaluate_account(bool on_close){
 }
 void * GetAccountPtr(void * broker_ptr, unsigned int account_id) {
     __Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return nullptr;
-    //return &__broker_ref->accounts[account_id];
+    return &__broker_ref->accounts[account_id];
 }
