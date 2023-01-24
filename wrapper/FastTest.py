@@ -16,7 +16,6 @@ from wrapper.Exchange import Exchange, Asset, g_asset_counter
 from wrapper.Broker import Broker
 from wrapper.Account import Account
 from wrapper.Strategy import Strategy, BenchMarkStrategy, TestStrategy
-from wrapper.Order import OrderSchedule, OrderType
 from wrapper import Wrapper
 
 class FastTest:
@@ -35,16 +34,14 @@ class FastTest:
         self.broker = None
         self.strategies = np.array([], dtype="O")
         
+        global g_asset_counter
         g_asset_counter = 0 
         
         self.ptr = Wrapper._new_fastTest_ptr(self.logging,self.debug)
         
     def __del__(self):
-        try:
-            Wrapper._free_fastTest_ptr(self.ptr)
-        except:
-            pass
-        
+        Wrapper._free_fastTest_ptr(self.ptr)
+
     def profile(self):
         pr = cProfile.Profile()
         pr.enable()
@@ -58,6 +55,9 @@ class FastTest:
     def build(self):
         Wrapper._build_fastTest(self.ptr)
         self.broker.build()
+        
+        for strategy in self.strategies:
+            strategy.build()
         
     def register_benchmark(self, asset : Asset):
         self.benchmark = asset
@@ -90,7 +90,9 @@ class FastTest:
                 account_name = account_name)
         self.account_counter += 1
         
-    def register_broker(self, broker : Broker, register = True, account_name = "default"):
+    def register_broker(self, broker : Broker,
+                        register = True, 
+                        account_name = "default"):
         self.broker = broker
         broker.broker_id = self.broker_counter
                 
@@ -115,13 +117,13 @@ class FastTest:
 
     def run(self):
         self.reset()
-        for strategy in self.strategies:
-            strategy.build()
+                
         while self.step():
             pass
         
+    def load_metrics(self):
         self.metrics = Metrics(self)
-    
+        
     def step(self):
         if not Wrapper._fastTest_forward_pass(self.ptr):
             return False
@@ -186,7 +188,7 @@ class Metrics():
             
         )
         
-@jit(forceobj=True)
+@jit(forceobj=True, cache=True)
 def run_jit(fast_test_ptr : c_void_p, strategy):
     Wrapper._fastTest_reset(fast_test_ptr)
     strategy.build()

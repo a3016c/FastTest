@@ -226,13 +226,19 @@ public:
 	*/
 	__Exchange(bool logging = false) { this->logging = logging; };
 
+	 // Disable move constructor
+    __Exchange(__Exchange&&) = delete;
+
+    // Disable move assignment operator
+    __Exchange& operator=(__Exchange&&) = delete;
+
 
 	/**
 	 *Function to get the current value of a given column from an asset
 	 *@param asset A referece to the name of the Asset for which to get the value.
 	 *@param column The column to get the value of.
 	*/
-	inline float _get_market_feature(unsigned int &asset_id, std::string column, int index) noexcept{
+	inline float _get_market_feature(unsigned int &asset_id, std::string &column, int index) noexcept{
 		if (this->market_view.count(asset_id) == 0){return NAN;}
 		return this->market_view[asset_id]->get(column, index);
 	}

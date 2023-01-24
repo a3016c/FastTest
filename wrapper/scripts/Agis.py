@@ -10,7 +10,7 @@ import numpy as np
 from Exchange import Exchange, Asset
 from Broker import Broker
 from Strategy import *
-from FastTest import FastTest
+from FastTest import FastTest, run_jit
 
 class Agis_Strategy(Strategy):
     def __init__(self, broker: Broker, exchange: Exchange, lookahead : int) -> None:
@@ -100,10 +100,8 @@ if __name__ == "__main__":
     
     strategy = Agis_Strategy(broker, exchange, lookahead=20)
     
-    #exchange.set_slippage(.0025)
+    exchange.set_slippage(.0025)
     
-    ft.build()
-
     df = pd.read_csv("/Users/nathantormaschy/Downloads/SPY.csv")
     df["DATE"] = pd.to_datetime(df["DATE"], format = "%Y-%m-%d")
     df["DATE"] = df['DATE'].apply(lambda x: x.replace(tzinfo=None))
@@ -116,12 +114,13 @@ if __name__ == "__main__":
     ft.register_benchmark(benchmark)
 
     ft.add_strategy(strategy)
+    ft.build()
     
     st = time.time()
     ft.run()
     et = time.time()
     
     print(strategy.count / (et-st))
-    print(ft.metrics.get_stats())
+    #print(ft.metrics.get_stats())
     
-    strategy.plot(benchmark)
+    #strategy.plot(benchmark)

@@ -120,7 +120,7 @@ public:
 	//as a row offset when querying the data.
 	unsigned int i;
 	inline float get(std::string &s, int index = 0) noexcept{
-		unsigned int i = this->headers[s];
+		i = this->headers[s];
 		return AM(this->current_index - 1 + index, i);
 	}
 	inline const timeval & asset_time() const noexcept {

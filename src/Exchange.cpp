@@ -361,7 +361,7 @@ float get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close)
 	return price;
 }
 void* get_asset_ptr(void *exchange_ptr, unsigned int asset_id) {
-	__Exchange * __exchange_ref = reinterpret_cast<__Exchange *>(exchange_ptr);
+	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	return &__exchange_ref->market[asset_id];
 }
 float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index) {

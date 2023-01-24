@@ -4,7 +4,6 @@ import os
 import sys
 
 import pandas as pd
-from numpy.ctypeslib import ndpointer
 
 SCRIPT_DIR = os.path.dirname(__file__)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
