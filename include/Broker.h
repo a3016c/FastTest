@@ -256,7 +256,7 @@ extern "C" {
 	BROKER_API void build_broker(void *broker_ptr);
 
 	BROKER_API void broker_register_exchange(void *broker_ptr, void *exchange_ptr);
-	BROKER_API void broker_register_account(void *broker_ptr, unsigned int account_id, float cash);
+	BROKER_API void* broker_register_account(void *broker_ptr, unsigned int account_id, float cash);
 
 
 	BROKER_API size_t broker_get_history_length(void *broker_ptr);

@@ -610,9 +610,10 @@ void broker_register_exchange(void *broker_ptr, void *exchange_ptr){
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__broker_ref->_broker_register_exchange(__exchange_ref);
 }
-void broker_register_account(void *broker_ptr, unsigned int account_id, float cash){
+void* broker_register_account(void *broker_ptr, unsigned int account_id, float cash){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->_broker_register_account(account_id, cash);
+	return &__broker_ref[account_id];
 }
 float get_cash(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

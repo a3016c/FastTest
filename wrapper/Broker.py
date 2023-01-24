@@ -55,9 +55,25 @@ class Broker():
         return Wrapper._get_nlv(self.ptr, account_id)
     
     def get_cash(self, account_id = -1):
+        """_summary_
+
+        Args:
+            account_id (int, optional): account id of the account to get cash, -1 for all accounts combined
+
+        Returns:
+            float: amount of cash available in a given account
+        """
         return Wrapper._get_cash(self.ptr, account_id)
     
     def get_positions(self, account_id = 0):
+        """_summary_
+
+        Args:
+            account_id (int, optional): the account id of the account to retrieve the positions of
+
+        Returns:
+            PositionArrayStruct: an array of PositionStructs
+        """
         position_count = self.get_open_position_count()
         open_positions = Wrapper.PositionArrayStruct(position_count)
         position_struct_pointer = pointer(open_positions)
@@ -68,6 +84,16 @@ class Broker():
     def get_position(self, asset_name : str,
                      exchange_name = "default",
                      account_id = 0):
+        """_summary_
+
+        Args:
+            asset_name (str): the asset name of the position to get
+            exchange_name (str, optional): the exchange name that the asset is listed on
+            account_id (int, optional): the id of the account that the position is in
+
+        Returns:
+            PositionStruct: position struct the requested position
+        """
         exchange = self.exchange_map[exchange_name]
         asset_id = exchange.asset_map[asset_name]
         position_struct = Wrapper.PositionStruct()
@@ -76,17 +102,41 @@ class Broker():
         return position_struct
           
     def get_position_ptr(self, asset_name : str, account_id = 0):
+        """_summary_
+
+        Args:
+            asset_name (str): the asset name of the position pointer to get
+            account_id (int, optional): the id of the account containing the position
+
+        Returns:
+            c_void+_ptr : a pointer to a C++ position object
+        """
         asset_id = self.exchange.asset_map[asset_name]
         return Wrapper._get_position_ptr(self.ptr, asset_id, account_id)
     
     def get_history_length(self):
+        """_summary_
+
+        Returns:
+            int: the length of the nlv_history of the broker (how many valuations of the portfolio there were)
+        """
         return Wrapper._broker_get_history_length(self.ptr)
     
     def get_cash_history(self):
+        """_summary_
+
+        Returns:
+            numpy array: an array of floats representing available cash at every time period 
+        """
         cash_ptr = Wrapper._broker_get_cash_history(self.ptr)
         return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
     
     def get_nlv_history(self):
+        """_summary_
+
+        Returns:
+            numpy array: an array of floats representing net liquidation value at every time period 
+        """
         nlv_ptr = Wrapper._broker_get_nlv_history(self.ptr)
         return np.ctypeslib.as_array(nlv_ptr, shape=(self.get_history_length(),))
     
@@ -109,13 +159,27 @@ class Broker():
         return position_history
 
     def place_market_order(self, asset_name : str, units : float, 
-                           asset_id = None,
                            stop_loss_on_fill = 0,
                            stop_loss_limit_pct = False,
                            cheat_on_close = False, 
                            exchange_name = "default",
                            strategy_id = 0,
                            account_id = 0):
+        """_summary_
+
+        Args:
+            asset_name (str): name of the asset to place the order for
+            units (float): how many units to buy/sell
+            stop_loss_on_fill (float, optional): stop loss level of stop loss placed on fill. Defaults to 0.
+            stop_loss_limit_pct (bool, optional): is the stop loss level a percentage of the current price. Defaults to False.
+            cheat_on_close (bool, optional): = allow position to be execute at end of current candle. Defaults to False.
+            exchange_name (str, optional): name of the exchange to place the order to. Defaults to "default".
+            strategy_id (int, optional): id of the strategy placing the trade. Defaults to 0.
+            account_id (int, optional): id of the account the order was placed for. Defaults to 0.
+
+        Returns:
+            OrderResponse: brokers response to the order containing the order id and state
+        """
         
         exchange = self.exchange_map[exchange_name]
         exchange_id = exchange.exchange_id

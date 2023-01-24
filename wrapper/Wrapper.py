@@ -232,6 +232,7 @@ _broker_register_exchange.argtypes = [c_void_p, c_void_p]
 
 _broker_register_account = FastTest.broker_register_account
 _broker_register_account.argtypes = [c_void_p, c_uint, c_float]
+_broker_register_account.restype = c_void_p
 
 _get_order_count = FastTest.get_order_count
 _get_order_count.argtypes = [c_void_p]

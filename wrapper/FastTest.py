@@ -59,11 +59,6 @@ class FastTest:
         Wrapper._build_fastTest(self.ptr)
         self.broker.build()
         
-        for i in range(0,self.account_counter):
-            self.accounts[i] = Account(
-                account_ptr = Wrapper._get_account_ptr(self.broker.ptr, i),
-                account_id = i)
-        
     def register_benchmark(self, asset : Asset):
         self.benchmark = asset
         Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
@@ -77,16 +72,32 @@ class FastTest:
         self.exchange_counter += 1
         if register: Wrapper._fastTest_register_exchange(self.ptr, exchange.ptr, exchange.exchange_id)
         
-    def register_account(self, cash : float):
+    def register_account(self, cash : float, account_name = "default"):
+        
+        if self.broker == None:
+            raise Exception("No broker registered to place the account to")
         
         if cash < 0:
             raise Exception("Account must start with positive cash amount")
         
-        Wrapper._broker_register_account(self.account_counter, cash)
+        if self.accounts.get(account_name) != None:
+            raise Exception("Account with same name already exists")
         
-    def register_broker(self, broker : Broker, register = True):
+        account_ptr = Wrapper._broker_register_account(self.broker.ptr, self.account_counter, cash)
+        self.accounts[account_name] = Account(
+                account_ptr = account_ptr,
+                account_id = self.account_counter,
+                account_name = account_name)
+        self.account_counter += 1
+        
+    def register_broker(self, broker : Broker, register = True, account_name = "default"):
         self.broker = broker
         broker.broker_id = self.broker_counter
+                
+        self.accounts[account_name] = Account(
+                account_ptr = Wrapper._get_account_ptr(self.broker.ptr, 0),
+                account_id = self.account_counter,
+                account_name = account_name)
         
         self.exchange_counter += 1
         self.account_counter += 1
