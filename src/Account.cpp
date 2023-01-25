@@ -97,7 +97,26 @@ void __Account::evaluate_account(bool on_close){
     }
     this->net_liquidation_value = nlv + this->cash - collateral;
 }
+void * CreateAccountPtr(unsigned int account_id, float cash) {
+	return new __Account(account_id, cash);
+}
+void DeleteAccountPtr(void *ptr) {
+	__Account * __account_ref = static_cast<__Account *>(ptr);
+	delete __account_ref;
+}
 void * GetAccountPtr(void * broker_ptr, unsigned int account_id) {
     __Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
     return &__broker_ref->accounts[account_id];
+}
+size_t account_get_history_length(void *account_ptr){
+	__Account * __account_ref = static_cast<__Account *>(account_ptr);
+	return __account_ref->nlv_history.size();
+}
+float * account_get_nlv_history(void *account_ptr) {
+	__Account * __account_ref = static_cast<__Account *>(account_ptr);
+	return __account_ref->nlv_history.data();
+}
+float * account_get_cash_history(void *account_ptr) {
+	__Account * __account_ref = static_cast<__Account *>(account_ptr);
+	return __account_ref->cash_history.data();
 }

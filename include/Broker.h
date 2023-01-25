@@ -132,8 +132,7 @@ public:
 	std::unordered_map<unsigned int, __Exchange*> exchanges;
 
 	//accounts contained within the broker
-	__Account * account;
-	std::unordered_map<unsigned int, __Account> accounts;
+	std::unordered_map<unsigned int, __Account*> accounts;
 
 	//counters to keep track of the IDs for orders and positions
 	unsigned int position_counter = 1;
@@ -165,7 +164,7 @@ public:
 	void _broker_register_exchange(__Exchange* exchange_ptr);
 
 	//functions for managing account of the broker 
-	void _broker_register_account(unsigned int account_id, float cash);
+	void _broker_register_account(__Account* account_ptr);
 
 	//functions for managing orders on the exchange
 	void send_order(std::unique_ptr<Order> new_order, OrderResponse *order_response);
@@ -216,16 +215,15 @@ public:
 	inline void evaluate_portfolio(bool on_close = false){
 		for (auto & pair : this->accounts){
 			auto & account = pair.second;
-			account.evaluate_account(on_close);
+			account->evaluate_account(on_close);
 		}
 	}
 	
-	__Broker(__Exchange *exchange_ptr, float cash = 100000, bool logging = false, bool margin = false, bool debug = false) {
+	__Broker(__Exchange *exchange_ptr, bool logging = false, bool margin = false, bool debug = false) {
 		this->debug = debug;
 		this->logging = logging;
 		this->margin = margin;
 		this->exchanges[exchange_ptr->exchange_id] = exchange_ptr;
-		this->_broker_register_account(0, cash);
 	};
 
 	template <class T>
@@ -250,14 +248,13 @@ public:
 };
 
 extern "C" {
-	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, float cash = 100000, bool logging = true, bool margin = false, bool debug = false);
+	BROKER_API void * CreateBrokerPtr(void *exchange_ptr, bool logging = true, bool margin = false, bool debug = false);
 	BROKER_API void DeleteBrokerPtr(void *ptr);
 	BROKER_API void reset_broker(void *broker_ptr);
 	BROKER_API void build_broker(void *broker_ptr);
 
 	BROKER_API void broker_register_exchange(void *broker_ptr, void *exchange_ptr);
-	BROKER_API void* broker_register_account(void *broker_ptr, unsigned int account_id, float cash);
-
+	BROKER_API void broker_register_account(void *broker_ptr, void *account_ptr);
 
 	BROKER_API size_t broker_get_history_length(void *broker_ptr);
 	BROKER_API float* broker_get_nlv_history(void *broker_ptr);
@@ -295,7 +292,13 @@ extern "C" {
 	BROKER_API void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false);
 	BROKER_API void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0, bool limit_pct = false);
 
+	ACCOUNT_API void * CreateAccountPtr(unsigned int account_id, float cash);
+	ACCOUNT_API void DeleteAccountPtr(void *ptr);
     ACCOUNT_API void* GetAccountPtr(void * broker_ptr, unsigned int account_id);
+	
+	ACCOUNT_API size_t account_get_history_length(void *account_ptr);
+	ACCOUNT_API float* account_get_nlv_history(void *account_ptr);
+	ACCOUNT_API float* account_get_cash_history(void *account_ptr);
 }
 
 #endif

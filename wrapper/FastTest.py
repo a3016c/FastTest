@@ -20,6 +20,7 @@ from wrapper import Wrapper
 
 class FastTest:
     def __init__(self, logging = False, debug = False) -> None:
+        self.built = False
         self.logging = logging
         self.debug = debug
         
@@ -40,8 +41,10 @@ class FastTest:
         self.ptr = Wrapper._new_fastTest_ptr(self.logging,self.debug)
         
     def __del__(self):
+        if self.debug: print("\nFREEING FASTTEST POINTER")
         Wrapper._free_fastTest_ptr(self.ptr)
-
+        if self.debug: print("FASTTEST POINTER FREED\n")
+        
     def profile(self):
         pr = cProfile.Profile()
         pr.enable()
@@ -58,6 +61,8 @@ class FastTest:
         
         for strategy in self.strategies:
             strategy.build()
+            
+        self.built = True
         
     def register_benchmark(self, asset : Asset):
         self.benchmark = asset
@@ -71,38 +76,31 @@ class FastTest:
         exchange.exchange_id = self.exchange_counter
         self.exchange_counter += 1
         if register: Wrapper._fastTest_register_exchange(self.ptr, exchange.ptr, exchange.exchange_id)
-        
-    def register_account(self, cash : float, account_name = "default"):
-        
+                
+    def add_account(self, account_name : str, cash : float):
         if self.broker == None:
             raise Exception("No broker registered to place the account to")
-        
-        if cash < 0:
-            raise Exception("Account must start with positive cash amount")
         
         if self.accounts.get(account_name) != None:
             raise Exception("Account with same name already exists")
         
-        account_ptr = Wrapper._broker_register_account(self.broker.ptr, self.account_counter, cash)
-        self.accounts[account_name] = Account(
-                account_ptr = account_ptr,
-                account_id = self.account_counter,
-                account_name = account_name)
+        if self.built:
+            raise Exception("Account must be registered before FastTest is built")
+                
+        account = Account(self.account_counter, account_name, cash,
+                          debug = self.debug)
+        
+        self.accounts[account.account_name] = account
+        self.broker.account_map[account_name] = self.account_counter
+        Wrapper._broker_register_account(self.broker.ptr, account.ptr)
         self.account_counter += 1
         
     def register_broker(self, broker : Broker,
-                        register = True, 
-                        account_name = "default"):
+                        register = True):
         self.broker = broker
         broker.broker_id = self.broker_counter
                 
-        self.accounts[account_name] = Account(
-                account_ptr = Wrapper._get_account_ptr(self.broker.ptr, 0),
-                account_id = self.account_counter,
-                account_name = account_name)
-        
         self.exchange_counter += 1
-        self.account_counter += 1
                 
         if register: Wrapper._fastTest_register_broker(self.ptr, broker.ptr, broker.broker_id)
         

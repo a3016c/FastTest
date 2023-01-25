@@ -1,9 +1,11 @@
 import sys
 import os
-import time
 import unittest
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
 import numpy as np
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
 from Exchange import Exchange, Asset
 from Broker import Broker
 from Strategy import *
@@ -20,6 +22,7 @@ class BrokerTestMethods(unittest.TestCase):
         
         broker = Broker(exchange, debug=False)
         ft.register_broker(broker)
+        ft.add_account("default", 100000)
          
         new_asset = Asset(exchange, asset_name="1")
         new_asset.set_format("%d-%d-%d", 0, 1)

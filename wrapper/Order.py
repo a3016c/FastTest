@@ -30,8 +30,8 @@ class OrderSchedule():
         self.limit = kwargs.get("limit")
         self.cheat_on_close = kwargs.get("cheat_on_close") if kwargs.get("cheat_on_close") != None else False
 
-        self.account_id = kwargs.get("account_id")
-        if self.account_id == None: self.account_id = 0
+        self.account_name = kwargs.get("account_name")
+        if self.account_name == None: self.account_name = "default"
         
         self.stop_loss_on_fill = kwargs.get("stop_loss_on_fill")
         if self.stop_loss_on_fill == None: self.stop_loss_on_fill = 0

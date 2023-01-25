@@ -4,6 +4,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from Exchange import Exchange, Asset
+from Account import Account
 from Broker import Broker 
 from FastTest import FastTest
 
@@ -32,6 +33,7 @@ def setup_simple(logging = False):
     ft.register_exchange(exchange)
     broker = Broker(exchange)
     ft.register_broker(broker)
+    ft.add_account("default", 100000)
 
     new_asset = Asset(exchange, asset_name="1")
     new_asset.set_format("%d-%d-%d", 0, 1)
@@ -51,6 +53,7 @@ def setup_multi(logging = False, margin = False, debug = False):
     
     broker = Broker(exchange,logging=logging, margin=margin, debug=debug)
     ft.register_broker(broker)
+    ft.add_account("default", 100000)
 
     for i, file_name in enumerate([file_name_1,file_name_2]):
         new_asset = Asset(exchange, asset_name=str(i+1))
@@ -72,6 +75,7 @@ def setup_multi_exchange(logging = False, margin = False, debug = False):
     
     broker = Broker(exchange1,logging=logging, margin=margin)
     ft.register_broker(broker)
+    ft.add_account("default", 100000)
 
     new_asset1 = Asset(exchange1, asset_name=str(1))
     new_asset2 = Asset(exchange2, asset_name=str(2))
@@ -85,12 +89,32 @@ def setup_multi_exchange(logging = False, margin = False, debug = False):
     exchange1.register_asset(new_asset1)
     exchange2.register_asset(new_asset2)
        
-
     broker.register_exchange(exchange2)
     
     ft.build()
         
     return broker, ft
+
+def setup_multi_account(logging = False, margin = False, debug = False):
+    ft = FastTest(logging=logging, debug=debug)
+    exchange = Exchange(logging = logging)
+    ft.register_exchange(exchange)
+    
+    broker = Broker(exchange,logging=logging, margin=margin, debug=debug)
+    ft.register_broker(broker)
+    ft.add_account("account1", 100000)
+    ft.add_account("account2", 100000)
+        
+    for i, file_name in enumerate([file_name_1,file_name_2]):
+        new_asset = Asset(exchange, asset_name=str(i+1))
+        new_asset.set_format("%d-%d-%d", 0, 1)
+        new_asset.load_from_csv(file_name)
+        exchange.register_asset(new_asset)
+        
+    ft.build()
+    
+    return exchange, broker, ft
+    
 
 
 

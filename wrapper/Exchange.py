@@ -14,17 +14,22 @@ global g_asset_counter
 g_asset_counter = 0
 
 class Exchange():
-    def __init__(self, logging = False, exchange_name = "default") -> None:
+    def __init__(self, exchange_name = "default", logging = False, debug = False) -> None:
         self.logging = logging
+        self.debug = debug
         self.exchange_name = exchange_name
         self.exchange_id = None
         self.ptr = Wrapper._new_exchange_ptr(logging)
         self.asset_map = {}
         self.id_map = {}
         self.asset_counter = 0
+        
+        if self.debug: print(f"ALLOCATING EXCHANGE POINTER AT {self.ptr}")
 
     def __del__(self):
+        if self.debug: print(f"\nFREEING {self.exchange_name} EXCHANGE POINTER AT {self.ptr}")
         Wrapper._free_exchange_ptr(self.ptr)
+        if self.debug: print(f"{self.exchange_name} EXCHANGE POINTER FREED\n")
 
     def reset(self):
         Wrapper._reset_exchange(self.ptr)

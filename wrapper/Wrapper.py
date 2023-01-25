@@ -214,7 +214,7 @@ _get_asset_data.restype = POINTER(c_float)
 
 """BROKER WRAPPER"""
 _new_broker_ptr = FastTest.CreateBrokerPtr
-_new_broker_ptr.argtypes =[c_void_p, c_float, c_bool, c_bool, c_bool]
+_new_broker_ptr.argtypes =[c_void_p, c_bool, c_bool, c_bool]
 _new_broker_ptr.restype = c_void_p
 
 _free_broker_ptr = FastTest.DeleteBrokerPtr
@@ -230,8 +230,7 @@ _broker_register_exchange = FastTest.broker_register_exchange
 _broker_register_exchange.argtypes = [c_void_p, c_void_p]
 
 _broker_register_account = FastTest.broker_register_account
-_broker_register_account.argtypes = [c_void_p, c_uint, c_float]
-_broker_register_account.restype = c_void_p
+_broker_register_account.argtypes = [c_void_p, c_void_p]
 
 _get_order_count = FastTest.get_order_count
 _get_order_count.argtypes = [c_void_p]
@@ -302,8 +301,27 @@ _order_place_stoploss_order = FastTest.order_add_stoploss
 _order_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_bool]
 
 """ACCOUNT WRAPPER"""
+_new_account_ptr = FastTest.CreateAccountPtr
+_new_account_ptr.argtypes = [c_uint, c_float]
+_new_account_ptr.restype = c_void_p
+
+_free_account_ptr = FastTest.DeleteAccountPtr
+_free_account_ptr.argtypes = [c_void_p]
+
 _get_account_ptr = FastTest.GetAccountPtr
 _get_account_ptr.argtypes = [c_void_p, c_uint]
+
+_account_get_history_length= FastTest.account_get_history_length
+_account_get_history_length.argtypes = [c_void_p]
+_account_get_history_length.restype = c_size_t
+
+_account_get_nlv_history = FastTest.account_get_nlv_history
+_account_get_nlv_history.argtypes = [c_void_p]
+_account_get_nlv_history.restype = POINTER(c_float)
+
+_account_get_cash_history = FastTest.account_get_cash_history
+_account_get_cash_history.argtypes = [c_void_p]
+_account_get_cash_history.restype = POINTER(c_float)
 
 """ORDER WRAPPER"""
 _order_type = FastTest.order_type
