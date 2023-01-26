@@ -140,7 +140,6 @@ bool forward_pass(void *fastTest_ptr){
 		return false;
 	}
 
-	bool complete = true;
 	long fasttest_time = __fastTest_ref->epoch_index[__fastTest_ref->current_index];
 	
 	if(__fastTest_ref->debug){
@@ -150,7 +149,6 @@ bool forward_pass(void *fastTest_ptr){
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
 		if(!(exchange->epoch_index[exchange->current_index] == fasttest_time)){continue;}
 		if(exchange->_get_market_view()){
-			complete = false;
 		}
 	}
 	__fastTest_ref->current_index++;

@@ -24,12 +24,15 @@ class FastTest:
         self.logging = logging
         self.debug = debug
         
+        #counters to set the necessary unique identifies for strucutres
         self.asset_counter = 0
         self.exchange_counter = 0
         self.broker_counter = 0
         self.strategy_counter = 0
         self.account_counter = 0
         
+        #containers used to hold the various structures. Held here to ensure that the c pointers held in the
+        #objects will not be freed untill the FastTest object is deleted
         self.assets = {}
         self.accounts = {}
         self.exchanges = {}
@@ -37,10 +40,7 @@ class FastTest:
         self.benchmark = None
         self.broker = None
         self.strategies = np.array([], dtype="O")
-        
-        global g_asset_counter
-        g_asset_counter = 0 
-        
+                
         self.ptr = Wrapper._new_fastTest_ptr(self.logging,self.debug)
         
     def __del__(self):
@@ -60,12 +60,14 @@ class FastTest:
 
     def build(self):
         
+        #copy the data into c++ objects and delete the local python copy to preserve memory
         for asset_name in list(self.assets.keys()):
             asset = self.assets[asset_name]
             exchange = self.exchanges[asset.exchange_name]
             exchange.register_asset(asset)
             del self.assets[asset_name]
         
+        #allow the fasttest and broker to complete any nessecary setup
         Wrapper._build_fastTest(self.ptr)
         self.broker.build()
         
@@ -130,6 +132,7 @@ class FastTest:
         if register: Wrapper._fastTest_register_broker(self.ptr, broker.ptr, broker.broker_id)
         
     def get_benchmark_ptr(self):
+        #return a pointer to a c++ asset class of the fasttest benchmark
         return Wrapper._get_benchmark_ptr(self.ptr)
     
     def add_strategy(self, strategy : Strategy):
@@ -139,6 +142,7 @@ class FastTest:
         self.strategies = np.append(self.strategies,(strategy))
 
     def run(self):
+        #clear any results/data from previous runs
         self.reset()
                 
         while self.step():
@@ -148,6 +152,13 @@ class FastTest:
         self.metrics = Metrics(self)
         
     def step(self):
+        """
+        Core event loop. Allows the C++ code to handle all events emitted by the strategies. 
+        
+        Returns:
+            bool: is there another time step to be executed in the current test
+        """
+    
         if not Wrapper._fastTest_forward_pass(self.ptr):
             return False
         for strategy in self.strategies:

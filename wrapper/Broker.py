@@ -91,7 +91,7 @@ class Broker():
             
     def get_position(self, asset_name : str,
                      exchange_name = "default",
-                     account_id = 0):
+                     account_name = "default"):
         """_summary_
 
         Args:
@@ -104,6 +104,8 @@ class Broker():
         """
         exchange = self.exchange_map[exchange_name]
         asset_id = exchange.asset_map[asset_name]
+        account_id = self.account_map[account_name]
+        
         position_struct = Wrapper.PositionStruct()
         position_struct_pointer = pointer(position_struct)
         Wrapper._get_position(self.ptr, asset_id, position_struct_pointer, account_id)
