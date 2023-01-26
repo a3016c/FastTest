@@ -73,21 +73,22 @@ class __Broker;
 
 class __Account {
 public:
-	unsigned int account_id;
-     __Broker *broker;
+	unsigned int account_id; /**<unique id of the account*/
+     __Broker *broker;		 /**<pointer to the broker that is the parent of the account*/
 
     bool margin;
 	float cash;
-	float net_liquidation_value;
-	float starting_cash;
-    float margin_loan = 0;
-    float unrealized_pl = 0;
-    float realized_pl = 0;
+	float net_liquidation_value; /**<net liquidation value of the portfolio*/
+	float starting_cash;         /**<cash that the account started with used for resets*/
+    float margin_loan = 0;		 /**<outstanding margin loan balance of the account*/
+    float unrealized_pl = 0;	 /**<unrealized pl of all positions in the account*/
+    float realized_pl = 0;		 /**<realized pl of all positions in the account*/
 
-	std::vector<float> cash_history;
-	std::vector<float> nlv_history;
+	std::vector<float> cash_history; /**<cash held in the account at each timestep of the test*/
+	std::vector<float> nlv_history;  /**<net liquidation value of the account at each timestep of the test*/
 
-	std::unordered_map<unsigned int, Position> portfolio;
+	//Account's current portfolio, map between asset id and a position object with that asset
+	std::unordered_map<unsigned int, Position> portfolio; 
 
     void reset();
     void build(float cash);
@@ -100,7 +101,6 @@ public:
 		this->starting_cash = cash;
         this->net_liquidation_value = cash;
     }
-	__Account(){};
 };
 
 class __Broker

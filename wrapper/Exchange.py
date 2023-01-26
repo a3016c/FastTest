@@ -41,8 +41,6 @@ class Exchange():
         
         if self.asset_map.get(asset.asset_name) != None:
             raise Exception("Asset already exists on exchange")
-        if asset.registered:
-            raise Exception("Asset is already registered to an exchange")
         
         self.asset_map[asset.asset_name] = asset.asset_id
         self.id_map[asset.asset_id] = asset.asset_name
@@ -105,7 +103,9 @@ class Exchange():
         return Wrapper._asset_count(self.ptr)
 
 class Asset():
-    def __init__(self, exchange_id, asset_name : str, exchange_name = None, debug = False) -> None:
+    def __init__(self, exchange_id, asset_name : str,
+                exchange_name = None,
+                debug = False) -> None:
         self.debug = debug
         self.asset_name = asset_name
         self.registered = False
@@ -125,11 +125,17 @@ class Asset():
         if self.debug: print(f"{self.asset_name} ASSET POINTER FREED\n")
                 
     def load_from_csv(self, file_name : str):
+        if not self.registered:
+            raise RuntimeError("Asset must be registered before loading data")
+        
         self.file_name = c_char_p(file_name.encode("utf-8"))
         Wrapper._asset_from_csv(self.ptr, self.file_name)
         self.headers = pd.read_csv(file_name, index_col=0, nrows=0).columns.tolist()
         
     def load_from_df(self, df : pd.DataFrame, nano = False):
+        if not self.registered:
+            raise RuntimeError("Asset must be registered before loading data")
+        
         values = df.values.flatten().astype(np.float32)
         epoch_index = df.index.values.astype(np.float32)
         if nano: epoch_index /=  1e9
@@ -155,6 +161,9 @@ class Asset():
         self.headers = columns
                     
     def set_format(self, digit_format : str, open_col : int, close_col : int):
+        if not self.registered:
+            raise RuntimeError("Asset must be registered before setting asset format")
+        
         Wrapper._set_asset_format(
             self.ptr,
             c_char_p(digit_format.encode("utf-8")),

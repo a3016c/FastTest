@@ -77,7 +77,11 @@ class FastTest:
         self.built = True
         
     def register_benchmark(self, asset : Asset):
+        asset.asset_id = self.asset_counter
+        asset.registered = True
         self.benchmark = asset
+        self.asset_counter += 1
+        asset.load_ptr()
         Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
         
     def register_asset(self, asset_name : str, exchange_name = "default"):
@@ -86,6 +90,7 @@ class FastTest:
         #build a new asset object using the asset name and given exchange
         asset = Asset(exchange.exchange_id, asset_name, debug=self.debug, exchange_name=exchange_name)
         asset.asset_id = self.asset_counter
+        asset.registered = True
         
         #once the asset has unique id we can allocate the c++ asset object
         asset.load_ptr()

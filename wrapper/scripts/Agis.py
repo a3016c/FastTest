@@ -66,7 +66,7 @@ class Agis_Strategy(Strategy):
                 counts += 1
                 if counts == self.position_count: break
            
-    def load(self,exchange):
+    def load(self, exchange : Exchange):
         z = zipfile.ZipFile(self.zip_path)
         file_names = z.namelist()
         asset_names = [_file[0:-4] for _file in file_names]
@@ -82,10 +82,9 @@ class Agis_Strategy(Strategy):
             df.set_index("DATE",inplace=True)
             
             asset_name = asset_names[index]
-            new_asset = Asset(exchange, asset_name=asset_name)
+            new_asset = ft.register_asset(asset_name)
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_df(df, nano=True)
-            exchange.register_asset(new_asset)
             self.count += df.shape[0]
                 
 if __name__ == "__main__":
@@ -109,10 +108,10 @@ if __name__ == "__main__":
     df["DATE"] = pd.to_datetime(df["DATE"])
     df.set_index("DATE",inplace=True)
     
-    benchmark = Asset(exchange, asset_name=str("Benchmark"))
+    benchmark = Asset(exchange.exchange_id, asset_name=str("Benchmark"))
+    ft.register_benchmark(benchmark)
     benchmark.set_format("%d-%d-%d", 0, 1)
     benchmark.load_from_df(df, nano=True)
-    ft.register_benchmark(benchmark)
 
     ft.add_strategy(strategy)
     ft.build()

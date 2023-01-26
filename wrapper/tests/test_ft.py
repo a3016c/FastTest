@@ -109,10 +109,10 @@ class FTTestMethods(unittest.TestCase):
     def test_benchmark_asset(self):
         exchange, broker, ft = setup_multi(False)
         
-        benchmark = ft.register_asset("benchmark")
+        benchmark = Asset(exchange.exchange_id, asset_name=str("Benchmark"))
+        ft.register_benchmark(benchmark)
         benchmark.set_format("%d-%d-%d", 0, 1)
         benchmark.load_from_csv(file_name_2)
-        ft.register_benchmark(benchmark)
         
         benchmark = ft.benchmark.df()
         assert((benchmark["CLOSE"].values == test2_close).all())

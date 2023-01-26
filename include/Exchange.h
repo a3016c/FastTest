@@ -77,12 +77,12 @@ public:
 	bool is_registered = false; /**<is the exchange registered to a FastTest*/ 
 	unsigned int exchange_id;   /**<unique id of the exchange*/ 
 
-	bool logging; /**<wether or not to log events*/
+	bool logging;    /**<wether or not to log events*/
 	char time[28]{}; /**<char array used for datetimes of log events*/
 
-	timeval current_time; /**<current epoch time in the FastTest*/
+	timeval current_time; 			/**<current epoch time in the FastTest*/
 	unsigned int current_index = 0; /**<current position in the FastTest master datetime index*/
-	__Asset* asset; /**<Pointer to a Asset used to create market view.*/
+	__Asset* asset; 				/**<Pointer to a Asset used to create market view.*/
 
 	//!FastTest master datetime index
 	/*!
