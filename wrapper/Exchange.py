@@ -10,9 +10,6 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from wrapper import  Wrapper
 
-global g_asset_counter 
-g_asset_counter = 0
-
 class Exchange():
     def __init__(self, exchange_name = "default", logging = False, debug = False) -> None:
         self.logging = logging
@@ -39,7 +36,7 @@ class Exchange():
     
     def set_slippage(self, slippage : float):
         Wrapper._exchange_set_slippage(self.ptr,slippage)
-
+        
     def register_asset(self, asset):
         
         if self.asset_map.get(asset.asset_name) != None:
@@ -52,7 +49,7 @@ class Exchange():
         self.asset_counter += 1
         asset.registered = True
         Wrapper._register_asset(asset.ptr, self.ptr)
-
+        
     def build(self):
         Wrapper._build_exchange(self.ptr)
         
@@ -108,17 +105,25 @@ class Exchange():
         return Wrapper._asset_count(self.ptr)
 
 class Asset():
-    def __init__(self, exchange : Exchange, asset_name : str) -> None:
+    def __init__(self, exchange_id, asset_name : str, exchange_name = None, debug = False) -> None:
+        self.debug = debug
         self.asset_name = asset_name
         self.registered = False
-        global g_asset_counter
-        self.asset_id = g_asset_counter
-        g_asset_counter += 1
-        self.ptr = Wrapper._new_asset_ptr(self.asset_id, exchange.exchange_id)
+        self.asset_id = None
+        self.exchange_id = exchange_id
+        self.exchange_name = exchange_name
+        
+    def load_ptr(self):
+        if self.asset_id == None:
+            raise RuntimeError("Asset doest not have and ID")
+        self.ptr = Wrapper._new_asset_ptr(self.asset_id, self.exchange_id)
+        if self.debug: print(f"ALLOCATING {self.asset_name} ASSET POINTER AT {self.ptr}")
 
     def __del__(self):
+        if self.debug: print(f"\nFREEING {self.asset_name} ASSET POINTER AT {self.ptr}")
         Wrapper._free_asset_ptr(self.ptr)
-
+        if self.debug: print(f"{self.asset_name} ASSET POINTER FREED\n")
+                
     def load_from_csv(self, file_name : str):
         self.file_name = c_char_p(file_name.encode("utf-8"))
         Wrapper._asset_from_csv(self.ptr, self.file_name)

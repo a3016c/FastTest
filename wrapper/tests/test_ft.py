@@ -97,11 +97,10 @@ class FTTestMethods(unittest.TestCase):
             df["50"] = df["CLOSE"].rolling(50).mean()
             df.dropna(inplace = True)
             
-            new_asset = Asset(exchange, asset_name=str(i+1))
+            new_asset = ft.register_asset(str(i+1))
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_df(df)
-            exchange.register_asset(new_asset)
-    
+            
         ft.build()
         strategy = MA_Cross(broker, exchange, 10, 50)
         ft.add_strategy(strategy)
@@ -110,7 +109,7 @@ class FTTestMethods(unittest.TestCase):
     def test_benchmark_asset(self):
         exchange, broker, ft = setup_multi(False)
         
-        benchmark = Asset(exchange, asset_name=str("Benchmark"))
+        benchmark = ft.register_asset("benchmark")
         benchmark.set_format("%d-%d-%d", 0, 1)
         benchmark.load_from_csv(file_name_2)
         ft.register_benchmark(benchmark)

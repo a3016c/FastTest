@@ -97,6 +97,7 @@ if __name__ == "__main__":
     
     broker = Broker(exchange, margin=True, logging=False)
     ft.register_broker(broker)
+    ft.add_account("default", 100000)
     
     strategy = Agis_Strategy(broker, exchange, lookahead=20)
     

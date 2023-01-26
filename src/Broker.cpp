@@ -204,7 +204,8 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 		order_fill_price,
 		order->order_fill_time,
 		order->exchange_id,
-		order->account_id
+		order->account_id,
+		order->strategy_id
 	};
 	
 	//adjust account's cash and margin balance accoringly

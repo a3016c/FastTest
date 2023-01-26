@@ -82,12 +82,19 @@ class PositionStruct(Structure):
         ('average_price', c_float),
         ('close_price', c_float),
         ('units',c_float),
+        
         ('bars_held', c_uint),
         ('bars_since_change', c_uint),
+        
         ('position_id',c_uint),
         ('asset_id',c_uint),
+        ('exchange_id',c_uint),
+        ('account_id',c_uint),
+        ('strategy_id',c_uint),
+        
         ('position_create_time',c_long),
         ('position_close_time',c_long),
+        
         ('realized_pl', c_float),
         ('unrealized_pl', c_float)
     ]
@@ -96,17 +103,24 @@ class PositionStruct(Structure):
     
     def to_list(self):
         return [
+            self.position_id,
+            self.asset_id,
+            self.exchange_id,
+            self.account_id,
+            self.strategy_id,
+            
             self.position_create_time,
             self.position_close_time,
+            
             self.average_price,
             self.close_price,
             self.units,
+            
             self.bars_held,
             self.bars_since_change,
+            
             self.realized_pl,
-            self.unrealized_pl,
-            self.position_id,
-            self.asset_id
+            self.unrealized_pl
         ]
 
 class PositionArrayStruct(Structure):
@@ -127,8 +141,12 @@ class PositionArrayStruct(Structure):
     
     def to_df(self):
         positions = [self.POSITION_ARRAY[i].contents.to_list() for i in range(self.number_positions)]
-        df = pd.DataFrame(positions, columns = ["position_create_time","position_close_time","average_price",
-                                "close_price","units","bars_held","bars_since_change","realized_pl","unrealized_pl","position_id","asset_id"])
+        df = pd.DataFrame(positions, columns = [
+            "position_id","asset_id","exchange_id","account_id","strategy_id",
+            "position_create_time","position_close_time",
+            "average_price","close_price","units",
+            "bars_held","bars_since_change",
+            "realized_pl","unrealized_pl"])
         df["position_create_time"] = df["position_create_time"]  * 1e9
         df["position_close_time"] = df["position_close_time"]  * 1e9
         df["position_create_time"]= df["position_create_time"].astype('datetime64[ns]')

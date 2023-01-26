@@ -24,13 +24,12 @@ class BrokerTestMethods(unittest.TestCase):
         ft.register_broker(broker)
         ft.add_account("default", 100000)
          
-        new_asset = Asset(exchange, asset_name="1")
+        new_asset = ft.register_asset(asset_name="1")
         new_asset.set_format("%d-%d-%d", 0, 1)
         new_asset.load_from_csv(file_name_2)
-        
-        exchange.register_asset(new_asset)
-        
+            
         ft.build()
+        
         strategy = Strategy(broker, exchange)
         ft.add_strategy(strategy)
         ft.run()

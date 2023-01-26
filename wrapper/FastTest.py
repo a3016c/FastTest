@@ -12,7 +12,7 @@ from numba import njit, jit
 SCRIPT_DIR = os.path.dirname(__file__)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from wrapper.Exchange import Exchange, Asset, g_asset_counter
+from wrapper.Exchange import Exchange, Asset
 from wrapper.Broker import Broker
 from wrapper.Account import Account
 from wrapper.Strategy import Strategy, BenchMarkStrategy, TestStrategy
@@ -24,12 +24,15 @@ class FastTest:
         self.logging = logging
         self.debug = debug
         
+        self.asset_counter = 0
         self.exchange_counter = 0
         self.broker_counter = 0
         self.strategy_counter = 0
         self.account_counter = 0
         
+        self.assets = {}
         self.accounts = {}
+        self.exchanges = {}
         
         self.benchmark = None
         self.broker = None
@@ -56,6 +59,13 @@ class FastTest:
         Wrapper._fastTest_reset(self.ptr)
 
     def build(self):
+        
+        for asset_name in list(self.assets.keys()):
+            asset = self.assets[asset_name]
+            exchange = self.exchanges[asset.exchange_name]
+            exchange.register_asset(asset)
+            del self.assets[asset_name]
+        
         Wrapper._build_fastTest(self.ptr)
         self.broker.build()
         
@@ -68,12 +78,27 @@ class FastTest:
         self.benchmark = asset
         Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
         
+    def register_asset(self, asset_name : str, exchange_name = "default"):
+        exchange = self.exchanges[exchange_name]
+        
+        #build a new asset object using the asset name and given exchange
+        asset = Asset(exchange.exchange_id, asset_name, debug=self.debug, exchange_name=exchange_name)
+        asset.asset_id = self.asset_counter
+        
+        #once the asset has unique id we can allocate the c++ asset object
+        asset.load_ptr()
+                
+        self.asset_counter += 1
+        self.assets[asset_name] = asset
+        return asset
+        
     def register_exchange(self, exchange : Exchange, register = True):
         
         if(exchange.is_registered()):
             raise Exception("Attempted to register an existing exchange")
         
         exchange.exchange_id = self.exchange_counter
+        self.exchanges[exchange.exchange_name] = exchange
         self.exchange_counter += 1
         if register: Wrapper._fastTest_register_exchange(self.ptr, exchange.ptr, exchange.exchange_id)
                 

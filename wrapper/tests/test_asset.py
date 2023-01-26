@@ -16,7 +16,7 @@ class AssetTestMethods(unittest.TestCase):
         ft = FastTest(broker)
         
         ft.register_exchange(exchange) 
-        new_asset = Asset(exchange, asset_name="test1")
+        new_asset = ft.register_asset("test1")
         new_asset.set_format("%d-%d-%d", 0, 1)
         new_asset.load_from_csv(file_name_1)
         assert(True)
@@ -29,7 +29,7 @@ class AssetTestMethods(unittest.TestCase):
         ft.register_exchange(exchange) 
     
         for index, df in enumerate([df1,df2]):
-            new_asset = Asset(exchange, asset_name="test1")
+            new_asset = ft.register_asset("test1")
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_df(df)
             asset_index = new_asset.index()
@@ -54,7 +54,7 @@ class AssetTestMethods(unittest.TestCase):
         
         ft.register_exchange(exchange) 
         for index, file_name in enumerate([file_name_1,file_name_2]):
-            new_asset = Asset(exchange, asset_name="test1")
+            new_asset = ft.register_asset("test1")
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_csv(file_name)
             asset_index = new_asset.index()
@@ -72,7 +72,7 @@ class AssetTestMethods(unittest.TestCase):
         
         ft.register_exchange(exchange) 
         for index, file_name in enumerate([file_name_1,file_name_2]):
-            new_asset = Asset(exchange, asset_name="test1")
+            new_asset = ft.register_asset("test1")
             new_asset.set_format("%d-%d-%d", 0, 1)
             new_asset.load_from_csv(file_name)
             asset_data = new_asset.data()
