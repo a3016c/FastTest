@@ -1,6 +1,7 @@
 /docs
 /src/__pycache__
 /src/wrapper/__pycache__
+/wrapper/__pycache__
 /wrapper/.vscode
 /wrapper/scripts
 /src/Strats
