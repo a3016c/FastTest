@@ -176,10 +176,10 @@ class FastTest:
         Wrapper._fastTest_backward_pass(self.ptr)
         return True
     
-    def get_sharpe(self, nlvs, N = 255, rf = .01):
+    def get_sharpe(self, nlvs, N = 252, rf = .01):
         returns = np.diff(nlvs) / nlvs[:-1]
         sharpe = returns.mean() / returns.std()
-        sharpe = (252**.5)*sharpe
+        sharpe = (N**.5)*sharpe
         return round(sharpe,3)
     
     def plot(self, benchmark = None):
