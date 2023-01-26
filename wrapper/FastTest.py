@@ -9,6 +9,11 @@ import numpy as np
 import pandas as pd
 from numba import njit, jit
 
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+from matplotlib.offsetbox import AnchoredText
+
 SCRIPT_DIR = os.path.dirname(__file__)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
@@ -170,6 +175,71 @@ class FastTest:
             strategy.next()
         Wrapper._fastTest_backward_pass(self.ptr)
         return True
+    
+    def get_sharpe(self, nlvs, N = 255, rf = .01):
+        returns = np.diff(nlvs) / nlvs[:-1]
+        sharpe = returns.mean() / returns.std()
+        sharpe = (252**.5)*sharpe
+        return round(sharpe,3)
+    
+    def plot(self, benchmark = None):
+        nlv = self.broker.get_nlv_history()
+        roll_max = np.maximum.accumulate(nlv)
+        daily_drawdown = nlv / roll_max - 1.0
+        
+        datetime_epoch_index = self.exchanges["sp500"].get_datetime_index()
+        datetime_index = pd.to_datetime(datetime_epoch_index, unit = "s")
+        
+        backtest_df = pd.DataFrame(index = datetime_index, data = nlv, columns=["nlv"])
+        backtest_df["max_drawdown"] = np.minimum.accumulate(daily_drawdown) * 100
+                            
+        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, height_ratios = [1,3])
+        fig = matplotlib.pyplot.gcf()
+        fig.set_size_inches(10.5, 6.5, forward = True)
+                    
+        if benchmark != None:
+            benchmark_df = benchmark.df()
+            benchmark_df = benchmark_df[["CLOSE"]]
+            benchmark_df.rename({'CLOSE': 'Benchmark'}, axis=1, inplace=True)
+            
+            benchmark_df.index = pd.to_datetime(benchmark_df.index, unit = "s")
+            backtest_df = pd.merge(backtest_df,benchmark_df, how='inner', left_index=True, right_index=True)
+
+            ratio = nlv[0] / backtest_df["Benchmark"].values[0]
+            backtest_df["Benchmark"] = backtest_df["Benchmark"].apply(lambda x: x*ratio)
+
+            ax2.plot(datetime_index, backtest_df["Benchmark"], color = "black", label = "Benchmark")  
+        
+        if len(self.accounts) > 1:
+            for account_name in list(self.accounts.keys()):
+                account = self.accounts[account_name]
+                backtest_df[account_name] = account.get_nlv_history()
+                ax2.plot(datetime_index, backtest_df[account_name]*2, label = account_name)
+            
+        ax2.plot(datetime_index, backtest_df["nlv"], label = "NLV")
+        ax2.set_ylabel("NLV")
+        ax2.set_xlabel("Datetime")
+        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
+          ncol=3, fancybox=True, shadow=True)
+        
+        ax1.plot(datetime_index, backtest_df["max_drawdown"])
+        ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
+        ax1.set_ylabel("Max Drawdown")
+        
+        sharpe = self.get_sharpe(backtest_df["nlv"].values)
+
+        if benchmark != None:
+            corr = round(np.corrcoef(
+                backtest_df["nlv"].values, 
+                backtest_df["Benchmark"].values, 
+                rowvar = False)[0][1],3)
+            
+            metrics = f"Sharpe: {sharpe} \n Benchmark Corr: {corr}"
+            anchored_text = AnchoredText(metrics, loc=2)
+            ax2.add_artist(anchored_text)
+                
+        plt.show()
+        
     
 class Metrics():
     def __init__(self, ft : FastTest) -> None:

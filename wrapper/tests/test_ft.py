@@ -1,9 +1,10 @@
 import sys
 import os
-import time
+from ctypes import c_char_p
+
 import unittest
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import numpy as np
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from Exchange import Exchange, Asset
 from Broker import Broker
 from Strategy import *

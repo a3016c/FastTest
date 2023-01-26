@@ -1,13 +1,10 @@
 import sys
 from ctypes import *
 import os
-import sys
-
 import numpy as np
 
 SCRIPT_DIR = os.path.dirname(__file__)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-
 from wrapper import Wrapper
 
 class Account():

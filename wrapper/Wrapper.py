@@ -1,5 +1,6 @@
 import time
-from ctypes import *
+from ctypes import c_void_p, c_uint, c_float, pointer, POINTER, Structure, c_long
+from ctypes import c_bool, cast, c_size_t, c_int, c_char_p, cdll
 import os 
 import sys
 

@@ -1,8 +1,7 @@
 import sys
-from ctypes import *
-from enum import Enum
+from ctypes import pointer
 import os
-import sys
+import math
 
 import numpy as np
 
@@ -11,8 +10,6 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from wrapper import Wrapper
 from wrapper.Exchange import Exchange, Asset
-from wrapper.Account import Account
-from wrapper.Order import OrderState
 
 class Broker():
     def __init__(self, exchange : Exchange,cash = 100000, logging = True, margin = False, debug = False) -> None:
@@ -59,8 +56,11 @@ class Broker():
         asset_id = exchange.asset_map[asset_name]
         return Wrapper._position_exists(self.ptr, asset_id, account_id)
     
-    def get_nlv(self, account_id = -1):
-        return Wrapper._get_nlv(self.ptr, account_id)
+    def get_nlv(self, account_id = -1, account_name = None):
+        if account_id == -1:
+            return Wrapper._get_nlv(self.ptr, account_id)
+        else:
+            return Wrapper._get_nlv(self.ptr, self.account_map[account_name])
     
     def get_cash(self, account_id = -1):
         """_summary_
@@ -119,7 +119,7 @@ class Broker():
             account_id (int, optional): the id of the account containing the position
 
         Returns:
-            c_void+_ptr : a pointer to a C++ position object
+            c_void_ptr : a pointer to a C++ position object
         """
         asset_id = self.exchange.asset_map[asset_name]
         return Wrapper._get_position_ptr(self.ptr, asset_id, account_id)
@@ -190,6 +190,9 @@ class Broker():
         Returns:
             OrderResponse: brokers response to the order containing the order id and state
         """
+        
+        if math.isnan(units):
+            raise RuntimeError("NAN units passed to place_market_order")
         
         exchange = self.exchange_map[exchange_name]
         
@@ -276,7 +279,7 @@ class Broker():
         order_response = Wrapper.OrderResponse()
         order_response_pointer = pointer(order_response)
         
-        if asset_name != None:
+        if asset_name is not None:
             asset_id = exchange.asset_map[asset_name]
             position_ptr = Wrapper._get_position_ptr(self.ptr, asset_id, account_id)
             
@@ -291,7 +294,7 @@ class Broker():
                 limit_pct
                 )
     
-        elif order_id != None:
+        elif order_id is not None:
             Wrapper._order_place_stoploss_order(
                 self.ptr,
                 order_response_pointer,
