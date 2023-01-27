@@ -549,11 +549,13 @@ void __Broker::_place_limit_order(OrderResponse *order_response, unsigned int as
 	order->strategy_id = strategy_id;
 
 #ifdef CHECK_ORDER
-	if (check_order(order) != VALID_ORDER) {
+	ORDER_CHECK order_check = check_order(order);
+	if (order_check != VALID_ORDER) {
 		order->order_state = BROKER_REJECTED;
-		this->order_history.push_back(std::move(order));
 		order_response->order_state = BROKER_REJECTED;
-		return;
+		this->order_history.push_back(std::move(order));
+		
+		throw std::runtime_error("Order check failed: Error code: " + std::to_string(order_check));
 	}
 #endif
 	this->send_order(std::move(order), order_response);
@@ -803,7 +805,6 @@ void get_position_history(void *broker_ptr, PositionArray *position_history) {
 void get_positions(void *broker_ptr, PositionArray *positions, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	auto & account = __broker_ref->accounts[account_id];
-	int number_positions = account->portfolio.size();
 	int i = 0;
 	for (auto &kvp : account->portfolio){
 		PositionStruct &position_struct_ref = *positions->POSITION_ARRAY[i];
@@ -814,7 +815,6 @@ void get_positions(void *broker_ptr, PositionArray *positions, unsigned int acco
 void get_position(void *broker_ptr, unsigned int assset_id, PositionStruct *position, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	auto & account = __broker_ref->accounts[account_id];
-	int number_positions = account->portfolio.size();
 	if(account->portfolio.count(assset_id) == 0){return;}
 	account->portfolio[assset_id].to_struct(*position);
 }

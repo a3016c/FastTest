@@ -72,17 +72,11 @@ class TestStrategy(Strategy):
 
         self.i += 1
 
-spec = [
-    ('broker_ptr',types.voidptr),
-    ('exchange_ptr', types.voidptr),
-    ('i',numba.int32)
-]
-
-@jitclass(spec)
 class BenchMarkStrategy(Strategy):
     def __init__(self, broker_ptr : c_void_p, exchange_ptr : c_void_p) -> None:
         self.broker_ptr = broker_ptr 
         self.exchange_ptr = exchange_ptr
+        self.strategy_id = 0
         self.i = 0
         
     def build(self):

@@ -134,4 +134,4 @@ if __name__ == "__main__":
     print(strategy.count / (et-st))
     #print(ft.metrics.get_stats())
     
-    ft.plot(benchmark)
+    ft.plot_asset("TSLA")

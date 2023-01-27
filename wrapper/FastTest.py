@@ -4,10 +4,9 @@ import sys
 import os
 import cProfile
 
-
 import numpy as np
 import pandas as pd
-from numba import njit, jit
+from numba import jit
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -24,6 +23,7 @@ from wrapper.Strategy import Strategy, BenchMarkStrategy, TestStrategy
 from wrapper import Wrapper
 
 class FastTest:
+    # -----------------------------------------------------------------------------  
     def __init__(self, logging = False, debug = False) -> None:
         self.built = False
         self.logging = logging
@@ -47,12 +47,14 @@ class FastTest:
         self.strategies = np.array([], dtype="O")
                 
         self.ptr = Wrapper._new_fastTest_ptr(self.logging,self.debug)
-        
+      
+    # -----------------------------------------------------------------------------    
     def __del__(self):
         if self.debug: print("\nFREEING FASTTEST POINTER")
         Wrapper._free_fastTest_ptr(self.ptr)
         if self.debug: print("FASTTEST POINTER FREED\n")
-        
+     
+    # -----------------------------------------------------------------------------     
     def profile(self):
         pr = cProfile.Profile()
         pr.enable()
@@ -60,17 +62,18 @@ class FastTest:
         pr.disable()
         pr.print_stats(sort='time')
 
+    # -----------------------------------------------------------------------------  
     def reset(self):
         Wrapper._fastTest_reset(self.ptr)
 
+    # -----------------------------------------------------------------------------  
     def build(self):
         
-        #copy the data into c++ objects and delete the local python copy to preserve memory
+        #copy the data into c++ objects
         for asset_name in list(self.assets.keys()):
             asset = self.assets[asset_name]
             exchange = self.exchanges[asset.exchange_name]
             exchange.register_asset(asset)
-            del self.assets[asset_name]
         
         #allow the fasttest and broker to complete any nessecary setup
         Wrapper._build_fastTest(self.ptr)
@@ -81,6 +84,7 @@ class FastTest:
             
         self.built = True
         
+    # -----------------------------------------------------------------------------  
     def register_benchmark(self, asset : Asset):
         asset.asset_id = self.asset_counter
         asset.registered = True
@@ -89,6 +93,7 @@ class FastTest:
         asset.load_ptr()
         Wrapper._fastTest_register_benchmark(self.ptr, asset.ptr)
         
+    # -----------------------------------------------------------------------------  
     def register_asset(self, asset_name : str, exchange_name = "default"):
         exchange = self.exchanges[exchange_name]
         
@@ -105,7 +110,7 @@ class FastTest:
         return asset
         
     def register_exchange(self, exchange : Exchange, register = True):
-        
+    # -----------------------------------------------------------------------------   
         if(exchange.is_registered()):
             raise Exception("Attempted to register an existing exchange")
         
@@ -113,7 +118,8 @@ class FastTest:
         self.exchanges[exchange.exchange_name] = exchange
         self.exchange_counter += 1
         if register: Wrapper._fastTest_register_exchange(self.ptr, exchange.ptr, exchange.exchange_id)
-                
+        
+    # -----------------------------------------------------------------------------          
     def add_account(self, account_name : str, cash : float):
         if self.broker == None:
             raise Exception("No broker registered to place the account to")
@@ -132,6 +138,7 @@ class FastTest:
         Wrapper._broker_register_account(self.broker.ptr, account.ptr)
         self.account_counter += 1
         
+    # -----------------------------------------------------------------------------  
     def register_broker(self, broker : Broker,
                         register = True):
         self.broker = broker
@@ -141,34 +148,33 @@ class FastTest:
                 
         if register: Wrapper._fastTest_register_broker(self.ptr, broker.ptr, broker.broker_id)
         
+    # -----------------------------------------------------------------------------  
     def get_benchmark_ptr(self):
         #return a pointer to a c++ asset class of the fasttest benchmark
         return Wrapper._get_benchmark_ptr(self.ptr)
     
+    # -----------------------------------------------------------------------------  
     def add_strategy(self, strategy : Strategy):
         strategy.broker_ptr = self.broker.ptr
         strategy.strategy_id = self.strategy_counter
         self.strategy_counter += 1
         self.strategies = np.append(self.strategies,(strategy))
 
+    # -----------------------------------------------------------------------------  
     def run(self):
         #clear any results/data from previous runs
         self.reset()
-                
+            
+        #core event loop of test
         while self.step():
             pass
         
+    # -----------------------------------------------------------------------------  
     def load_metrics(self):
         self.metrics = Metrics(self)
         
+    # -----------------------------------------------------------------------------  
     def step(self):
-        """
-        Core event loop. Allows the C++ code to handle all events emitted by the strategies. 
-        
-        Returns:
-            bool: is there another time step to be executed in the current test
-        """
-    
         if not Wrapper._fastTest_forward_pass(self.ptr):
             return False
         for strategy in self.strategies:
@@ -176,19 +182,55 @@ class FastTest:
         Wrapper._fastTest_backward_pass(self.ptr)
         return True
     
+    # -----------------------------------------------------------------------------  
     def get_datetime_index_len(self):
         return Wrapper._fastTest_get_datetime_length(self.ptr)
     
+    # -----------------------------------------------------------------------------  
     def get_datetime_index(self):
         index_ptr = Wrapper._fastTest_get_datetime_index(self.ptr)
         return np.ctypeslib.as_array(index_ptr, shape=(self.get_datetime_index_len(),))
-        
+    
+    # -----------------------------------------------------------------------------    
     def get_sharpe(self, nlvs, N = 252, rf = .01):
         returns = np.diff(nlvs) / nlvs[:-1]
         sharpe = returns.mean() / returns.std()
         sharpe = (N**.5)*sharpe
         return round(sharpe,3)
     
+    # -----------------------------------------------------------------------------
+    def plot_asset(self, asset_name : str):
+        """Plot asset price over the test period with buys and sells overlayed
+
+        :param asset_name: name of the asset to plot
+        :type asset_name: str
+        """
+        asset = self.assets[asset_name]
+        asset_df = asset.df()
+        asset_df.index = pd.to_datetime(asset_df.index, unit = "s")
+        
+        asset_orders = self.broker.get_order_history().to_df()
+        asset_orders = asset_orders[asset_orders["asset_id"] == asset.asset_id]
+        asset_orders.set_index("order_fill_time", inplace = True)
+        
+        markers_buy = asset_orders[asset_orders["units"] > 0].index
+        markers_sell = asset_orders[asset_orders["units"] < 0].index
+        
+        asset_df = pd.merge(asset_df, asset_orders,left_index=True, right_index=True, how = "left")
+        markers_buy = asset_df[asset_df.index.isin(markers_buy)]
+        markers_sell = asset_df[asset_df.index.isin(markers_sell)]
+        
+        fig, ax = plt.subplots(figsize=(10.5, 6.5))
+        
+        ax.plot(asset_df.index, asset_df["CLOSE"], color = "black", label = asset_name)  
+        ax.scatter(markers_buy.index, markers_buy["CLOSE"], marker = "^", c = "green", label = "Buys")
+        ax.scatter(markers_sell.index, markers_sell["CLOSE"], marker = "^", c = "red", label = "Sells")
+        
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
+          ncol=3, fancybox=True, shadow=True)
+        plt.show()
+        
+    # -----------------------------------------------------------------------------  
     def plot(self, benchmark = None):
         nlv = self.broker.get_nlv_history()
         roll_max = np.maximum.accumulate(nlv)
@@ -313,9 +355,13 @@ def run_jit(fast_test_ptr : c_void_p, strategy):
         Wrapper._fastTest_backward_pass(fast_test_ptr)
         
 def test_speed():
+    ft = FastTest(logging = False, debug = False)
     exchange = Exchange()
-    broker = Broker(exchange)
-    ft = FastTest(exchange, broker)
+    ft.register_exchange(exchange)
+    
+    broker = Broker(exchange,logging=False, margin=False, debug=False)
+    ft.register_broker(broker)
+    ft.add_account("default", 100000)
     
     n = 200000
     n_assets = 40
@@ -326,12 +372,12 @@ def test_speed():
     df = pd.DataFrame(data = [o,c]).T
     df.columns = ["OPEN","CLOSE"]
     df.index = index
+    
     st = time.time()
     for i in range(0,n_assets):    
-        new_asset = Asset(exchange, asset_name=str(i))
+        new_asset = ft.register_asset(str(i))
         new_asset.set_format("%d-%d-%d", 0, 1)
         new_asset.load_from_df(df)
-        ft.exchange.register_asset(new_asset)
     et = time.time()
     print(f"Average Asset Load Time: {(et-st)*(1000/n_assets):.2f} ms")
 
