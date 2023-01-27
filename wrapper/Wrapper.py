@@ -178,7 +178,7 @@ class PositionArrayStruct(Structure):
 
 """FastTest wrapper"""
 _new_fastTest_ptr = FastTest.CreateFastTestPtr
-_new_fastTest_ptr.argtypes = [c_bool, c_bool]
+_new_fastTest_ptr.argtypes = [c_bool, c_bool, c_bool]
 _new_fastTest_ptr.restype = c_void_p
 
 _free_fastTest_ptr = FastTest.DeleteFastTestPtr
@@ -218,10 +218,12 @@ _fastTest_get_datetime_index = FastTest.get_fasttest_datetime_index
 _fastTest_get_datetime_index.argtypes = [c_void_p]
 _fastTest_get_datetime_index.restype = POINTER(c_long)
 
+_fastTest_get_portfolio_size = FastTest.get_portfolio_size
+_fastTest_get_portfolio_size.argtypes = [c_void_p]
+_fastTest_get_portfolio_size.restype = c_size_t
 
-_rows = FastTest.rows
-_rows.argtypes = [c_void_p]
-_rows.restype = c_size_t
+_get_last_positions = FastTest.get_last_positions
+_get_last_positions.argtypes = [c_void_p,POINTER(PositionArrayStruct)]
 
 """ASSET WRAPPER"""
 _rows = FastTest.rows

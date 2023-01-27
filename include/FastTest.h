@@ -9,6 +9,7 @@
 #include <vector>
 #include <string>
 #include "Exchange.h"
+#include "Position.h"
 #include "Strategy.h"
 #include "Asset.h"
 #include "Broker.h"
@@ -17,8 +18,11 @@
 class __FastTest {
 public:
 
-	bool logging;
-	bool debug;
+	bool logging = false;
+	bool debug = false;
+
+	bool save_last_portfolio = false;
+	std::unordered_map<unsigned int, Position> portfolio; 
 
 	unsigned int      current_index = 0;
 	std::vector<long> epoch_index;
@@ -49,16 +53,19 @@ public:
 	//function to reset fasttest and member objects
 	void reset();
 
+	//function to save positions to a PositionArray to pass through C api
+	void copy_positions_on_end();
+
 	//main event lopp
 	void analyze_step();
 	inline void run();
 
-	__FastTest(Strategy *Strategy, bool logging = false, bool debug = false);
-	__FastTest(bool logging = false, bool debug = false);
+	__FastTest(Strategy *Strategy, bool logging = false, bool debug = false, bool save_last_portfolio = false);
+	__FastTest(bool logging = false, bool debug = false, bool save_last_portfolio = false);
 };
 
 extern "C" {
-	FAST_API void * CreateFastTestPtr(bool logging = true, bool debug = false);
+	FAST_API void * CreateFastTestPtr(bool logging = true, bool debug = false, bool save_last_portfolio = false);
 	FAST_API void DeleteFastTestPtr(void *ptr);
 	FAST_API void reset_fastTest(void *exchange_ptr);
 
@@ -74,6 +81,9 @@ extern "C" {
 	FAST_API void * get_benchmark_ptr(void* fastTest_ptr);
 	FAST_API size_t get_fasttest_index_length(void* fastTest_ptr);
 	FAST_API long * get_fasttest_datetime_index(void* fastTest_ptr);
+
+	FAST_API size_t get_portfolio_size(void* fastTest_ptr);
+	FAST_API void get_last_positions(void *fastTest_ptr, PositionArray *position_array);
 
 }
 

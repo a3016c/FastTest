@@ -109,7 +109,7 @@ class AccountTestMethods(unittest.TestCase):
         assert(np.array_equal(act_2_nlv,np.array([100000,  99900,  99700, 100150, 100150,  99600])))
         assert(np.array_equal(nlv, act_1_nlv + act_2_nlv))
         print("TESTING: test_multi_account passed")
-        
+            
     def test_account_position_check(self):
         print("TESTING test_account_position_check...")
         orders1 = [
@@ -133,7 +133,6 @@ class AccountTestMethods(unittest.TestCase):
                 )
          ]
         exchange, broker, ft = setup_multi_account(logging=False, debug=False)
-        ft.build()
         
         strategy1 = TestStrategy(orders1, broker, exchange=None)
         strategy2 = TestStrategy(orders2, broker, exchange=None)

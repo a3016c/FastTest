@@ -748,7 +748,12 @@ void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigne
 }
 void place_limit_order(void *broker_ptr, OrderResponse *order_response,  unsigned int asset_id, float units, float limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	__broker_ref->_place_limit_order(order_response, asset_id, units, limit, cheat_on_close, exchange_id, strategy_id, account_id);
+	try{
+		__broker_ref->_place_limit_order(order_response, asset_id, units, limit, cheat_on_close, exchange_id, strategy_id, account_id);
+	}
+	catch (std::runtime_error& e){
+		if(__broker_ref->debug){std::cerr << e.what() << std::endl;}
+	}
 }
 void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void * position_ptr, float units, float stop_loss, bool cheat_on_close, bool limit_pct){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

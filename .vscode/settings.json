@@ -84,7 +84,8 @@
         "variant": "cpp",
         "__verbose_abort": "cpp",
         "algorithm": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "map": "cpp"
     },
     "cmake.configureOnOpen": true,
 }

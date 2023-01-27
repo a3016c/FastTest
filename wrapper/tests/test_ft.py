@@ -117,6 +117,28 @@ class FTTestMethods(unittest.TestCase):
         
         benchmark = ft.benchmark.df()
         assert((benchmark["CLOSE"].values == test2_close).all())
+        
+    def test_get_last_positions(self):
+        orders = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 0,
+                    units = 100,
+                    exchange_name = "default",
+                    account_name = "account1"
+                ),
+         ]
+        exchange, broker, ft = setup_multi_account(logging=False, debug=False, save_last_positions=True)
+        strategy1 = TestStrategy(orders, broker, exchange=None)
+        ft.add_strategy(strategy1)
+        ft.run()
+        
+        last_positions = ft.get_last_positions()
+        assert(last_positions.number_positions == 1)
+        assert(last_positions.POSITION_ARRAY[0].contents.close_price == 0)
+        assert(last_positions.POSITION_ARRAY[0].contents.realized_pl == 0)
+        assert(last_positions.POSITION_ARRAY[0].contents.unrealized_pl == -400)
             
 if __name__ == '__main__':
     unittest.main()

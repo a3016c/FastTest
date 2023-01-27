@@ -88,8 +88,8 @@ def setup_multi_exchange(logging = False, margin = False, debug = False, build =
         
     return broker, ft
 
-def setup_multi_account(logging = False, margin = False, debug = False):
-    ft = FastTest(logging=logging, debug=debug)
+def setup_multi_account(logging = False, margin = False, debug = False, save_last_positions = True):
+    ft = FastTest(logging=logging, debug=debug, save_last_positions=save_last_positions)
     exchange = Exchange(logging = logging)
     ft.register_exchange(exchange)
     

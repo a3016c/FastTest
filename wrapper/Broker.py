@@ -12,6 +12,7 @@ from wrapper import Wrapper
 from wrapper.Exchange import Exchange, Asset
 
 class Broker():
+    # -----------------------------------------------------------------------------
     def __init__(self, exchange : Exchange,cash = 100000, logging = True, margin = False, debug = False) -> None:
         self.exchange_map = {exchange.exchange_name : exchange} 
         self.account_map = {}

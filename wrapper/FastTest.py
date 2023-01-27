@@ -24,10 +24,11 @@ from wrapper import Wrapper
 
 class FastTest:
     # -----------------------------------------------------------------------------  
-    def __init__(self, logging = False, debug = False) -> None:
+    def __init__(self, logging = False, debug = False, save_last_positions = False) -> None:
         self.built = False
         self.logging = logging
         self.debug = debug
+        self.save_last_positions = save_last_positions
         
         #counters to set the necessary unique identifies for strucutres
         self.asset_counter = 0
@@ -46,7 +47,7 @@ class FastTest:
         self.broker = None
         self.strategies = np.array([], dtype="O")
                 
-        self.ptr = Wrapper._new_fastTest_ptr(self.logging,self.debug)
+        self.ptr = Wrapper._new_fastTest_ptr(logging,debug,save_last_positions)
       
     # -----------------------------------------------------------------------------    
     def __del__(self):
@@ -162,16 +163,16 @@ class FastTest:
 
     # -----------------------------------------------------------------------------  
     def run(self):
+        """
+        Core event loop used for the backtest. First clear any data from previous runs, the execute 
+        self.step() as long is the forward pass returns true.
+        """
         #clear any results/data from previous runs
         self.reset()
             
         #core event loop of test
         while self.step():
             pass
-        
-    # -----------------------------------------------------------------------------  
-    def load_metrics(self):
-        self.metrics = Metrics(self)
         
     # -----------------------------------------------------------------------------  
     def step(self):
@@ -182,6 +183,26 @@ class FastTest:
         Wrapper._fastTest_backward_pass(self.ptr)
         return True
     
+    # -----------------------------------------------------------------------------  
+    def get_portfolio_size(self):
+        return Wrapper._fastTest_get_portfolio_size(self.ptr)
+    
+    # -----------------------------------------------------------------------------  
+    def get_last_positions(self):
+        if not self.save_last_positions:
+            raise AttributeError("can't load last positions, save_last_positions set to false")
+        
+        position_count = self.get_portfolio_size()
+        last_positions = Wrapper.PositionArrayStruct(position_count)
+        position_struct_pointer = pointer(last_positions)
+        Wrapper._get_last_positions(self.ptr, position_struct_pointer)
+        
+        return last_positions
+    
+    # -----------------------------------------------------------------------------  
+    def load_metrics(self):
+        self.metrics = Metrics(self)
+            
     # -----------------------------------------------------------------------------  
     def get_datetime_index_len(self):
         return Wrapper._fastTest_get_datetime_length(self.ptr)

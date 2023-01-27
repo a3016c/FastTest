@@ -15,14 +15,15 @@
 #include "Broker.h"
 #include "FastTest.h"
 
-__FastTest::__FastTest(Strategy *StrategyObj, bool logging, bool debug) :
+__FastTest::__FastTest(Strategy *StrategyObj, bool logging, bool debug, bool save_last_portfolio):
 	strategy(StrategyObj){
 	this->logging = logging;
 	this->debug = debug;
 }
-__FastTest::__FastTest(bool logging, bool debug) {
+__FastTest::__FastTest(bool logging, bool debug, bool save_last_portfolio) {
 	this->logging = logging;
 	this->debug = debug;
+	this->save_last_portfolio = save_last_portfolio;
 }
 void __FastTest::reset() {
 	this->current_index = 0;
@@ -73,6 +74,23 @@ void __FastTest::_register_exchange(__Exchange *new_exchange){
 	this->__exchanges.push_back(new_exchange);
 }
 
+void __FastTest::copy_positions_on_end(){
+	this->portfolio.clear();
+	for (auto & pair : this->broker->accounts){
+		auto & account = pair.second;
+		for (auto it = account->portfolio.begin(); it != account->portfolio.end();) {
+			Position position =  it->second;	
+			unsigned int exchange_id = position.exchange_id;
+        	__Exchange *exchange = this->broker->exchanges[exchange_id];
+        	float market_price = exchange->_get_market_price(position.asset_id, true);	
+
+			position.evaluate(market_price, true);
+			this->portfolio[position.asset_id] = position;
+			it++;
+		}
+	}
+}
+
 void __FastTest::run() {
 	if (this->logging) { printf("RUNNING FASTEST\n"); }
 	for(__Exchange* exchange : this->__exchanges){
@@ -112,8 +130,8 @@ void __FastTest::run() {
 	}
 	*/
 }
-void * CreateFastTestPtr(bool logging, bool debug) {
-	__FastTest* fastTest_ptr = new __FastTest(logging, debug);
+void * CreateFastTestPtr(bool logging, bool debug, bool save_last_portfolio) {
+	__FastTest* fastTest_ptr = new __FastTest(logging, debug, save_last_portfolio);
 	return fastTest_ptr;
 }
 
@@ -181,6 +199,14 @@ void backward_pass(void * fastTest_ptr) {
 		printf("ENTERING BACKWARD PASS\n");
 	}
 
+	//if we are at the last step and save_last_portfolio is true, then add a copy of all open positions into the 
+	//fasttest portfolio member to be able to access once the test is complete
+	if(__fastTest_ref->save_last_portfolio){
+		if(__fastTest_ref->current_index == __fastTest_ref->epoch_index.size()){
+		__fastTest_ref->copy_positions_on_end();
+		}
+	}
+
 	//evaluate the portfolio
 	__fastTest_ref->broker->evaluate_portfolio(true);
 
@@ -242,4 +268,26 @@ size_t get_fasttest_index_length(void * fastTest_ptr){
 long * get_fasttest_datetime_index(void *fastTest_ptr){
 	__FastTest * __fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 	return __fastTest_ref->epoch_index.data();
+}
+size_t get_portfolio_size(void *fastTest_ptr){
+	__FastTest * __fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+	return __fastTest_ref->portfolio.size();
+}
+void get_last_positions(void *fastTest_ptr, PositionArray *position_history) {
+	__FastTest * __fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+	int number_positions = position_history->number_positions;
+
+	if(position_history->number_positions != __fastTest_ref->portfolio.size()){
+		throw std::runtime_error("incorrect position count passed to PositionArray object");
+	}
+	if(!__fastTest_ref->save_last_portfolio){
+		throw std::runtime_error("last portfolio was not saved");
+	}
+
+	int i = 0;
+	for (auto &kvp : __fastTest_ref->portfolio){
+		PositionStruct &position_struct_ref = *position_history->POSITION_ARRAY[i];
+		__fastTest_ref->portfolio[kvp.first].to_struct(position_struct_ref);
+		i++;
+	}
 }
