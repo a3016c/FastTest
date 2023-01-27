@@ -4,10 +4,6 @@ import os
 
 import pandas as pd
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
-from matplotlib.offsetbox import AnchoredText
 
 import numba
 from numba.core import types

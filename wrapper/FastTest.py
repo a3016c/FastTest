@@ -176,6 +176,13 @@ class FastTest:
         Wrapper._fastTest_backward_pass(self.ptr)
         return True
     
+    def get_datetime_index_len(self):
+        return Wrapper._fastTest_get_datetime_length(self.ptr)
+    
+    def get_datetime_index(self):
+        index_ptr = Wrapper._fastTest_get_datetime_index(self.ptr)
+        return np.ctypeslib.as_array(index_ptr, shape=(self.get_datetime_index_len(),))
+        
     def get_sharpe(self, nlvs, N = 252, rf = .01):
         returns = np.diff(nlvs) / nlvs[:-1]
         sharpe = returns.mean() / returns.std()
@@ -187,7 +194,7 @@ class FastTest:
         roll_max = np.maximum.accumulate(nlv)
         daily_drawdown = nlv / roll_max - 1.0
         
-        datetime_epoch_index = self.exchanges["sp500"].get_datetime_index()
+        datetime_epoch_index = self.get_datetime_index()
         datetime_index = pd.to_datetime(datetime_epoch_index, unit = "s")
         
         backtest_df = pd.DataFrame(index = datetime_index, data = nlv, columns=["nlv"])

@@ -219,22 +219,27 @@ void register_benchmark(void* fastTest_ptr, void *asset_ptr){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 	__fastTest_ref->_register_benchmark(*__asset_ref);
 }
-
 void register_exchange(void * fastTest_ptr, void *exchange_ptr, unsigned int exchange_id){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->exchange_id = exchange_id;
 	__fastTest_ref->_register_exchange(__exchange_ref);
 }
-
 void register_broker(void * fastTest_ptr, void *broker_ptr, unsigned int broker_id){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->broker_id = broker_id;
 	__fastTest_ref->_register_broker(__broker_ref);
 }
-
 void* get_benchmark_ptr(void* fastTest_ptr){
 	__FastTest *__fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
 	return & __fastTest_ref->benchmark;
+}
+size_t get_fasttest_index_length(void * fastTest_ptr){
+	__FastTest * __fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+	return __fastTest_ref->epoch_index.size();
+}
+long * get_fasttest_datetime_index(void *fastTest_ptr){
+	__FastTest * __fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
+	return __fastTest_ref->epoch_index.data();
 }

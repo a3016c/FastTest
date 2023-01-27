@@ -70,7 +70,10 @@ extern "C" {
 	FAST_API void register_benchmark(void* fastTest_ptr, void *asset_ptr);
 	FAST_API void register_exchange(void* fastTest_ptr, void *exchange_ptr, unsigned int exchange_id);
 	FAST_API void register_broker(void* fastTest_ptr, void *broker_ptr, unsigned int broker_id);
+	
 	FAST_API void * get_benchmark_ptr(void* fastTest_ptr);
+	FAST_API size_t get_fasttest_index_length(void* fastTest_ptr);
+	FAST_API long * get_fasttest_datetime_index(void* fastTest_ptr);
 
 }
 

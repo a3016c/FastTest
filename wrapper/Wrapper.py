@@ -210,6 +210,15 @@ _get_benchmark_ptr = FastTest.get_benchmark_ptr
 _get_benchmark_ptr.argtypes = [c_void_p]
 _get_benchmark_ptr.restype = c_void_p
 
+_fastTest_get_datetime_length= FastTest.get_fasttest_index_length
+_fastTest_get_datetime_length.argtypes = [c_void_p]
+_fastTest_get_datetime_length.restype = c_size_t
+
+_fastTest_get_datetime_index = FastTest.get_fasttest_datetime_index
+_fastTest_get_datetime_index.argtypes = [c_void_p]
+_fastTest_get_datetime_index.restype = POINTER(c_long)
+
+
 _rows = FastTest.rows
 _rows.argtypes = [c_void_p]
 _rows.restype = c_size_t
