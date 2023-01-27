@@ -43,6 +43,9 @@ class FastTest:
         self.accounts = {}
         self.exchanges = {}
         
+        #container to rever asset id to name
+        self.id_map = {}
+        
         self.benchmark = None
         self.broker = None
         self.strategies = np.array([], dtype="O")
@@ -108,6 +111,7 @@ class FastTest:
                 
         self.asset_counter += 1
         self.assets[asset_name] = asset
+        self.id_map[asset.asset_id] = asset_name
         return asset
         
     def register_exchange(self, exchange : Exchange, register = True):
@@ -183,12 +187,15 @@ class FastTest:
         Wrapper._fastTest_backward_pass(self.ptr)
         return True
     
+    def asset_id_to_name(self, asset_id):
+        return self.id_map[asset_id]
+    
     # -----------------------------------------------------------------------------  
     def get_portfolio_size(self):
         return Wrapper._fastTest_get_portfolio_size(self.ptr)
     
     # -----------------------------------------------------------------------------  
-    def get_last_positions(self):
+    def get_last_positions(self, to_df = False):
         if not self.save_last_positions:
             raise AttributeError("can't load last positions, save_last_positions set to false")
         
@@ -196,7 +203,12 @@ class FastTest:
         last_positions = Wrapper.PositionArrayStruct(position_count)
         position_struct_pointer = pointer(last_positions)
         Wrapper._get_last_positions(self.ptr, position_struct_pointer)
-        
+                
+        if to_df:
+            last_positions = last_positions.to_df()
+            last_positions["asset_id"] = last_positions["asset_id"].map(self.asset_id_to_name)
+            return last_positions
+    
         return last_positions
     
     # -----------------------------------------------------------------------------  

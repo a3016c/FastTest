@@ -106,7 +106,7 @@ class Agis_Strategy(Strategy):
                 
 if __name__ == "__main__":
 
-    ft = FastTest(logging=False)
+    ft = FastTest(logging=False, debug=False, save_last_positions=True)
     
     exchange = Exchange(exchange_name="sp500")
     ft.register_exchange(exchange)
@@ -134,4 +134,6 @@ if __name__ == "__main__":
     print(strategy.count / (et-st))
     #print(ft.metrics.get_stats())
     
-    ft.plot_asset("TSLA")
+    #ft.plot_asset("TSLA")
+    last_positions = ft.get_last_positions(to_df=True)
+    print(last_positions)
