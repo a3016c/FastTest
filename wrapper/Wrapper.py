@@ -3,17 +3,39 @@ from ctypes import c_void_p, c_uint, c_float, pointer, POINTER, Structure, c_lon
 from ctypes import c_bool, cast, c_size_t, c_int, c_char_p, cdll
 import os 
 import sys
+from pathlib import Path
+from enum import Enum
 
 import pandas as pd
 
 SCRIPT_DIR = os.path.dirname(__file__)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from wrapper.Order import OrderState, OrderType
-import sys
+class OrderState(Enum):
+	ACCEPETED = 0
+	OPEN = 1
+	FILLED = 2
+	CANCELED = 3
+	BROKER_REJECTED = 4
 
-lib_path = r"/Users/nathantormaschy/Desktop/C++/FastTest/build/build/libFastTest.dylib"
+class OrderType(Enum):
+	MARKET_ORDER = 0
+	LIMIT_ORDER = 1
+	STOP_LOSS_ORDER = 2
+	TAKE_PROFIT_ORDER = 3
+ 
+parent_dir = Path.cwd()
+lib_path = os.path.join(parent_dir, "build/build/libFastTest")
 
+if sys.platform == "linux" or sys.platform == "linux2":
+    lib_path += ".so"
+elif sys.platform == "darwin":
+    lib_path += ".dylib"
+elif sys.platform == "win32":
+    lib_path += ".dll"
+else:
+    raise RuntimeError("Failed to locate supported OS")
+ 
 FastTest = cdll.LoadLibrary(lib_path)
 
 class OrderResponse(Structure):
@@ -405,3 +427,4 @@ _get_exchange_datetime_index.restype = POINTER(c_long)
 _get_exchange_index_length = FastTest.get_exchange_index_length
 _get_exchange_index_length.argtypes = [c_void_p]  
 _get_exchange_index_length.restype = c_size_t
+

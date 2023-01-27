@@ -18,8 +18,9 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from wrapper.Exchange import Exchange
 from wrapper.Broker import Broker
-from wrapper.Order import OrderSchedule, OrderType, OrderState
+from wrapper.Order import OrderSchedule
 from wrapper import Wrapper
+from wrapper.Wrapper import OrderType, OrderState
 
 class Strategy():
     def __init__(self, broker : Broker, exchange : Exchange, strategy_name = "default") -> None:

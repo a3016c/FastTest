@@ -1,4 +1,3 @@
-from enum import Enum
 import ctypes
 import sys
 import os
@@ -7,19 +6,6 @@ SCRIPT_DIR = os.path.dirname(__file__)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from wrapper import Wrapper
-
-class OrderState(Enum):
-	ACCEPETED = 0
-	OPEN = 1
-	FILLED = 2
-	CANCELED = 3
-	BROKER_REJECTED = 4
-
-class OrderType(Enum):
-	MARKET_ORDER = 0
-	LIMIT_ORDER = 1
-	STOP_LOSS_ORDER = 2
-	TAKE_PROFIT_ORDER = 3
 
 class OrderSchedule():
     def __init__(self, **kwargs) -> None:

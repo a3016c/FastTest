@@ -1,5 +1,6 @@
 #include <vector>
 #include <unordered_set>
+#include <algorithm>
 #include "Order.h"
 #include "utils_vector.h"
 
