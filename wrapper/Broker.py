@@ -25,30 +25,37 @@ class Broker():
 
         if self.debug: print(f"ALLOCATING BROKER POINTER AT {self.ptr}\n")
 
+    # -----------------------------------------------------------------------------
     def __del__(self):
         if self.debug: print(f"\nFREEING BROKER POINTER AT {self.ptr}")
         Wrapper._free_broker_ptr(self.ptr)
         if self.debug: print("BROKER POINTER FREED\n")
-        
+    
+    # -----------------------------------------------------------------------------
     def build(self):
         Wrapper._build_broker(self.ptr)
         
+    # -----------------------------------------------------------------------------
     def register_exchange(self, exchange : Exchange):
         if(not exchange.is_registered()):
             raise Exception("Exchange is not yet registered to the FastTest")
         
         self.exchange_map[exchange.exchange_name] = exchange
         Wrapper._broker_register_exchange(self.ptr, exchange.ptr)
-                        
+    
+    # -----------------------------------------------------------------------------                 
     def get_order_count(self):
         return Wrapper._get_order_count(self.ptr)
         
+    # -----------------------------------------------------------------------------
     def get_total_position_count(self):
         return Wrapper._get_position_count(self.ptr)
     
+    # -----------------------------------------------------------------------------
     def get_open_position_count(self):
         return Wrapper._get_open_position_count(self.ptr)
     
+    # -----------------------------------------------------------------------------
     def position_exists(self, asset_name,
                         exchange_name = "default",
                         account_id = 0):
@@ -56,12 +63,14 @@ class Broker():
         asset_id = exchange.asset_map[asset_name]
         return Wrapper._position_exists(self.ptr, asset_id, account_id)
     
+    # -----------------------------------------------------------------------------
     def get_nlv(self, account_id = -1, account_name = None):
         if account_id == -1:
             return Wrapper._get_nlv(self.ptr, account_id)
         else:
             return Wrapper._get_nlv(self.ptr, self.account_map[account_name])
     
+    # -----------------------------------------------------------------------------
     def get_cash(self, account_id = -1):
         """_summary_
 
@@ -73,6 +82,7 @@ class Broker():
         """
         return Wrapper._get_cash(self.ptr, account_id)
     
+    # -----------------------------------------------------------------------------
     def get_positions(self, account_id = 0):
         """_summary_
 
@@ -88,7 +98,8 @@ class Broker():
         Wrapper._get_positions(self.ptr, position_struct_pointer, account_id)
         
         return open_positions
-            
+       
+    # -----------------------------------------------------------------------------     
     def get_position(self, asset_name : str,
                      exchange_name = "default",
                      account_name = "default"):
@@ -110,7 +121,8 @@ class Broker():
         position_struct_pointer = pointer(position_struct)
         Wrapper._get_position(self.ptr, asset_id, position_struct_pointer, account_id)
         return position_struct
-          
+       
+    # -----------------------------------------------------------------------------   
     def get_position_ptr(self, asset_name : str, account_id = 0):
         """_summary_
 
@@ -124,6 +136,7 @@ class Broker():
         asset_id = self.exchange.asset_map[asset_name]
         return Wrapper._get_position_ptr(self.ptr, asset_id, account_id)
     
+    # -----------------------------------------------------------------------------
     def get_history_length(self):
         """_summary_
 
@@ -132,6 +145,7 @@ class Broker():
         """
         return Wrapper._broker_get_history_length(self.ptr)
     
+    # -----------------------------------------------------------------------------
     def get_cash_history(self):
         """_summary_
 
@@ -141,6 +155,7 @@ class Broker():
         cash_ptr = Wrapper._broker_get_cash_history(self.ptr)
         return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
     
+    # -----------------------------------------------------------------------------
     def get_nlv_history(self):
         """_summary_
 
@@ -150,10 +165,12 @@ class Broker():
         nlv_ptr = Wrapper._broker_get_nlv_history(self.ptr)
         return np.ctypeslib.as_array(nlv_ptr, shape=(self.get_history_length(),))
     
+    # -----------------------------------------------------------------------------
     def get_margin_history(self):
         cash_ptr = Wrapper._broker_get_margin_history(self.ptr)
         return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
-        
+    
+    # -----------------------------------------------------------------------------  
     def get_order_history(self):
         order_count = self.get_order_count()
         order_history = Wrapper.OrderHistoryStruct(order_count)
@@ -161,6 +178,7 @@ class Broker():
         Wrapper._get_order_history(self.ptr, order_struct_pointer)
         return order_history
     
+    # -----------------------------------------------------------------------------
     def get_position_history(self):
         position_count = self.get_total_position_count()
         position_history = Wrapper.PositionArrayStruct(position_count)
@@ -168,6 +186,7 @@ class Broker():
         Wrapper._get_position_history(self.ptr, position_struct_pointer)
         return position_history
 
+    # -----------------------------------------------------------------------------
     def place_market_order(self, asset_name : str, units : float, 
                            stop_loss_on_fill = 0,
                            stop_loss_limit_pct = False,
@@ -311,5 +330,6 @@ class Broker():
 
         return order_response
         
+    # -----------------------------------------------------------------------------
     def reset(self):
         Wrapper._reset_broker(self.ptr)

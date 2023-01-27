@@ -6,11 +6,9 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
-from Exchange import Exchange, Asset
-from Broker import Broker
 from Strategy import *
-from FastTest import FastTest
 from helpers import *
+from Wrapper import OrderState
 
 
 class AccountTestMethods(unittest.TestCase):
@@ -112,6 +110,42 @@ class AccountTestMethods(unittest.TestCase):
         assert(np.array_equal(nlv, act_1_nlv + act_2_nlv))
         print("TESTING: test_multi_account passed")
         
+    def test_account_position_check(self):
+        print("TESTING test_account_position_check...")
+        orders1 = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 0,
+                    units = 100,
+                    exchange_name = "default",
+                    account_name = "account1"
+                )
+            ]
+        orders2 = [
+                OrderSchedule(
+                    order_type = OrderType.MARKET_ORDER,
+                    asset_name = "2",
+                    i = 1,
+                    units = -100,
+                    exchange_name = "default",
+                    account_name = "account2"
+                )
+         ]
+        exchange, broker, ft = setup_multi_account(logging=False, debug=False)
+        ft.build()
+        
+        strategy1 = TestStrategy(orders1, broker, exchange=None)
+        strategy2 = TestStrategy(orders2, broker, exchange=None)
+        ft.add_strategy(strategy1)
+        ft.add_strategy(strategy2)
+        ft.run()
+        
+        order_history = broker.get_order_history()
+        assert(OrderState(order_history.ORDER_ARRAY[1].contents.order_state) == OrderState.BROKER_REJECTED)
+        assert(len(broker.get_position_history()) == 1)
+        print("TESTING: test_multi_account passed")
+
 if __name__ == '__main__':
     unittest.main()
 

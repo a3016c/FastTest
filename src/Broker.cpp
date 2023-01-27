@@ -228,6 +228,13 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 	//insert the new postion into the account's portfolio
 	account->portfolio[order->asset_id] = new_position;
 
+	#ifdef CHECK_POSITION_OPEN
+	POSITION_CHECK_OPEN position_check = this->check_position_open(new_position);
+	if(position_check != VALID_POSITION){
+		throw std::runtime_error("New position check failed. Error code: " + std::to_string(position_check));
+	}
+	#endif
+
 	if (this->logging) {
 		log_open_position(new_position);
 	}
@@ -332,14 +339,16 @@ MARGIN_CHECK __Broker::check_margin() noexcept{
 	if(!margin){
 		return VALID_ACCOUNT_STATUS;
 	}
-	//check to see if nlv is below broker's margin account requirment 
+
 	float margin = 0;
 	for(const auto & pair : this->accounts){
 		margin += pair.second->net_liquidation_value;
+		//check to see if any account has negative cash balance
 		if(pair.second->cash < 0){
 			return MARGIN_CALL;
 		}
 	}
+	//check to see if nlv is below broker's margin account requirment 
 	if(margin < this->minimum_nlv){
 		return NLV_BELOW_BROKER_REQ;
 	}
@@ -347,6 +356,35 @@ MARGIN_CHECK __Broker::check_margin() noexcept{
 }
 
 #ifdef CHECK_ORDER
+
+ORDER_CHECK __Broker::check_position_open(const std::unique_ptr<Order>& new_order){
+	float new_position_units = new_order->units;
+	unsigned int new_position_asset_id = new_order->asset_id;
+
+	//check to see if this order will open a new position
+	auto &account = this->accounts[new_order->account_id];
+	for(const auto & position_pair : account->portfolio){
+		if(position_pair.second.asset_id == new_position_asset_id){
+				return VALID_ORDER;
+		}
+	}
+
+	//check to see if there exists a position in a different account with a different direction (short/long)
+	//cannnot have two positions with the same asset with different directions
+	for (const auto & account_pair : this->accounts){
+		__Account *account = account_pair.second;
+		for(const auto & position_pair : account->portfolio){
+			if(position_pair.second.asset_id != new_position_asset_id){
+				continue;
+			}
+			if(position_pair.second.units * new_position_units < 0 ){
+				return INVALID_NEW_POSITION_SIDE;
+			}
+		}
+	}
+	return VALID_ORDER;
+}
+
 ORDER_CHECK __Broker::check_stop_loss_order(const StopLossOrder* stop_loss_order) {
 	OrderParent parent = stop_loss_order->order_parent;
 	if (parent.type == ORDER) {
@@ -413,6 +451,7 @@ ORDER_CHECK __Broker::check_order(const std::unique_ptr<Order>& new_order) {
 	if(this->debug){
 		printf("CHECKING ORDER, ORDER_ID: %i, EXCHANGE_ID: %i\n", new_order->order_id, new_order->exchange_id);
 	}
+	ORDER_CHECK order_code;
 
 	//check to see if the asset exsists on the exchange
 	__Exchange *exchange = this->exchanges[new_order->exchange_id];
@@ -421,7 +460,10 @@ ORDER_CHECK __Broker::check_order(const std::unique_ptr<Order>& new_order) {
 	//An order can not have units set to 0
 	if (new_order->units == 0) { return INVALID_ORDER_UNITS; }
 
-	ORDER_CHECK order_code;
+	//if order opens new position make sure it is valid new position side
+	order_code = check_position_open(new_order);
+	if(order_code!= VALID_ORDER){return order_code;}
+
 	switch (new_order->order_type) {
 		case MARKET_ORDER: {
 			MarketOrder* market_order = static_cast <MarketOrder*>(new_order.get());
@@ -484,11 +526,13 @@ void __Broker::_place_market_order(OrderResponse *order_response, unsigned int a
 	order->strategy_id = strategy_id;
 
 #ifdef CHECK_ORDER
-	if (check_order(order) != VALID_ORDER) {
+	ORDER_CHECK order_check = check_order(order);
+	if (order_check!= VALID_ORDER) {
 		order->order_state = BROKER_REJECTED;
 		this->order_history.push_back(std::move(order));
 		order_response->order_state = BROKER_REJECTED;
-		return;
+
+		throw std::runtime_error("Order check failed: Error code: " + std::to_string(order_check));
 	}
 #endif
 	this->send_order(std::move(order), order_response);
@@ -693,18 +737,23 @@ bool position_exists(void *broker_ptr, unsigned int asset_id){
 }
 void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	__broker_ref->_place_market_order(order_response, asset_id, units, cheat_on_close, exchange_id, strategy_id, account_id);
+	try{
+		__broker_ref->_place_market_order(order_response, asset_id, units, cheat_on_close, exchange_id, strategy_id, account_id);
+	}
+	catch (std::runtime_error& e){
+		if(__broker_ref->debug){std::cerr << e.what() << std::endl;}
+	}
 }
 void place_limit_order(void *broker_ptr, OrderResponse *order_response,  unsigned int asset_id, float units, float limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->_place_limit_order(order_response, asset_id, units, limit, cheat_on_close, exchange_id, strategy_id, account_id);
 }
 void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void * position_ptr, float units, float stop_loss, bool cheat_on_close, bool limit_pct){
-		__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-		Position * __position_ref = static_cast<Position *>(position_ptr);
-		__broker_ref->place_stoploss_order(
-			__position_ref, order_response, units, stop_loss, cheat_on_close, limit_pct
-		);
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	Position * __position_ref = static_cast<Position *>(position_ptr);
+	__broker_ref->place_stoploss_order(
+		__position_ref, order_response, units, stop_loss, cheat_on_close, limit_pct
+	);
 }
 void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_clos, unsigned int exchange_id, bool limit_pct){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

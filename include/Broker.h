@@ -29,6 +29,7 @@ enum ORDER_CHECK {
 	INVALID_ORDER_COLLATERAL,
 	INVALID_ORDER_UNITS,
 	INVALID_PARENT_ORDER,
+	INVALID_NEW_POSITION_SIDE
 };
 #endif
 
@@ -181,8 +182,9 @@ public:
 	ORDER_CHECK check_stop_loss_order(const StopLossOrder* new_order);
 	ORDER_CHECK check_take_profit_order(const TakeProfitOrder* new_order);
 	ORDER_CHECK check_market_order(const MarketOrder* new_order);
+	ORDER_CHECK check_position_open(const std::unique_ptr<Order>& new_order);
 	#endif
-
+	
 	//functions for managing margin 
 	#ifdef MARGIN
 	MARGIN_CHECK check_margin() noexcept;
