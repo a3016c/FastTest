@@ -24,7 +24,7 @@ class OrderType(Enum):
 	STOP_LOSS_ORDER = 2
 	TAKE_PROFIT_ORDER = 3
  
-parent_dir = Path.cwd()
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 lib_path = os.path.join(parent_dir, "build/build/libFastTest")
 
 if sys.platform == "linux" or sys.platform == "linux2":
