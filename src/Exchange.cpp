@@ -58,8 +58,7 @@ void __Exchange::build() {
 			if (kvp.second.current_index >= (kvp.second.AM.N)) {
 				continue; 
 			}
-			if ((kvp.second.asset_time() == next_time)
-				&(kvp.second.current_index >= kvp.second.minimum_warmup)) {
+			if (kvp.second.asset_time() == next_time) {
 				kvp.second.current_index++;
 			}
 		}
@@ -87,13 +86,13 @@ bool __Exchange::_get_market_view() {
 
 		//if asset time is equal to the next time add pointer to the asset into the market view
 		if (_asset->asset_time() == next_time){
-			_asset->current_index++;
 			//make sure asset index is greater than it's warmup period
 			if(_asset->current_index >= _asset->minimum_warmup){
 				this->market_view[_asset->asset_id] = _asset;
 			}
+			_asset->current_index++;
 		}
-		//else make sure the market view does not contain a pointer to the assed
+		//else make sure the market view does not contain a pointer to the asset
 		else {
 			this->market_view.erase(_asset->asset_id);
 		}
@@ -232,7 +231,9 @@ std::vector<std::unique_ptr<Order>> __Exchange::process_orders(bool on_close) {
 				this->process_order(order, on_close);
 			}
 			catch (const std::exception& e) {
-				std::cerr << "INVALID ORDER CAUGHT: " << e.what() << std::endl;
+				if(this->logging){
+					std::cerr << "INVALID ORDER CAUGHT: " << e.what() << std::endl;
+				}
 			}
 		}
 		else {
