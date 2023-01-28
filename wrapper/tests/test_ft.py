@@ -136,7 +136,7 @@ class FTTestMethods(unittest.TestCase):
         
         last_positions = ft.get_last_positions()
         assert(last_positions.number_positions == 1)
-        assert(last_positions.POSITION_ARRAY[0].contents.close_price == 0)
+        assert(abs(last_positions.POSITION_ARRAY[0].contents.close_price) < .0000000001)
         assert(last_positions.POSITION_ARRAY[0].contents.realized_pl == 0)
         assert(last_positions.POSITION_ARRAY[0].contents.unrealized_pl == -400)
             

@@ -33,4 +33,11 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-target_compile_options(FastTest PRIVATE -std=c++20)
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-std=c++20" CXX_HAS_STD_20)
+if(CXX_HAS_STD_20)
+    set(CMAKE_CXX_FLAGS_RELEASE "-std=c++20")
+else()
+    set(CMAKE_CXX_FLAGS_RELEASE "-std=c++2a")
+endif()
+

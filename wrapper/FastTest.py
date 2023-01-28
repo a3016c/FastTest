@@ -288,7 +288,7 @@ class FastTest:
         plt.show()
         
     # -----------------------------------------------------------------------------  
-    def plot(self, benchmark = None):
+    def plot(self, benchmark_df = pd.DataFrame()):
         nlv = self.broker.get_nlv_history()
         roll_max = np.maximum.accumulate(nlv)
         daily_drawdown = nlv / roll_max - 1.0
@@ -299,12 +299,11 @@ class FastTest:
         backtest_df = pd.DataFrame(index = datetime_index, data = nlv, columns=["nlv"])
         backtest_df["max_drawdown"] = np.minimum.accumulate(daily_drawdown) * 100
                             
-        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, height_ratios = [1,3])
+        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [1, 3]})
         fig = matplotlib.pyplot.gcf()
         fig.set_size_inches(10.5, 6.5, forward = True)
                     
-        if benchmark != None:
-            benchmark_df = benchmark.df()
+        if not benchmark_df.empty:
             benchmark_df = benchmark_df[["CLOSE"]]
             benchmark_df.rename({'CLOSE': 'Benchmark'}, axis=1, inplace=True)
             
@@ -334,7 +333,7 @@ class FastTest:
         
         sharpe = self.get_sharpe(backtest_df["nlv"].values)
 
-        if benchmark != None:
+        if not benchmark_df.empty:
             corr = round(np.corrcoef(
                 backtest_df["nlv"].values, 
                 backtest_df["Benchmark"].values, 

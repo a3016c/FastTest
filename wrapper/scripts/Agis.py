@@ -3,7 +3,7 @@ import os
 import time
 import zipfile
 import io
-from math import isnan, floor
+from math import isnan
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import numpy as np

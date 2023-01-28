@@ -66,7 +66,7 @@ class Midas_Strategy(Strategy):
             return
         
     def load(self):
-        df = pd.read_csv("/Users/nathantormaschy/Downloads/SPY_midas.csv")
+        df = pd.read_csv("/Users/nathantormaschy/Downloads/df_sub.csv")
         df["DATE"] = pd.to_datetime(df["DATE"], format = "%Y-%m-%d")
         df["DATE"] = df['DATE'].apply(lambda x: x.replace(tzinfo=None))
         df["DATE"] = pd.to_datetime(df["DATE"])
