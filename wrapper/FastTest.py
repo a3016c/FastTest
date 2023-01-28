@@ -336,23 +336,26 @@ class FastTest:
                     
         if not benchmark_df.empty:
             benchmark_df = benchmark_df[["CLOSE"]]
-            benchmark_df.rename({'CLOSE': 'Benchmark'}, axis=1, inplace=True)
+            benchmark_df.rename(columns={'CLOSE': 'Benchmark'}, inplace=True)
             
             benchmark_df.index = pd.to_datetime(benchmark_df.index, unit = "s")
             backtest_df = pd.merge(backtest_df,benchmark_df, how='inner', left_index=True, right_index=True)
 
-            ratio = nlv[0] / backtest_df["Benchmark"].values[0]
-            backtest_df["Benchmark"] = backtest_df["Benchmark"].apply(lambda x: x*ratio)
-
+            first = backtest_df["Benchmark"].values[0]
+            backtest_df["Benchmark"] = (backtest_df["Benchmark"] - first) / first
             ax2.plot(datetime_index, backtest_df["Benchmark"], color = "black", label = "Benchmark")  
         
         if len(self.accounts) > 1:
             for account_name in list(self.accounts.keys()):
                 account = self.accounts[account_name]
                 backtest_df[account_name] = account.get_nlv_history()
-                ax2.plot(datetime_index, backtest_df[account_name]*2, label = account_name)
-            
-        ax2.plot(datetime_index, backtest_df["nlv"], label = "NLV")
+                first = backtest_df[account_name].values[0]
+                backtest_df[account_name] = (backtest_df[account_name] - first) / first
+                ax2.plot(datetime_index, backtest_df[account_name], label = account_name, alpha = .6)
+        
+        first = backtest_df["nlv"].values[0]
+        ax2.plot(datetime_index, (backtest_df["nlv"] - first) / first, label = "NLV")
+        ax2.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
         ax2.set_ylabel("NLV")
         ax2.set_xlabel("Datetime")
         ax2.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),

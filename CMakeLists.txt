@@ -40,4 +40,5 @@ if(CXX_HAS_STD_20)
 else()
     set(CMAKE_CXX_FLAGS_RELEASE "-std=c++2a")
 endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 

@@ -73,22 +73,32 @@ void __Exchange::build() {
 	for (auto& kvp : this->market) { kvp.second.current_index = 0; }
 }
 bool __Exchange::_get_market_view() {
+	//if the current index is the last then return false, all assets listed on this exchange 
+	//are done streaming their data
 	if (this->current_index == this->datetime_index.size()) {
 		return false;
 	}
+
+	//loop through all of the assets in this exchage. If the asset's next datetime is equal to the 
+	//next datetime of the exchange, then that asset will be visable in the market view.
 	timeval next_time = this->datetime_index[this->current_index];
 	for (auto& _asset_pair : this->market) {
 		__Asset * const _asset = &_asset_pair.second;
-		if ((_asset->asset_time() == next_time)
-			&(_asset->current_index >= _asset->minimum_warmup)) {
+
+		//if asset time is equal to the next time add pointer to the asset into the market view
+		if (_asset->asset_time() == next_time){
 			_asset->current_index++;
-			if (this->market_view.count(_asset->asset_id) == 0) {
-				this->market_view[_asset->asset_id] = std::move(_asset);
+			//make sure asset index is greater than it's warmup period
+			if(_asset->current_index >= _asset->minimum_warmup){
+				this->market_view[_asset->asset_id] = _asset;
 			}
 		}
+		//else make sure the market view does not contain a pointer to the assed
 		else {
 			this->market_view.erase(_asset->asset_id);
 		}
+		//if the asset's current index is equal to it's last row of data, add the asset's id to the asset
+		//remove vector so we can remove it when clean up market is called
 		if (_asset->current_index == (_asset->AM.N)+1) {
 			this->asset_remove.push_back(_asset->asset_id);
 		}
@@ -97,22 +107,19 @@ bool __Exchange::_get_market_view() {
 	this->current_index++;
 	return true;
 }
-std::vector<std::unique_ptr<Order>> __Exchange::clean_up_market() {
-
-	std::vector<std::unique_ptr<Order>> cleared_orders;
+void __Exchange::clean_up_market(std::vector<std::unique_ptr<Order>> & canceled_orders) {
 	if (this->asset_remove.empty()) {
-		return cleared_orders;
+		return;
 	}
 	for (auto asset_name : this->asset_remove) {
 		//delete the asset from the market 
 		this->market_expired[asset_name] = std::move(this->market.at(asset_name));
-		cleared_orders = this->cancel_orders(asset_name);
+		this->cancel_orders(canceled_orders, asset_name);
 		this->market.erase(asset_name);
 		this->market_view.erase(asset_name);
 	}
 	this->asset_remove.clear();
 	this->asset_counter--;
-	return std::move(cleared_orders);
 }
 
 void __Exchange::_set_slippage(float _slippage){
@@ -272,13 +279,11 @@ std::unique_ptr<Order> __Exchange::cancel_order(std::unique_ptr<Order>& order_ca
 	return order;
 }
 
-std::vector<std::unique_ptr<Order>> __Exchange::cancel_orders(unsigned int asset_id) {
-	std::vector<std::unique_ptr<Order>> canceled_orders;
+void __Exchange::cancel_orders(std::vector<std::unique_ptr<Order>>& canceled_orders, unsigned int asset_id) {
 	for (auto& order : this->orders) {
 		if (order->asset_id != asset_id) { continue; }
 		canceled_orders.push_back(std::move(this->cancel_order(order)));
 	}
-	return canceled_orders;
 }
 
 void __Exchange::log_order_placed(std::unique_ptr<Order>& order) {
@@ -380,7 +385,7 @@ void get_id_max_market_feature(void *exchange_ptr, const char *column, unsigned 
 	}
 	std::vector<unsigned int> ids = n_biggest_elements(id_feature_map, count);
 
-	for(int i = 0; i < count; i++){
+	for(unsigned int i = 0; i < count; i++){
 		res_ids[i] = ids[i]; 
 	}
 }

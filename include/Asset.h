@@ -39,10 +39,10 @@ public:
 	//constructors 
 	__AssetMatrix() :__AssetMatrix(0, 0) {};
 	__AssetMatrix(size_t M, size_t N) :
-		M(M), N(N), data(M*N, 0) {}
+		N(N), M(M), data(M*N, 0) {}
 
 	T const& operator()(size_t n, size_t m) const {
-		return data[n*M + n];
+		return data[n*M + m];
 	}
 	T& operator()(size_t n, size_t m) {
 #if RANGE_CHECK
@@ -87,7 +87,7 @@ public:
 	std::vector<float> epoch_index;
 	__AssetMatrix<float> AM;
 	unsigned int current_index = 0;
-	unsigned int minimum_warmup;
+	unsigned int minimum_warmup = 0;
 
 	//function to reset the asset after a test is run
 	void reset();
@@ -106,6 +106,9 @@ public:
 
 	//function to set the slippage rate of an asset
 	void _set_asset_slippage(float slippage);
+
+	//function to set the minimum warmup period for a asset (allows indicators to load)
+	void _set_asset_warmup(unsigned int minimum_warmup);
 
 	//function to print the asset data to standard out  (used for debuging mainly)
 	void print_data();
@@ -155,6 +158,7 @@ extern "C" {
 
 	ASSET_API void set_format(void *ptr, const char * dformat = "%d-%d-%d", size_t open = 0, size_t close = 1);
 	ASSET_API void set_asset_slippage(void *ptr, float slippage);
+	ASSET_API void set_asset_warmup(void *ptr, unsigned int minimum_warmup);
 	
 	ASSET_API float* get_asset_index(void *ptr);
 	ASSET_API float* get_asset_data(void *ptr);

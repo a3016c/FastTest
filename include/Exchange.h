@@ -194,13 +194,13 @@ public:
 	 *@param asset_name The name of the Asset to cancel the open Orders on.
 	 *@return A vecotr of unique pointers to Orders that have been canceled.
 	*/
-	std::vector<std::unique_ptr<Order>> cancel_orders(unsigned int asset_id);
+	void cancel_orders(std::vector<std::unique_ptr<Order>>& canceled_orders, unsigned int asset_id);
 
 	/**
 	 *@brief Function to clearn up assets that have reached the end of their data.
 	 *@return A vector of unique pointers to orders that have been canceled by removing expired Assets.
 	*/
-	std::vector<std::unique_ptr<Order>> clean_up_market();
+	void clean_up_market(std::vector<std::unique_ptr<Order>> & cancel_orders);
 
 	/**
 	 *Function to get the market view for the current market time. Consists of pointers to Asset's that

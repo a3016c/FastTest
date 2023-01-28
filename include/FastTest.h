@@ -36,7 +36,6 @@ public:
 
 	std::vector<std::unique_ptr<Order>> filled_orders;
 	std::vector<std::unique_ptr<Order>> canceled_orders;
-	std::vector<std::unique_ptr<Order>> canceled_orders_mid;
 
 	//function to register a benchmark to compare results too
 	void _register_benchmark(__Asset new_benchmark);

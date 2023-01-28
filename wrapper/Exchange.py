@@ -214,6 +214,22 @@ class Asset():
         )
         self.formatted = True
         
+    #-----------------------------------------------------------------------------
+    def set_warmup(self, warmup : int):
+        """Allow for a asset to have a warmup period to load any nessecary columns that might 
+        have null values in the begining. For example a 20 period moving average would need a 
+        warmup of 19 if the null values are not removed before the asset is loaded.
+
+        Args:
+            warmup (int): number of rows of data to skip when executing the backtest 
+
+        Raises:
+            AttributeError: if warmup is less than 0 raise error
+        """
+        if warmup <= 0:
+            raise AttributeError("Invalid warmup, must be positive number")
+        Wrapper._set_asset_warmup(self.ptr, warmup)
+        
     # -----------------------------------------------------------------------------
     def set_slippage(self, slippage : float):
         Wrapper._set_asset_slippage(self.ptr, slippage)

@@ -256,6 +256,9 @@ _columns.restype = c_size_t
 _set_asset_slippage = FastTest.set_asset_slippage
 _set_asset_slippage.argtypes = [c_void_p, c_float]
 
+_set_asset_warmup = FastTest.set_asset_warmup
+_set_asset_warmup.argtypes = [c_void_p, c_uint]
+
 _get_asset_index = FastTest.get_asset_index
 _get_asset_index.argtypes = [c_void_p]
 _get_asset_index.restype = POINTER(c_float)

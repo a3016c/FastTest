@@ -154,6 +154,7 @@ bool forward_pass(void *fastTest_ptr){
 		printf("ENTERING FORWARD PASS\n");
 	}
 
+	//reached end of the test
 	if(__fastTest_ref->current_index == __fastTest_ref->epoch_index.size()){
 		return false;
 	}
@@ -164,6 +165,7 @@ bool forward_pass(void *fastTest_ptr){
 		printf("TIME: %ld\n", fasttest_time);
 	}
 
+	//set the market view for all exchanges that are at the current time
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
 		if(!(exchange->epoch_index[exchange->current_index] == fasttest_time)){continue;}
 		if(exchange->_get_market_view()){
@@ -215,10 +217,9 @@ void backward_pass(void * fastTest_ptr) {
 
 	//allow the exchange to clean up assets that are done streaming
 	__fastTest_ref->canceled_orders.clear();
+	std::vector<std::unique_ptr<Order>> canceled_orders;
 	for(__Exchange* exchange : __fastTest_ref->__exchanges){
-		__fastTest_ref->canceled_orders_mid = exchange->clean_up_market();
-		if(__fastTest_ref->canceled_orders_mid.size() == 0){continue;}
-		__fastTest_ref->canceled_orders = combine_order_vectors(__fastTest_ref->canceled_orders, __fastTest_ref->canceled_orders_mid);
+		exchange->clean_up_market(canceled_orders);
 	}
 
 	if (!__fastTest_ref->canceled_orders.empty()) {

@@ -30,6 +30,10 @@ void __Asset::_set_asset_slippage(float _slippage){
 	this->slippage = _slippage;
 }
 
+void __Asset::_set_asset_warmup(unsigned int minimum_warmup){
+	this->minimum_warmup = minimum_warmup;
+}
+
 void __Asset::_load_from_pointer(float *datetime_index, float *data, size_t rows, size_t columns) {
 	size_t size = rows * columns;
 
@@ -37,7 +41,7 @@ void __Asset::_load_from_pointer(float *datetime_index, float *data, size_t rows
 	long tv_sec;
 	int tv_usec;
 	timeval tv;
-	int i;
+	size_t i;
 	for (i = 0; i < rows; i++) {
 		fractional = std::modf(datetime_index[i], &whole);
 		tv_sec = static_cast<long>(whole);
@@ -93,7 +97,7 @@ void __Asset::_load_from_csv(const char *file_name)
 }
 void __Asset::print_data()
 {
-	int i = 0;
+	size_t i = 0;
 	for ( const auto &myPair : this->headers ) {
         std::cout << myPair.first;
 				if (i < AM.M) {
@@ -177,6 +181,10 @@ void set_format(void *ptr, const char * dformat, size_t open_col, size_t close_c
 void set_asset_slippage(void *asset_ptr, float slippage) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
 	__asset_ref->_set_asset_slippage(slippage);
+}
+void set_asset_warmup(void *asset_ptr, unsigned int minimum_warmup) {
+	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
+	__asset_ref->_set_asset_warmup(minimum_warmup);
 }
 float * get_asset_index(void *asset_ptr) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
