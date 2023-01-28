@@ -7,6 +7,7 @@ from math import isnan, floor
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import numpy as np
+from numba import jit
 from Exchange import Exchange, Asset
 from Broker import Broker
 from Strategy import *
@@ -23,6 +24,10 @@ class Agis_Strategy(Strategy):
         self.position_size = .025
         self.position_count = 2
         
+    def build(self):
+        self.asset_names = self.exchange.id_map.values()
+        self.asset_ids = self.exchange.asset_map.values()
+    
     def check_positions(self):
         positions = self.broker.get_positions()
         for i in range(positions.number_positions):
@@ -32,11 +37,7 @@ class Agis_Strategy(Strategy):
                 self.broker.place_market_order(asset_name, -1*position.units,
                                             exchange_name="sp500",
                                             account_name="agis")
-        
-    def build(self):
-        self.asset_names = self.exchange.id_map.values()
-        self.asset_ids = self.exchange.asset_map.values()
-        
+       
     def next(self):
         self.check_positions()
         predicted_returns = {asset_name : self.exchange.get(asset_name, "Next Return") 
@@ -134,6 +135,6 @@ if __name__ == "__main__":
     print(strategy.count / (et-st))
     #print(ft.metrics.get_stats())
     
-    #ft.plot_asset("TSLA")
-    last_positions = ft.get_last_positions(to_df=True)
-    print(last_positions)
+    ft.plot_asset("NVDA")
+    #last_positions = ft.get_last_positions(to_df=True)
+    #print(last_positions)

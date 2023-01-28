@@ -3,6 +3,7 @@ from ctypes import *
 import sys
 import os
 import cProfile
+import copy
 
 import numpy as np
 import pandas as pd
@@ -76,6 +77,10 @@ class FastTest:
         #copy the data into c++ objects
         for asset_name in list(self.assets.keys()):
             asset = self.assets[asset_name]
+            
+            if not asset.formatted: 
+                raise RuntimeError(f"attempting to build with unformatted asset: {asset.asset_name}")
+            
             exchange = self.exchanges[asset.exchange_name]
             exchange.register_asset(asset)
         
@@ -242,7 +247,17 @@ class FastTest:
         asset_df = asset.df()
         asset_df.index = pd.to_datetime(asset_df.index, unit = "s")
         
+        asset_positions = self.broker.get_position_history().to_df()
+        asset_positions = asset_positions[asset_positions["asset_id"] == asset.asset_id]
+        opens, closes = copy.deepcopy(asset_positions), asset_positions
+        opens.set_index("position_create_time", inplace = True)
+        closes.set_index("position_close_time", inplace = True)
+                
+        opens = pd.merge(asset_df["CLOSE"], opens,left_index=True, right_index=True, how = "inner")
+        closes = pd.merge(asset_df["CLOSE"], closes,left_index=True, right_index=True, how = "inner")
+        
         asset_orders = self.broker.get_order_history().to_df()
+        
         asset_orders = asset_orders[asset_orders["asset_id"] == asset.asset_id]
         asset_orders.set_index("order_fill_time", inplace = True)
         
@@ -255,10 +270,19 @@ class FastTest:
         
         fig, ax = plt.subplots(figsize=(10.5, 6.5))
         
+        #plot asset close price agaisnt time
         ax.plot(asset_df.index, asset_df["CLOSE"], color = "black", label = asset_name)  
-        ax.scatter(markers_buy.index, markers_buy["CLOSE"], marker = "^", c = "green", label = "Buys")
-        ax.scatter(markers_sell.index, markers_sell["CLOSE"], marker = "^", c = "red", label = "Sells")
         
+        #plot all of the order for the given asset
+        ax.scatter(markers_buy.index, markers_buy["CLOSE"], marker = "^", c = "green", label = "Buys", alpha = .3)
+        ax.scatter(markers_sell.index, markers_sell["CLOSE"], marker = "^", c = "red", label = "Sells", alpha = .3)
+        
+        #plot position opens and closes
+        color = ['green' if c > 0 else 'red' for c in opens['units']]
+        ax.scatter(opens.index, opens["CLOSE"], marker = "o", c = color, label = "Position Open", s =100, alpha=.75)
+        color = ['green' if c > 0 else 'red' for c in closes['units']]
+        ax.scatter(closes.index, closes["CLOSE"], marker = "X", c = color, label = "Position Close", s=100, alpha = .75)
+
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
           ncol=3, fancybox=True, shadow=True)
         plt.show()

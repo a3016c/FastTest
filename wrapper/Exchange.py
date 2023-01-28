@@ -126,6 +126,7 @@ class Asset():
         self.debug = debug
         self.asset_name = asset_name
         self.registered = False
+        self.formatted = False
         self.asset_id = None
         self.exchange_id = exchange_id
         self.exchange_name = exchange_name
@@ -211,6 +212,7 @@ class Asset():
             open_col,
             close_col
         )
+        self.formatted = True
         
     # -----------------------------------------------------------------------------
     def set_slippage(self, slippage : float):
