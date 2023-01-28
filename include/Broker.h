@@ -212,7 +212,7 @@ public:
 
 	//functions for managing positions
 	float get_net_liquidation_value();
-	bool _position_exists(unsigned int asset_id);
+	bool _position_exists(int asset_id, int account_id = -1);
 
 	inline void evaluate_portfolio(bool on_close = false){
 		for (auto & pair : this->accounts){
@@ -269,7 +269,7 @@ extern "C" {
 	BROKER_API void get_order_history(void *broker_ptr, OrderArray *order_history);
 	BROKER_API void get_position_history(void *broker_ptr, PositionArray *position_history);
 	
-	BROKER_API bool position_exists(void *broker_ptr, unsigned int asset_id);
+	BROKER_API bool position_exists(void *broker_ptr, unsigned int asset_id, int account_id = -1);
 	BROKER_API void get_positions(void *broker_ptr, PositionArray *positions, unsigned int account_id = 0);
 	BROKER_API void get_position(void *broker_ptr, unsigned int asset_id, PositionStruct *position, unsigned int account_id = 0);
 	BROKER_API void * get_position_ptr(void *broker_ptr, unsigned int asset_id, unsigned int account_id = 0);

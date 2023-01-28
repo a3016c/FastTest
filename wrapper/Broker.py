@@ -59,17 +59,38 @@ class Broker():
     # -----------------------------------------------------------------------------
     def position_exists(self, asset_name,
                         exchange_name = "default",
-                        account_id = 0):
+                        account_id = -1):
+        """Test to see if a position exists in an account or in a broker
+
+        Args:
+            asset_name (str): name of the asset to test
+            exchange_name (str, optional): name of the exchange the asset is on. Defaults to "default".
+            account_id (int, optional): account id to search in. Defaults to -1 (search all accounts)
+
+        Returns:
+            bool: position exists with the given asset name
+        """
         exchange = self.exchange_map[exchange_name]
         asset_id = exchange.asset_map[asset_name]
         return Wrapper._position_exists(self.ptr, asset_id, account_id)
     
     # -----------------------------------------------------------------------------
-    def get_nlv(self, account_id = -1, account_name = None):
-        if account_id == -1:
-            return Wrapper._get_nlv(self.ptr, account_id)
-        else:
-            return Wrapper._get_nlv(self.ptr, self.account_map[account_name])
+    def get_nlv(self, account_name = None):
+        """Get the net liquidation value of either the entire portfolio or a specific account
+
+        Args:
+            account_name (str, optional): name of the account to get nlv for. Defaults to none (entire portfolio)
+
+        Returns:
+            _type_: _description_
+        """
+        if account_name is None:
+            return Wrapper._get_nlv(self.ptr, -1)
+        
+        if self.account_map.get(account_name) is None:
+            raise RuntimeError("Invalid acccount name passed")
+        
+        return Wrapper._get_nlv(self.ptr, self.account_map[account_name])
     
     # -----------------------------------------------------------------------------
     def get_cash(self, account_id = -1):

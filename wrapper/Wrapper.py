@@ -308,7 +308,7 @@ _get_cash.argtypes = [c_void_p, c_int]
 _get_cash.restype = c_float
 
 _position_exists = FastTest.position_exists
-_position_exists.argtypes = [c_void_p, c_uint]
+_position_exists.argtypes = [c_void_p, c_uint, c_int]
 _position_exists.restype = c_bool
 
 _broker_get_history_length= FastTest.broker_get_history_length

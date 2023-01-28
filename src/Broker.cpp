@@ -602,10 +602,21 @@ std::deque<std::unique_ptr<Order>>& __Broker::open_orders(unsigned int exchange_
 	__Exchange* exchange = this->exchanges[exchange_id];
 	return exchange->orders;
 }
-bool __Broker::_position_exists(unsigned int asset_id) {
+bool __Broker::_position_exists(int asset_id, int account_id) {
+	unsigned int uaccount_id = abs(account_id);
+
 	for (const auto & pair : this->accounts){
 		auto & account = pair.second;
+		//found the assed inside an account
 		if(account->portfolio.count(asset_id) > 0){
+			//if account_id == -1 searching for position in any account
+			if(account_id == -1){
+				return true;
+			}
+			//else make sure the account id is equal to the account id that was passed
+			else if (uaccount_id == account->account_id){
+				return true;
+			}
 			return true;
 		}
 	}
@@ -733,9 +744,9 @@ int get_open_position_count(void *broker_ptr){
 	}
 	return count;
 }
-bool position_exists(void *broker_ptr, unsigned int asset_id){
+bool position_exists(void *broker_ptr, unsigned int asset_id, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
-	return __broker_ref->_position_exists(asset_id);
+	return __broker_ref->_position_exists(asset_id, account_id);
 }
 void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

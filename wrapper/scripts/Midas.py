@@ -12,17 +12,18 @@ from FastTest import FastTest
 import math
 
 class Midas_Strategy(Strategy):
-    def __init__(self, broker: Broker, exchange: Exchange, ft : FastTest, asset_name : str) -> None:
+    def __init__(self, broker: Broker, exchange: Exchange, ft : FastTest, asset_name : str, cash : float) -> None:
         super().__init__(broker, exchange)
         self.ft = ft
         self.lookahead = 5
         self.asset_name = asset_name
+        self.starting_cash = cash
         self.load()
         
     def next(self):
         predicted_returns = self.exchange.get(self.asset_name,"LR_PREDS")
         
-        position_size = 80000
+        position_size = .9*self.starting_cash
 
         if not self.broker.position_exists(self.asset_name,
                                         exchange_name=self.exchange.exchange_name,
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     ft.register_broker(broker)
     ft.add_account("midas", 100000)
     
-    midas_strategy = Midas_Strategy(broker, spy_exchange, ft, "SPY")
+    midas_strategy = Midas_Strategy(broker, spy_exchange, ft, "SPY", 100000)
     
     ft.add_strategy(midas_strategy)
     

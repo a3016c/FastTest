@@ -354,7 +354,7 @@ class FastTest:
                 ax2.plot(datetime_index, backtest_df[account_name], label = account_name, alpha = .6)
         
         first = backtest_df["nlv"].values[0]
-        ax2.plot(datetime_index, (backtest_df["nlv"] - first) / first, label = "NLV")
+        ax2.plot(datetime_index, (backtest_df["nlv"] - first) / first, label = "Total NLV")
         ax2.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
         ax2.set_ylabel("NLV")
         ax2.set_xlabel("Datetime")

@@ -19,6 +19,7 @@ __FastTest::__FastTest(Strategy *StrategyObj, bool logging, bool debug, bool sav
 	strategy(StrategyObj){
 	this->logging = logging;
 	this->debug = debug;
+	this->save_last_portfolio = save_last_portfolio;
 }
 __FastTest::__FastTest(bool logging, bool debug, bool save_last_portfolio) {
 	this->logging = logging;
@@ -276,7 +277,6 @@ size_t get_portfolio_size(void *fastTest_ptr){
 }
 void get_last_positions(void *fastTest_ptr, PositionArray *position_history) {
 	__FastTest * __fastTest_ref = static_cast<__FastTest *>(fastTest_ptr);
-	int number_positions = position_history->number_positions;
 
 	if(position_history->number_positions != __fastTest_ref->portfolio.size()){
 		throw std::runtime_error("incorrect position count passed to PositionArray object");
