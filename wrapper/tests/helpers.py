@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 import os 
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
 from Exchange import Exchange, Asset
 from Account import Account
 from Broker import Broker 
@@ -17,8 +19,8 @@ test1_close = np.array([101,103,105,106])
 test2_open = np.array([101,100,98,101,101,103])
 test2_close = np.array([101.5,99,97,101.5,101.5,96])
 
-file_name_1 = r"/Users/nathantormaschy/Desktop/C++/FastTest/wrapper/tests/data/test1.csv"
-file_name_2 = r"/Users/nathantormaschy/Desktop/C++/FastTest/wrapper/tests/data/test2.csv"
+file_name_1 = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)),"tests","data","test1.csv")
+file_name_2 = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)),"tests","data","test2.csv")
 
 def get_unix_time(dt64):
     return dt64.astype("datetime64[s]").astype('int')
