@@ -13,6 +13,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.offsetbox import AnchoredText
+import seaborn as sns
+import calendar
+sns.set()
 
 SCRIPT_DIR = os.path.dirname(__file__)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -235,6 +238,34 @@ class FastTest:
         sharpe = returns.mean() / returns.std()
         sharpe = (N**.5)*sharpe
         return round(sharpe,3)
+    
+    # -----------------------------------------------------------------------------    
+    def plot_monthly_returns(self):
+        nlv = self.broker.get_nlv_history()        
+        datetime_epoch_index = self.get_datetime_index()
+        datetime_index = pd.to_datetime(datetime_epoch_index, unit = "s")
+        
+        backtest_df = pd.DataFrame(index = datetime_index, data = nlv, columns=["nlv"])
+        monthly_df = backtest_df.resample('M').last()
+        monthly_df["Returns"] = monthly_df['nlv'].pct_change()
+        monthly_df = monthly_df[["Returns"]]
+        monthly_returns = monthly_df.pivot_table(
+            values = "Returns",
+            index=monthly_df.index.month,
+            columns=monthly_df.index.year,
+            aggfunc='mean')
+
+        fig, ax = plt.subplots(figsize=(10.5, 6.5))
+        cmap = sns.diverging_palette(h_neg=10, h_pos=130, s=99, l=55, sep=3, as_cmap=True)
+        
+        sns.heatmap(monthly_returns,
+                    cmap=cmap,
+                    annot=True,
+                    linewidths=.5,
+                    center=0.00,
+                    yticklabels=calendar.month_name[1:],
+                    fmt = ".2%")
+        plt.show()
     
     # -----------------------------------------------------------------------------
     def plot_asset(self, asset_name : str):
