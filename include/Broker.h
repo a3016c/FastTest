@@ -157,6 +157,9 @@ public:
 	void log_open_position(Position &position);
 	void log_close_position(Position &position);
 
+	//set commissions
+	void set_commission(float commission);
+
 	//functions for managing margin balance 
 	void margin_on_reduce(Position &existing_position, float order_fill_price, float units);
 	void margin_on_increase(Position &new_position,std::unique_ptr<Order>& order);
@@ -254,6 +257,8 @@ extern "C" {
 	BROKER_API void DeleteBrokerPtr(void *ptr);
 	BROKER_API void reset_broker(void *broker_ptr);
 	BROKER_API void build_broker(void *broker_ptr);
+
+	BROKER_API void broker_set_commission(void* broker_ptr, float commission);
 
 	BROKER_API void broker_register_exchange(void *broker_ptr, void *exchange_ptr);
 	BROKER_API void broker_register_account(void *broker_ptr, void *account_ptr);

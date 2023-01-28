@@ -34,10 +34,10 @@ void __Asset::_set_asset_warmup(unsigned int minimum_warmup){
 	this->minimum_warmup = minimum_warmup;
 }
 
-void __Asset::_load_from_pointer(float *datetime_index, float *data, size_t rows, size_t columns) {
+void __Asset::_load_from_pointer(double *datetime_index, float *data, size_t rows, size_t columns) {
 	size_t size = rows * columns;
 
-	float whole, fractional;
+	double whole, fractional;
 	long tv_sec;
 	int tv_usec;
 	timeval tv;
@@ -149,7 +149,7 @@ void load_from_csv(void *ptr, const char* file_name) {
 	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
 	__asset_ref->_load_from_csv(file_name);
 }
-void load_from_pointer(void *ptr, float *datetime_index, float *data, size_t rows, size_t columns){
+void load_from_pointer(void *ptr, double *datetime_index, float *data, size_t rows, size_t columns){
 	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
 	__asset_ref->_load_from_pointer(datetime_index,data,rows,columns);
 }

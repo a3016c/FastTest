@@ -241,7 +241,7 @@ _asset_from_csv = FastTest.load_from_csv
 _asset_from_csv.argtypes = [c_void_p,c_char_p]
 
 _asset_from_pointer = FastTest.load_from_pointer
-_asset_from_pointer.argtypes = [c_void_p, POINTER(c_float), POINTER(c_float), c_size_t, c_size_t]
+_asset_from_pointer.argtypes = [c_void_p, POINTER(c_long), POINTER(c_float), c_size_t, c_size_t]
 
 _register_header = FastTest.register_header
 _register_header.argtypes = [c_void_p, c_char_p, c_uint]
@@ -280,6 +280,9 @@ _reset_broker.argtypes = [c_void_p]
 
 _build_broker = FastTest.build_broker
 _build_broker.argtypes = [c_void_p]
+
+_broker_set_commission = FastTest.broker_set_commission
+_broker_set_commission.argtypes = [c_void_p, c_float]
 
 _broker_register_exchange = FastTest.broker_register_exchange
 _broker_register_exchange.argtypes = [c_void_p, c_void_p]

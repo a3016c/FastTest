@@ -40,6 +40,13 @@ void __Broker::clean_up(){
 	this->perfomance.winrate /= position_count;
 }
 
+void __Broker::set_commission(float commission){
+	this->commission = commission;
+	if(this->commission > 0){
+		this->has_commission = true;
+	}
+}
+
 void __Broker::build(){
 
 	if(this->debug){
@@ -661,6 +668,10 @@ void reset_broker(void *broker_ptr) {
 void build_broker(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->build();
+}
+void broker_set_commission(void* broker_ptr, float commission){
+	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
+	__broker_ref->set_commission(commission);
 }
 void broker_register_exchange(void *broker_ptr, void *exchange_ptr){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);

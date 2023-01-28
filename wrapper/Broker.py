@@ -31,13 +31,32 @@ class Broker():
         if self.debug: print(f"\nFREEING BROKER POINTER AT {self.ptr}")
         Wrapper._free_broker_ptr(self.ptr)
         if self.debug: print("BROKER POINTER FREED\n")
+        
+    # -----------------------------------------------------------------------------
+    def reset(self):
+        Wrapper._reset_broker(self.ptr)
     
     # -----------------------------------------------------------------------------
     def build(self):
         Wrapper._build_broker(self.ptr)
+
+    # -----------------------------------------------------------------------------        
+    def set_commission(self, commission : float):
+        if commission < 0: 
+            raise RuntimeError("Commission amount must be greater than or equal to 0")
+        Wrapper._broker_set_commission(self.ptr, commission)
         
     # -----------------------------------------------------------------------------
     def register_exchange(self, exchange : Exchange):
+        """Register an exchange to a broker. A broker will only be able to place orders for assets
+        that are on an exchange that is registered to it. 
+
+        Args:
+            exchange (Exchange): exchange to be registered to the asset
+
+        Raises:
+            Exception: raise error if exchange is not registered to the FastTest yet
+        """
         if(not exchange.is_registered()):
             raise Exception("Exchange is not yet registered to the FastTest")
         
@@ -351,7 +370,3 @@ class Broker():
             raise Exception("Must pass in order id or asset name")
 
         return order_response
-        
-    # -----------------------------------------------------------------------------
-    def reset(self):
-        Wrapper._reset_broker(self.ptr)

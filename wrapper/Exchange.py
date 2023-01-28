@@ -145,6 +145,16 @@ class Asset():
         Wrapper._free_asset_ptr(self.ptr)
         if self.debug: print(f"{self.asset_name} ASSET POINTER FREED\n")
         
+    # -----------------------------------------------------------------------------
+    def generate_random(self, step_size : int, num_steps : int):
+        steps = np.random.uniform(-step_size, step_size, num_steps)
+        df = pd.DataFrame(
+            data = 100 + np.cumsum(steps),
+            columns = ["CLOSE"],
+            index = pd.date_range(end='1/1/2020', periods=num_steps, freq = "s")
+        )
+        return df
+        
     # -----------------------------------------------------------------------------        
     def load_from_csv(self, file_name : str):
         if not self.registered:
@@ -160,11 +170,11 @@ class Asset():
             raise RuntimeError("Asset must be registered before loading data")
         
         values = df.values.flatten().astype(np.float32)
-        epoch_index = df.index.values.astype(np.float32)
+        epoch_index = df.index.values.astype(np.float64)
         if nano: epoch_index /=  1e9
         
         values_p = values.ctypes.data_as(POINTER(c_float))
-        epoch_index_p = epoch_index.ctypes.data_as(POINTER(c_float))
+        epoch_index_p = epoch_index.ctypes.data_as(POINTER(c_long))
         
         Wrapper._asset_from_pointer(
             self.ptr,

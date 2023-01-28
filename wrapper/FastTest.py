@@ -107,6 +107,15 @@ class FastTest:
         
     # -----------------------------------------------------------------------------  
     def register_asset(self, asset_name : str, exchange_name = "default"):
+        """add a new asset to the fasttest
+
+        Args:
+            asset_name (str): name of the new asset
+            exchange_name (str, optional): name of the exchange to register the asset to. Defaults to "default".
+
+        Returns:
+            Asset: a new Asset object with the appropriate asset_id and exchange_id 
+        """
         exchange = self.exchanges[exchange_name]
         
         #build a new asset object using the asset name and given exchange
@@ -122,8 +131,8 @@ class FastTest:
         self.id_map[asset.asset_id] = asset_name
         return asset
         
+    # ----------------------------------------------------------------------------- 
     def register_exchange(self, exchange : Exchange, register = True):
-    # -----------------------------------------------------------------------------   
         if(exchange.is_registered()):
             raise Exception("Attempted to register an existing exchange")
         
@@ -168,6 +177,12 @@ class FastTest:
     
     # -----------------------------------------------------------------------------  
     def add_strategy(self, strategy : Strategy):
+        """Register a strategy to the fast test. strategy.next() will now be called everytime
+        the fasttest steps forward in time
+
+        Args:
+            strategy (Strategy): strategy object to register
+        """
         strategy.broker_ptr = self.broker.ptr
         strategy.strategy_id = self.strategy_counter
         self.strategy_counter += 1
@@ -196,6 +211,7 @@ class FastTest:
         return True
     
     def asset_id_to_name(self, asset_id):
+        #assed_id -> asset_name
         return self.id_map[asset_id]
     
     # -----------------------------------------------------------------------------  

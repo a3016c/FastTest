@@ -5,7 +5,7 @@ from math import isnan, floor
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import numpy as np
-from Exchange import Exchange, Asset
+from Exchange import Exchange
 from Broker import Broker
 from Strategy import Strategy
 from FastTest import FastTest
@@ -27,7 +27,7 @@ class Midas_Strategy(Strategy):
 
         if not self.broker.position_exists(self.asset_name,
                                         exchange_name=self.exchange.exchange_name,
-                                        account_id = 0):
+                                        account_id = -1):
             
             market_price = self.exchange.get_market_price(self.asset_name)
             
@@ -51,14 +51,7 @@ class Midas_Strategy(Strategy):
             return
         elif predicted_returns > 0.5 and position.units > 0:
             return
-        elif predicted_returns < 0.5 and position.units > 0:
-            units = -1 * position.units
-            self.broker.place_market_order(self.asset_name, units,
-                                        strategy_id=self.strategy_id,
-                                        exchange_name=self.exchange.exchange_name,
-                                        account_name="midas")
-            return
-        elif predicted_returns > 0.5 and position.units < 0:
+        else:
             units = -1 * position.units
             self.broker.place_market_order(self.asset_name, units,
                                         strategy_id=self.strategy_id,
@@ -89,7 +82,7 @@ if __name__ == "__main__":
     spy_exchange = Exchange(exchange_name="SPY")
     ft.register_exchange(spy_exchange)
     
-    broker = Broker(spy_exchange, margin=True, logging=True)
+    broker = Broker(spy_exchange, margin=True, logging=False)
     ft.register_broker(broker)
     ft.add_account("midas", 100000)
     

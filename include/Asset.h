@@ -102,7 +102,7 @@ public:
 	void _register_header(std::string header, unsigned int column_index);
 
 	//function to load an asset from a float pointer using specified dims
-	void _load_from_pointer(float *datetime_index,float *data, size_t rows, size_t columns);
+	void _load_from_pointer(double *datetime_index,float *data, size_t rows, size_t columns);
 
 	//function to set the slippage rate of an asset
 	void _set_asset_slippage(float slippage);
@@ -150,7 +150,7 @@ extern "C" {
 	ASSET_API bool AssetCompare(void *asset_ptr1, void *asset_ptr2);
 
 	ASSET_API void load_from_csv(void *ptr, const char* file_name);
-	ASSET_API void load_from_pointer(void *ptr, float *datetime_index, float *data, size_t rows, size_t columns);
+	ASSET_API void load_from_pointer(void *ptr, double *datetime_index, float *data, size_t rows, size_t columns);
 	ASSET_API void register_header(void *ptr, const char *header, unsigned int column_index);
 	ASSET_API float* get_data(void *ptr);
 	ASSET_API size_t rows(void *ptr);
