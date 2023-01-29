@@ -194,6 +194,10 @@ class FastTest:
         Core event loop used for the backtest. First clear any data from previous runs, the execute 
         self.step() as long is the forward pass returns true.
         """
+        
+        if not self.built:
+            raise RuntimeError("FastTest is not yet built")
+        
         #clear any results/data from previous runs
         self.reset()
             
@@ -284,7 +288,10 @@ class FastTest:
         plt.show()
     
     # -----------------------------------------------------------------------------
-    def plot_asset(self, asset_name : str, overlays = []):
+    def plot_asset(self, asset_name : str,
+                   overlays = [],
+                   _from = None,
+                   _to = None):
         """Plot asset price over the test period with buys and sells overlayed
 
         :param asset_name: name of the asset to plot
@@ -312,6 +319,16 @@ class FastTest:
         markers_sell = asset_orders[asset_orders["units"] < 0].index
         
         asset_df = pd.merge(asset_df, asset_orders,left_index=True, right_index=True, how = "left")
+        
+        if _from is not None:
+            asset_df = asset_df[asset_df.index > _from]
+            asset_df = asset_df[asset_df.index > _from]
+            asset_df = asset_df[asset_df.index > _from]
+        if _to is not None:
+            asset_df = asset_df[asset_df.index < _to]
+            opens = opens[opens.index < _to]
+            closes = closes[closes.index < _to]
+        
         markers_buy = asset_df[asset_df.index.isin(markers_buy)]
         markers_sell = asset_df[asset_df.index.isin(markers_sell)]
         
@@ -339,7 +356,10 @@ class FastTest:
         plt.show()
         
     # -----------------------------------------------------------------------------  
-    def plot(self, benchmark_df = pd.DataFrame()):
+    def plot(self, 
+            benchmark_df = pd.DataFrame(),
+            _from = None,
+            _to = None):
         nlv = self.broker.get_nlv_history()
         roll_max = np.maximum.accumulate(nlv)
         daily_drawdown = nlv / roll_max - 1.0
@@ -353,6 +373,11 @@ class FastTest:
         fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [1, 3]})
         fig = matplotlib.pyplot.gcf()
         fig.set_size_inches(10.5, 6.5, forward = True)
+        
+        if _from is not None:
+            backtest_df = backtest_df[backtest_df.index > _from]
+        if _to is not None:
+            backtest_df = backtest_df[backtest_df.index < _to]
                     
         if not benchmark_df.empty:
             benchmark_df = benchmark_df[["CLOSE"]]
@@ -363,7 +388,7 @@ class FastTest:
 
             first = backtest_df["Benchmark"].values[0]
             backtest_df["Benchmark"] = (backtest_df["Benchmark"] - first) / first
-            ax2.plot(datetime_index, backtest_df["Benchmark"], color = "black", label = "Benchmark")  
+            ax2.plot(backtest_df.index, backtest_df["Benchmark"], color = "black", label = "Benchmark")  
         
         if len(self.accounts) > 1:
             for account_name in list(self.accounts.keys()):
@@ -371,17 +396,17 @@ class FastTest:
                 backtest_df[account_name] = account.get_nlv_history()
                 first = backtest_df[account_name].values[0]
                 backtest_df[account_name] = (backtest_df[account_name] - first) / first
-                ax2.plot(datetime_index, backtest_df[account_name], label = f"{account_name} Strategy", alpha = .6)
+                ax2.plot(backtest_df.index, backtest_df[account_name], label = f"{account_name} Strategy", alpha = .6)
         
         first = backtest_df["nlv"].values[0]
-        ax2.plot(datetime_index, (backtest_df["nlv"] - first) / first, label = "Total NLV")
+        ax2.plot(backtest_df.index, (backtest_df["nlv"] - first) / first, label = "Total NLV")
         ax2.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
         ax2.set_ylabel("NLV")
         ax2.set_xlabel("Datetime")
         ax2.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
           ncol=3, fancybox=True, shadow=True)
         
-        ax1.plot(datetime_index, backtest_df["max_drawdown"])
+        ax1.plot(backtest_df.index, backtest_df["max_drawdown"])
         ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
         ax1.set_ylabel("Max Drawdown")
         
