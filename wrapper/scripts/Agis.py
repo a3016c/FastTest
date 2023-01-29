@@ -136,5 +136,5 @@ if __name__ == "__main__":
     #print(ft.metrics.get_stats())
     
     #last_positions = ft.get_last_positions(to_df=True)
-    #ft.plot(benchmark.df(), _from = "2020-01-01", _to = "2023-01-01")
-    ft.plot_asset("NVDA",_from = "2022-01-01", _to = "2023-01-01")
+    ft.plot(benchmark.df(), _from = "2020-01-01", _to = "2023-01-01")
+    #ft.plot_asset("NVDA",_from = "2022-01-01", _to = "2023-01-01")

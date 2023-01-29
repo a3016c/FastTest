@@ -374,6 +374,10 @@ class FastTest:
         fig = matplotlib.pyplot.gcf()
         fig.set_size_inches(10.5, 6.5, forward = True)
         
+        for account_name in list(self.accounts.keys()):
+            account = self.accounts[account_name]
+            backtest_df[account_name] = account.get_nlv_history()
+        
         if _from is not None:
             backtest_df = backtest_df[backtest_df.index > _from]
         if _to is not None:
@@ -392,8 +396,6 @@ class FastTest:
         
         if len(self.accounts) > 1:
             for account_name in list(self.accounts.keys()):
-                account = self.accounts[account_name]
-                backtest_df[account_name] = account.get_nlv_history()
                 first = backtest_df[account_name].values[0]
                 backtest_df[account_name] = (backtest_df[account_name] - first) / first
                 ax2.plot(backtest_df.index, backtest_df[account_name], label = f"{account_name} Strategy", alpha = .6)
