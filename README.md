@@ -1,6 +1,6 @@
 # FastTest
 
-High performance C++ backtesting library with a python wrapper for Algorithmic trading 
+High performance C++ backtesting library with a python wrapper for Algorithmic trading. See wrapper/examples/ma_cross.py for complete example of a moving average crossover strategy and a comparison to the same strategy using Backtrader
 
 ## Installation
 
