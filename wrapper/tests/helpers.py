@@ -108,8 +108,3 @@ def setup_multi_account(logging = False, margin = False, debug = False, save_las
     ft.build()
     
     return exchange, broker, ft
-    
-
-
-
-

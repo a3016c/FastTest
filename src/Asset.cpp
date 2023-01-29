@@ -186,7 +186,7 @@ void set_asset_warmup(void *asset_ptr, unsigned int minimum_warmup) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
 	__asset_ref->_set_asset_warmup(minimum_warmup);
 }
-float * get_asset_index(void *asset_ptr) {
+long * get_asset_index(void *asset_ptr) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
 	return __asset_ref->epoch_index.data();
 }

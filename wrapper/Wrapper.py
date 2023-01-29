@@ -261,7 +261,7 @@ _set_asset_warmup.argtypes = [c_void_p, c_uint]
 
 _get_asset_index = FastTest.get_asset_index
 _get_asset_index.argtypes = [c_void_p]
-_get_asset_index.restype = POINTER(c_float)
+_get_asset_index.restype = POINTER(c_long)
 
 _get_asset_data = FastTest.get_asset_data
 _get_asset_data.argtypes = [c_void_p]

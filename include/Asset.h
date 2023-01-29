@@ -84,7 +84,7 @@ public:
 
 	std::unordered_map<std::string, unsigned int> headers;
 	std::vector<timeval> datetime_index;
-	std::vector<float> epoch_index;
+	std::vector<long> epoch_index;
 	__AssetMatrix<float> AM;
 	unsigned int current_index = 0;
 	unsigned int minimum_warmup = 0;
@@ -160,6 +160,6 @@ extern "C" {
 	ASSET_API void set_asset_slippage(void *ptr, float slippage);
 	ASSET_API void set_asset_warmup(void *ptr, unsigned int minimum_warmup);
 	
-	ASSET_API float* get_asset_index(void *ptr);
+	ASSET_API long* get_asset_index(void *ptr);
 	ASSET_API float* get_asset_data(void *ptr);
 }

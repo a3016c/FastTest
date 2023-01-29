@@ -284,7 +284,7 @@ class FastTest:
         plt.show()
     
     # -----------------------------------------------------------------------------
-    def plot_asset(self, asset_name : str):
+    def plot_asset(self, asset_name : str, overlays = []):
         """Plot asset price over the test period with buys and sells overlayed
 
         :param asset_name: name of the asset to plot
@@ -319,6 +319,10 @@ class FastTest:
         
         #plot asset close price agaisnt time
         ax.plot(asset_df.index, asset_df["CLOSE"], color = "black", label = asset_name)  
+        
+        for overlay in overlays:
+            ax.plot(asset_df.index, asset_df[overlay], label = overlay)  
+            
         
         #plot all of the order for the given asset
         ax.scatter(markers_buy.index, markers_buy["CLOSE"], marker = "^", c = "green", label = "Buys", alpha = .3)
@@ -392,6 +396,11 @@ class FastTest:
             metrics = f"Sharpe: {sharpe} \n Benchmark Corr: {corr}"
             anchored_text = AnchoredText(metrics, loc=2)
             ax2.add_artist(anchored_text)
+            
+        else:
+            metrics = f"Sharpe: {sharpe}"
+            anchored_text = AnchoredText(metrics, loc=2)
+            ax2.add_artist(anchored_text)
                 
         plt.show()
         
@@ -442,14 +451,15 @@ class Metrics():
         return (
             f"Number of Trades: {len(self.positions)}\n"
             f"Win Rate: {win_pct:.2f}\n"
-            f"Long Win Rate: {win_pct_long:.2f}\n"
-            f"Short Win Rate: {win_pct_short:.2f}\n"
-            f"Average Long PL: {avg_pl_long:.2f}\n"
-            f"Average Short PL: {avg_pl_short:.2f}\n"
             f"Average Trade Duration: {avg_total_durations}\n"
-            f"Average Long Trade Duration {avg_long_durations}\n"
-            f"Average Short Trade Duration: {avg_short_durations}\n\n"
             
+            f"Long Win Rate: {win_pct_long:.2f}\n"
+            f"Average Long PL: {avg_pl_long:.2f}\n"
+            f"Average Long Trade Duration {avg_long_durations}\n"
+            
+            f"Short Win Rate: {win_pct_short:.2f}\n"
+            f"Average Short PL: {avg_pl_short:.2f}\n"
+            f"Average Short Trade Duration: {avg_short_durations}\n\n"
         )
         
 @jit(forceobj=True, cache=True)
