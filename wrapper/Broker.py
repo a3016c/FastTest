@@ -122,7 +122,7 @@ class Broker():
             account_id (int, optional): account id of the account to get cash, -1 for all accounts combined
 
         Returns:
-            float: amount of cash available in a given account
+            double: amount of cash available in a given account
         """
         return Wrapper._get_cash(self.ptr, account_id)
     
@@ -194,7 +194,7 @@ class Broker():
         """_summary_
 
         Returns:
-            numpy array: an array of floats representing available cash at every time period 
+            numpy array: an array of doubles representing available cash at every time period 
         """
         cash_ptr = Wrapper._broker_get_cash_history(self.ptr)
         return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
@@ -204,7 +204,7 @@ class Broker():
         """_summary_
 
         Returns:
-            numpy array: an array of floats representing net liquidation value at every time period 
+            numpy array: an array of doubles representing net liquidation value at every time period 
         """
         nlv_ptr = Wrapper._broker_get_nlv_history(self.ptr)
         return np.ctypeslib.as_array(nlv_ptr, shape=(self.get_history_length(),))
@@ -244,8 +244,8 @@ class Broker():
 
         Args:
             asset_name (str): name of the asset to place the order for
-            units (float): how many units to buy/sell
-            stop_loss_on_fill (float, optional): stop loss level of stop loss placed on fill. Defaults to 0.
+            units (double): how many units to buy/sell
+            stop_loss_on_fill (double, optional): stop loss level of stop loss placed on fill. Defaults to 0.
             stop_loss_limit_pct (bool, optional): is the stop loss level a percentage of the current price. Defaults to False.
             cheat_on_close (bool, optional): = allow position to be execute at end of current candle. Defaults to False.
             exchange_name (str, optional): name of the exchange to place the order to. Defaults to "default".

@@ -482,8 +482,8 @@ def test_speed():
     n = 200000
     n_assets = 40
     
-    o = np.arange(0,10,step = 10/n).astype(np.float32)
-    c = (np.arange(0,10,step = 10/n) + .001).astype(np.float32)
+    o = np.arange(0,10,step = 10/n).astype(np.double32)
+    c = (np.arange(0,10,step = 10/n) + .001).astype(np.double32)
     index = pd.date_range(end='1/1/2018', periods=n, freq = "s").astype(int) / 10**9
     df = pd.DataFrame(data = [o,c]).T
     df.columns = ["OPEN","CLOSE"]

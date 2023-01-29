@@ -22,7 +22,7 @@ bool operator==(const OrderStruct &order1, const OrderStruct &order2) {
 void Order::create(timeval order_create_time) {
 	this->order_create_time = order_create_time;
 }
-void Order::fill(float market_price, timeval fill_time) {
+void Order::fill(double market_price, timeval fill_time) {
 	this->order_fill_time = fill_time;
 	this->fill_price = market_price;
 	this->order_state = FILLED;
@@ -37,11 +37,11 @@ void Order::fill(float market_price, timeval fill_time) {
 				StopLossOrder* stop_loss_order = static_cast <StopLossOrder*>(order.get());
 				if(stop_loss_order->limit_pct == true){
 					if(this->units > 0){
-						float pct = (1-stop_loss_order->stop_loss);
+						double pct = (1-stop_loss_order->stop_loss);
 						stop_loss_order->stop_loss = pct * market_price;
 					}
 					else{
-						float pct = (1+stop_loss_order->stop_loss);
+						double pct = (1+stop_loss_order->stop_loss);
 						stop_loss_order->stop_loss = pct * market_price;
 					}
 				}
@@ -95,7 +95,7 @@ void Order::to_struct(OrderStruct &order_struct){
 	order_struct.order_create_time = this->order_create_time.tv_sec + this->order_create_time.tv_usec/1e6;
 	order_struct.order_fill_time = this->order_fill_time.tv_sec + this->order_fill_time.tv_usec / 1e6;
 }
-void Order::add_stop_loss(float stop_loss, float units, bool limit_pct) {
+void Order::add_stop_loss(double stop_loss, double units, bool limit_pct) {
 	if (std::isnan(units)) {
 		units = this->units;
 	}

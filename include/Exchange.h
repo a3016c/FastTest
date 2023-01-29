@@ -71,7 +71,7 @@ class __Exchange
 {
 public:
 	bool has_slippage = false;
-	float total_slippage = 0;
+	double total_slippage = 0;
 
 	bool is_built = false;      /**<is the exchange built*/
 	bool is_registered = false; /**<is the exchange registered to a FastTest*/ 
@@ -138,14 +138,14 @@ public:
 	 *@brief Set the slippage for assets listed on the exchange
 	 *@param slippage The slippage amount 
 	*/
-	void _set_slippage(float slippage);
+	void _set_slippage(double slippage);
 
 	/**
 	 *@brief Apply slippage to a order fill
 	 *@param asset_id id of the asset (to look up slippage)
 	 *@param market_price the actual fill price
 	*/
-	float apply_slippage(unsigned int asset_id, float market_price, float units);
+	double apply_slippage(unsigned int asset_id, double market_price, double units);
 
 	/**
 	 *@brief Register a new Asset to the FastTest.
@@ -238,7 +238,7 @@ public:
 	 *@param asset A referece to the name of the Asset for which to get the value.
 	 *@param column The column to get the value of.
 	*/
-	inline float _get_market_feature(unsigned int &asset_id, std::string &column, int index) noexcept{
+	inline double _get_market_feature(unsigned int &asset_id, std::string &column, int index) noexcept{
 		if (this->market_view.count(asset_id) == 0){return NAN;}
 		return this->market_view[asset_id]->get(column, index);
 	}
@@ -248,7 +248,7 @@ public:
 	 *@param asset_name A referece to the name of the Asset for which to get the market price.
 	 *@param on_close Wether or not to return the market price on close or open for the current market view.
 	*/
-	inline float _get_market_price(unsigned int &asset_id, bool on_close = false) noexcept {
+	inline double _get_market_price(unsigned int &asset_id, bool on_close = false) noexcept {
 	if (this->market_view.count(asset_id) == 0) {
 		return NAN;
 	}
@@ -285,7 +285,7 @@ extern "C" {
 	EXCHANGE_API void DeleteExchangePtr(void *ptr);
 
 	EXCHANGE_API bool _is_registered(void *exchange_ptr);
-	EXCHANGE_API void set_slippage(void *exchange_ptr, float slippage);
+	EXCHANGE_API void set_slippage(void *exchange_ptr, double slippage);
 
 	EXCHANGE_API void register_asset(void *asset_ptr, void *exchange_ptr);
 	EXCHANGE_API int asset_count(void *exchange_ptr);
@@ -297,8 +297,8 @@ extern "C" {
 	EXCHANGE_API size_t get_exchange_index_length(void *exchange_ptr);
 
 	EXCHANGE_API void get_market_view(void *exchange_ptr);
-	EXCHANGE_API float get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close = false);
-	EXCHANGE_API float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index = 0);
+	EXCHANGE_API double get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close = false);
+	EXCHANGE_API double get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index = 0);
 	EXCHANGE_API void get_id_max_market_feature(void *exchange_ptr, const char *column, unsigned int *res_ids, unsigned int count = 0, bool max = true);
 
 	EXCHANGE_API void* get_asset_ptr(void *exchange_ptr, unsigned int asset_name);

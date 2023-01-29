@@ -42,23 +42,23 @@ enum MARGIN_CHECK{
 #endif
 
 struct PerformanceStruct {
-    float risk_free_rate = 0;
-    float time_in_market = 0;
-    float average_time_in_market = 0;
+    double risk_free_rate = 0;
+    double time_in_market = 0;
+    double average_time_in_market = 0;
 
-    float pl = 0;
-    float average_return = 0;
-    float cumulative_return = 0;
-    float winrate = 0;
-    float cagr = 0;
-    float sharpe = 0;
-    float sortino = 0;
-    float max_drawdown = 0;
-    float longest_drawdown = 0;
+    double pl = 0;
+    double average_return = 0;
+    double cumulative_return = 0;
+    double winrate = 0;
+    double cagr = 0;
+    double sharpe = 0;
+    double sortino = 0;
+    double max_drawdown = 0;
+    double longest_drawdown = 0;
 
-    float volatility = 0;
-    float skew = 0;
-    float kurtosis = 0;
+    double volatility = 0;
+    double skew = 0;
+    double kurtosis = 0;
 
 };
 
@@ -67,7 +67,7 @@ struct cash_transfer {
 	unsigned int destination_broker_id;
 	timeval transfer_create_time; 
 	timeval transfer_recieved_time; 
-	float cash_amount;
+	double cash_amount;
 };
 
 class __Broker;
@@ -78,25 +78,25 @@ public:
      __Broker *broker;		 /**<pointer to the broker that is the parent of the account*/
 
     bool margin;
-	float cash;
-	float net_liquidation_value; /**<net liquidation value of the portfolio*/
-	float starting_cash;         /**<cash that the account started with used for resets*/
-    float margin_loan = 0;		 /**<outstanding margin loan balance of the account*/
-    float unrealized_pl = 0;	 /**<unrealized pl of all positions in the account*/
-    float realized_pl = 0;		 /**<realized pl of all positions in the account*/
+	double cash;
+	double net_liquidation_value; /**<net liquidation value of the portfolio*/
+	double starting_cash;         /**<cash that the account started with used for resets*/
+    double margin_loan = 0;		 /**<outstanding margin loan balance of the account*/
+    double unrealized_pl = 0;	 /**<unrealized pl of all positions in the account*/
+    double realized_pl = 0;		 /**<realized pl of all positions in the account*/
 
-	std::vector<float> cash_history; /**<cash held in the account at each timestep of the test*/
-	std::vector<float> nlv_history;  /**<net liquidation value of the account at each timestep of the test*/
+	std::vector<double> cash_history; /**<cash held in the account at each timestep of the test*/
+	std::vector<double> nlv_history;  /**<net liquidation value of the account at each timestep of the test*/
 
 	//Account's current portfolio, map between asset id and a position object with that asset
 	std::unordered_map<unsigned int, Position> portfolio; 
 
     void reset();
-    void build(float cash);
+    void build(double cash);
 	void set_margin(bool margin = false);
     void evaluate_account(bool on_close = false);
 
-    __Account(unsigned int _account_id, float cash){
+    __Account(unsigned int _account_id, double cash){
         this->account_id = _account_id;
         this->cash = cash;
 		this->starting_cash = cash;
@@ -115,19 +115,19 @@ public:
 	std::vector<Position> position_history;
 
 	unsigned int current_index = 0;
-	std::vector<float> cash_history;
-	std::vector<float> nlv_history;
-	std::vector<float> margin_history;
+	std::vector<double> cash_history;
+	std::vector<double> nlv_history;
+	std::vector<double> margin_history;
 
 	//friction settings for the broker
 	bool has_commission = false;
-	float commission = 0.0f;
-	float total_commission = 0; 
+	double commission = 0.0f;
+	double total_commission = 0; 
 
 	//margin settings
 	bool margin = false;
-	float margin_req = REG_T_REQ;
-	float short_margin_req = REG_T_SHORT_REQ;
+	double margin_req = REG_T_REQ;
+	double short_margin_req = REG_T_SHORT_REQ;
 
 	//exchanges visable to the broker;
 	std::unordered_map<unsigned int, __Exchange*> exchanges;
@@ -140,9 +140,9 @@ public:
 	unsigned int order_counter = 1;
 
 	//portfolio values 
-	float minimum_nlv = 2000;
+	double minimum_nlv = 2000;
 
-	void set_cash(float cash, unsigned int account_id = 0);
+	void set_cash(double cash, unsigned int account_id = 0);
 	void reset();
 	void clean_up();
 
@@ -158,10 +158,10 @@ public:
 	void log_close_position(Position &position);
 
 	//set commissions
-	void set_commission(float commission);
+	void set_commission(double commission);
 
 	//functions for managing margin balance 
-	void margin_on_reduce(Position &existing_position, float order_fill_price, float units);
+	void margin_on_reduce(Position &existing_position, double order_fill_price, double units);
 	void margin_on_increase(Position &new_position,std::unique_ptr<Order>& order);
 
 	//functions for managing which exchanges are visable to the broker
@@ -191,30 +191,30 @@ public:
 	//functions for managing margin 
 	#ifdef MARGIN
 	MARGIN_CHECK check_margin() noexcept;
-	void margin_adjustment(Position &new_position, float market_price);
+	void margin_adjustment(Position &new_position, double market_price);
 	#endif
 
 	//functions for managing positions
 	void increase_position(Position &existing_position, std::unique_ptr<Order>& order);
 	void reduce_position(Position &existing_position, std::unique_ptr<Order>& order);
 	void open_position(std::unique_ptr<Order>& order_filled);
-	void close_position(Position &existing_position, float fill_price, timeval order_fill_time);
+	void close_position(Position &existing_position, double fill_price, timeval order_fill_time);
 
 
 	//order wrapers exposed to strategy
-	void _place_market_order(OrderResponse *order_response, unsigned int asset_id, float units,
+	void _place_market_order(OrderResponse *order_response, unsigned int asset_id, double units,
 			bool cheat_on_close = false,
 			unsigned int exchange_id = 0,
 			unsigned int strategy_id = 0,
 			unsigned int account_id = 0);
-	void _place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit,
+	void _place_limit_order(OrderResponse *order_response, unsigned int asset_id, double units, double limit,
 			bool cheat_on_close = false,
 			unsigned int exchange_id = 0,
 			unsigned int strategy_id = 0,
 			unsigned int account_id = 0);
 
 	//functions for managing positions
-	float get_net_liquidation_value();
+	double get_net_liquidation_value();
 	bool _position_exists(int asset_id, int account_id = -1);
 
 	inline void evaluate_portfolio(bool on_close = false){
@@ -232,7 +232,7 @@ public:
 	};
 
 	template <class T>
-	void place_stoploss_order(T* parent, OrderResponse *order_response, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false) {
+	void place_stoploss_order(T* parent, OrderResponse *order_response, double units, double stop_loss, bool cheat_on_close = false, bool limit_pct = false) {
 		std::unique_ptr<Order> order(new StopLossOrder(
 			parent,
 			units,
@@ -258,15 +258,15 @@ extern "C" {
 	BROKER_API void reset_broker(void *broker_ptr);
 	BROKER_API void build_broker(void *broker_ptr);
 
-	BROKER_API void broker_set_commission(void* broker_ptr, float commission);
+	BROKER_API void broker_set_commission(void* broker_ptr, double commission);
 
 	BROKER_API void broker_register_exchange(void *broker_ptr, void *exchange_ptr);
 	BROKER_API void broker_register_account(void *broker_ptr, void *account_ptr);
 
 	BROKER_API size_t broker_get_history_length(void *broker_ptr);
-	BROKER_API float* broker_get_nlv_history(void *broker_ptr);
-	BROKER_API float* broker_get_cash_history(void *broker_ptr);
-	BROKER_API float* broker_get_margin_history(void *broker_ptr);
+	BROKER_API double* broker_get_nlv_history(void *broker_ptr);
+	BROKER_API double* broker_get_cash_history(void *broker_ptr);
+	BROKER_API double* broker_get_margin_history(void *broker_ptr);
 
 	BROKER_API int get_order_count(void *broker_ptr);
 	BROKER_API int get_position_count(void *broker_ptr);
@@ -280,32 +280,32 @@ extern "C" {
 	BROKER_API void * get_position_ptr(void *broker_ptr, unsigned int asset_id, unsigned int account_id = 0);
 	BROKER_API void get_orders(void *broker_ptr, OrderArray *orders, unsigned int exchange_id = 0);
 
-	BROKER_API float get_cash(void *broker_ptr, int account_id = -1);
-	BROKER_API float get_nlv(void *broker_ptr, int account_id = -1);
-	BROKER_API float get_unrealied_pl(void *broker_ptr, int account_id = -1);
-	BROKER_API float get_realied_pl(void *broker_ptr, int account_id = -1);
+	BROKER_API double get_cash(void *broker_ptr, int account_id = -1);
+	BROKER_API double get_nlv(void *broker_ptr, int account_id = -1);
+	BROKER_API double get_unrealied_pl(void *broker_ptr, int account_id = -1);
+	BROKER_API double get_realied_pl(void *broker_ptr, int account_id = -1);
 
-	BROKER_API void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units,
+	BROKER_API void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, double units,
 			bool cheat_on_close = false,
 			unsigned int exchange_id = 0,
 			unsigned int strategy_id = 0,
 			unsigned int account_id = 0);
-	BROKER_API void place_limit_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, float limit,
+	BROKER_API void place_limit_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, double units, double limit,
 			bool cheat_on_close = false,
 			unsigned int exchange_id = 0,
 			unsigned int strategy_id = 0,
 			unsigned int account_id = 0);
 
-	BROKER_API void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void *position_ptr, float units, float stop_loss, bool cheat_on_close = false, bool limit_pct = false);
-	BROKER_API void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0, bool limit_pct = false);
+	BROKER_API void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void *position_ptr, double units, double stop_loss, bool cheat_on_close = false, bool limit_pct = false);
+	BROKER_API void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, double units, double stop_loss, bool cheat_on_close = false, unsigned int exchange_id = 0, bool limit_pct = false);
 
-	ACCOUNT_API void * CreateAccountPtr(unsigned int account_id, float cash);
+	ACCOUNT_API void * CreateAccountPtr(unsigned int account_id, double cash);
 	ACCOUNT_API void DeleteAccountPtr(void *ptr);
     ACCOUNT_API void* GetAccountPtr(void * broker_ptr, unsigned int account_id);
 	
 	ACCOUNT_API size_t account_get_history_length(void *account_ptr);
-	ACCOUNT_API float* account_get_nlv_history(void *account_ptr);
-	ACCOUNT_API float* account_get_cash_history(void *account_ptr);
+	ACCOUNT_API double* account_get_nlv_history(void *account_ptr);
+	ACCOUNT_API double* account_get_cash_history(void *account_ptr);
 }
 
 #endif

@@ -46,7 +46,7 @@ class Exchange():
         Ex: Stock market price is 100, slippage is .01 -> you can buy for 101 or sell for 99
 
         Args:
-            slippage (float): % of slippage applied when exiting/entering a position
+            slippage (double): % of slippage applied when exiting/entering a position
         """
         Wrapper._exchange_set_slippage(self.ptr,slippage)
      
@@ -100,7 +100,7 @@ class Exchange():
             on_close (bool, optional): Get the current close price or open. Defaults to True.
 
         Returns:
-            float : market price
+            double : market price
         """
         asset_id = self.asset_map[asset_name]
         return Wrapper._get_market_price(
@@ -119,7 +119,7 @@ class Exchange():
             index (int, optional): which row to get. Defaults to 0 (current data).
 
         Returns:
-            float: current value of the column for the asset. Returns NAN if the asset is not currently 
+            double: current value of the column for the asset. Returns NAN if the asset is not currently 
             in the market view
         """
         asset_id = self.asset_map[asset_name]
@@ -209,7 +209,7 @@ class Asset():
     # -----------------------------------------------------------------------------
     def load_from_df(self, df : pd.DataFrame, nano = False):
         """Load a asset object from a pandas datafram. Note that the index must be a datetime index
-        that has a valid conversion to a float64 representation of epoch time.
+        that has a valid conversion to a double64 representation of epoch time.
 
         Args:
             df (pd.DataFrame): DataFrame to load into the asset
@@ -221,11 +221,11 @@ class Asset():
         if not self.registered:
             raise RuntimeError("Asset must be registered before loading data")
         
-        values = df.values.flatten().astype(np.float32)
+        values = df.values.flatten().astype(np.float64)
         epoch_index = df.index.values.astype(np.float64)
         if nano: epoch_index /=  1e9
         
-        values_p = values.ctypes.data_as(POINTER(c_float))
+        values_p = values.ctypes.data_as(POINTER(c_double))
         epoch_index_p = epoch_index.ctypes.data_as(POINTER(c_long))
         
         Wrapper._asset_from_pointer(

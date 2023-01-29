@@ -37,7 +37,7 @@ class Account():
         """_summary_
 
         Returns:
-            numpy array: an array of floats representing available cash at every time period 
+            numpy array: an array of doubles representing available cash at every time period 
         """
         cash_ptr = Wrapper._account_get_cash_history(self.ptr)
         return np.ctypeslib.as_array(cash_ptr, shape=(self.get_history_length(),))
@@ -47,7 +47,7 @@ class Account():
         """_summary_
 
         Returns:
-            numpy array: an array of floats representing net liquidation value at every time period 
+            numpy array: an array of doubles representing net liquidation value at every time period 
         """
         nlv_ptr = Wrapper._account_get_nlv_history(self.ptr)
         return np.ctypeslib.as_array(nlv_ptr, shape=(self.get_history_length(),))

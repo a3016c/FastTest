@@ -11,7 +11,7 @@ void __Account::reset(){
     this->portfolio.clear();
 }
 
-void __Account::build(float _cash){
+void __Account::build(double _cash){
     this->reset();
     this->cash = _cash;
     this->net_liquidation_value = _cash;
@@ -22,11 +22,11 @@ void __Account::set_margin(bool margin){
 }
 
 void __Account::evaluate_account(bool on_close){
-    float nlv = 0;
-    float collateral = 0;
-    float margin_req_mid;
+    double nlv = 0;
+    double collateral = 0;
+    double margin_req_mid;
     unsigned int asset_id;
-    float market_price;
+    double market_price;
 
     __Exchange *exchange;
     for (auto it = this->portfolio.begin(); it != this->portfolio.end();) {
@@ -55,8 +55,8 @@ void __Account::evaluate_account(bool on_close){
                 else{
                     margin_req_mid = this->broker->margin_req;
                 }
-                float new_collateral = abs(margin_req_mid * position.units*market_price);
-                float adjustment = (new_collateral - position.collateral);
+                double new_collateral = abs(margin_req_mid * position.units*market_price);
+                double adjustment = (new_collateral - position.collateral);
                 
                 if(position.units > 0){
                     this->cash += adjustment;
@@ -74,11 +74,11 @@ void __Account::evaluate_account(bool on_close){
             nlv += position.liquidation_value();
 
             if(this->margin){
-                float old_collateral = position.collateral;
+                double old_collateral = position.collateral;
                 this->broker->margin_adjustment(position, market_price);
 
                 //update the margin required to maintain the position. 
-                float adjustment = (position.collateral - old_collateral);
+                double adjustment = (position.collateral - old_collateral);
 
                 //if long position, add collateral to subtract off later to prevent double counting the
                 //value of the security 
@@ -97,7 +97,7 @@ void __Account::evaluate_account(bool on_close){
     }
     this->net_liquidation_value = nlv + this->cash - collateral;
 }
-void * CreateAccountPtr(unsigned int account_id, float cash) {
+void * CreateAccountPtr(unsigned int account_id, double cash) {
 	return new __Account(account_id, cash);
 }
 void DeleteAccountPtr(void *ptr) {
@@ -112,11 +112,11 @@ size_t account_get_history_length(void *account_ptr){
 	__Account * __account_ref = static_cast<__Account *>(account_ptr);
 	return __account_ref->nlv_history.size();
 }
-float * account_get_nlv_history(void *account_ptr) {
+double * account_get_nlv_history(void *account_ptr) {
 	__Account * __account_ref = static_cast<__Account *>(account_ptr);
 	return __account_ref->nlv_history.data();
 }
-float * account_get_cash_history(void *account_ptr) {
+double * account_get_cash_history(void *account_ptr) {
 	__Account * __account_ref = static_cast<__Account *>(account_ptr);
 	return __account_ref->cash_history.data();
 }

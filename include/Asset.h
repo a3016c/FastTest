@@ -68,7 +68,7 @@ public:
 };
 class __Asset {
 public:
-	float slippage = 0;
+	double slippage = 0;
 	ASSET_TYPE asset_type;    //type of asset
 	unsigned int asset_id;    // unique identifier of the asset
 	unsigned int exchange_id; //the id of the exchange the asset is listed on
@@ -85,7 +85,7 @@ public:
 	std::unordered_map<std::string, unsigned int> headers;
 	std::vector<timeval> datetime_index;
 	std::vector<long> epoch_index;
-	__AssetMatrix<float> AM;
+	__AssetMatrix<double> AM;
 	unsigned int current_index = 0;
 	unsigned int minimum_warmup = 0;
 
@@ -101,11 +101,11 @@ public:
 	//function to register a new header to provide easy access to underlying data
 	void _register_header(std::string header, unsigned int column_index);
 
-	//function to load an asset from a float pointer using specified dims
-	void _load_from_pointer(double *datetime_index,float *data, size_t rows, size_t columns);
+	//function to load an asset from a double pointer using specified dims
+	void _load_from_pointer(double *datetime_index,double *data, size_t rows, size_t columns);
 
 	//function to set the slippage rate of an asset
-	void _set_asset_slippage(float slippage);
+	void _set_asset_slippage(double slippage);
 
 	//function to set the minimum warmup period for a asset (allows indicators to load)
 	void _set_asset_warmup(unsigned int minimum_warmup);
@@ -116,13 +116,13 @@ public:
 	//functions for interfacing with the underlying data of the asset. If a size_t is passed
 	//then fetch the data using AssetMatrix api. If string is passed, use column map to pass through
 	//appropriate column index.
-	inline float get(size_t i) {
+	inline double get(size_t i) {
 		return AM(current_index - 1, i);
 	}
 	//if a column is provided as a string then lookup appropriate column index. Index param is used 
 	//as a row offset when querying the data.
 	unsigned int i;
-	inline float get(std::string &s, int index = 0) noexcept{
+	inline double get(std::string &s, int index = 0) noexcept{
 		i = this->headers[s];
 		return AM(this->current_index - 1 + index, i);
 	}
@@ -150,16 +150,16 @@ extern "C" {
 	ASSET_API bool AssetCompare(void *asset_ptr1, void *asset_ptr2);
 
 	ASSET_API void load_from_csv(void *ptr, const char* file_name);
-	ASSET_API void load_from_pointer(void *ptr, double *datetime_index, float *data, size_t rows, size_t columns);
+	ASSET_API void load_from_pointer(void *ptr, double *datetime_index, double *data, size_t rows, size_t columns);
 	ASSET_API void register_header(void *ptr, const char *header, unsigned int column_index);
-	ASSET_API float* get_data(void *ptr);
+	ASSET_API double* get_data(void *ptr);
 	ASSET_API size_t rows(void *ptr);
 	ASSET_API size_t columns(void *ptr);
 
 	ASSET_API void set_format(void *ptr, const char * dformat = "%d-%d-%d", size_t open = 0, size_t close = 1);
-	ASSET_API void set_asset_slippage(void *ptr, float slippage);
+	ASSET_API void set_asset_slippage(void *ptr, double slippage);
 	ASSET_API void set_asset_warmup(void *ptr, unsigned int minimum_warmup);
 	
 	ASSET_API long* get_asset_index(void *ptr);
-	ASSET_API float* get_asset_data(void *ptr);
+	ASSET_API double* get_asset_data(void *ptr);
 }

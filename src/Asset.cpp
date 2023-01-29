@@ -26,7 +26,7 @@ void __Asset::_register_header(std::string header, unsigned int column_index){
 	this->headers[header] = column_index;
 }
 
-void __Asset::_set_asset_slippage(float _slippage){
+void __Asset::_set_asset_slippage(double _slippage){
 	this->slippage = _slippage;
 }
 
@@ -34,7 +34,7 @@ void __Asset::_set_asset_warmup(unsigned int minimum_warmup){
 	this->minimum_warmup = minimum_warmup;
 }
 
-void __Asset::_load_from_pointer(double *datetime_index, float *data, size_t rows, size_t columns) {
+void __Asset::_load_from_pointer(double *datetime_index, double *data, size_t rows, size_t columns) {
 	size_t size = rows * columns;
 
 	double whole, fractional;
@@ -82,7 +82,7 @@ void __Asset::_load_from_csv(const char *file_name)
 		token = strtok(line_buffer, ",");
 		string_to_timeval(&tv, token, this->digit_datetime_format);
 		this->datetime_index.emplace_back(tv);
-		float _time = tv.tv_sec + tv.tv_usec / 1e6;
+		double _time = tv.tv_sec + tv.tv_usec / 1e6;
 		this->epoch_index.push_back(_time);
 
 		token = strtok(NULL, ",");
@@ -149,7 +149,7 @@ void load_from_csv(void *ptr, const char* file_name) {
 	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
 	__asset_ref->_load_from_csv(file_name);
 }
-void load_from_pointer(void *ptr, double *datetime_index, float *data, size_t rows, size_t columns){
+void load_from_pointer(void *ptr, double *datetime_index, double *data, size_t rows, size_t columns){
 	__Asset *__asset_ref = reinterpret_cast<__Asset *>(ptr);
 	__asset_ref->_load_from_pointer(datetime_index,data,rows,columns);
 }
@@ -158,7 +158,7 @@ void register_header(void *ptr, const char *header, unsigned int column_index){
 	std::string column_name(header);
 	__asset_ref->_register_header(column_name, column_index);
 }
-float* get_data(void *ptr) {
+double* get_data(void *ptr) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(ptr);
 	return &__asset_ref->AM.data[0];
 }
@@ -178,7 +178,7 @@ void set_format(void *ptr, const char * dformat, size_t open_col, size_t close_c
 	__asset_ref->close_col = close_col;
 	__asset_ref->format = format;
 }
-void set_asset_slippage(void *asset_ptr, float slippage) {
+void set_asset_slippage(void *asset_ptr, double slippage) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
 	__asset_ref->_set_asset_slippage(slippage);
 }
@@ -190,7 +190,7 @@ long * get_asset_index(void *asset_ptr) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
 	return __asset_ref->epoch_index.data();
 }
-float * get_asset_data(void *asset_ptr) {
+double * get_asset_data(void *asset_ptr) {
 	__Asset * __asset_ref = reinterpret_cast<__Asset *>(asset_ptr);
 	return __asset_ref->AM.data.data();
 }

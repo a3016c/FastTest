@@ -40,7 +40,7 @@ void __Broker::clean_up(){
 	this->perfomance.winrate /= position_count;
 }
 
-void __Broker::set_commission(float commission){
+void __Broker::set_commission(double commission){
 	this->commission = commission;
 	if(this->commission > 0){
 		this->has_commission = true;
@@ -129,8 +129,8 @@ void __Broker::analyze_step() {
 	}
 }
 
-float __Broker::get_net_liquidation_value() {
-	float nlv = 0;
+double __Broker::get_net_liquidation_value() {
+	double nlv = 0;
 	for(auto & pair : this->accounts){
 		__Account* account = pair.second;
 		for (auto & position : account->portfolio) {
@@ -141,33 +141,33 @@ float __Broker::get_net_liquidation_value() {
 	return nlv;
 }
 
-void __Broker::margin_adjustment(Position &position, float market_price){
-	float margin_req_mid;
+void __Broker::margin_adjustment(Position &position, double market_price){
+	double margin_req_mid;
 	if(position.units < 0){
 		margin_req_mid = this->short_margin_req;
 	}
 	else{
 		margin_req_mid = this->margin_req;
 	}
-	float new_collateral = abs(margin_req_mid* position.units*market_price);
-	float adjustment = (new_collateral - position.collateral);
+	double new_collateral = abs(margin_req_mid* position.units*market_price);
+	double adjustment = (new_collateral - position.collateral);
 	position.collateral = new_collateral;
 }
 
 void __Broker::margin_on_increase(Position &new_position, std::unique_ptr<Order> &order){
 		//set the appropriate margin requirment for the position
-		float margin_req_mid;
+		double margin_req_mid;
 		if(new_position.units < 0){
 			margin_req_mid = this->short_margin_req;
 		}
 		else{
 			margin_req_mid = this->margin_req;
 		}
-		float order_fill_price = order->fill_price;
+		double order_fill_price = order->fill_price;
 		//if is margin account, calculate the colateral needed to maintain the trade and the 
 		//margin loan provided by the broker. Subtract collateral from the cash available.
-		float collateral = abs(margin_req_mid * order->units*order_fill_price);
-		float loan = abs((1-margin_req_mid) * order->units*order_fill_price);
+		double collateral = abs(margin_req_mid * order->units*order_fill_price);
+		double loan = abs((1-margin_req_mid) * order->units*order_fill_price);
 
 		auto & account = this->accounts[new_position.account_id];
 		//remove collateral required for the position from the cash in the account
@@ -183,9 +183,9 @@ void __Broker::margin_on_increase(Position &new_position, std::unique_ptr<Order>
 		new_position.margin_loan += loan;
 }
 
-void __Broker::margin_on_reduce(Position &existing_position, float order_fill_price, float units){
-	float pct_reduce = abs(units/existing_position.units);
-	float collateral_free = existing_position.collateral*pct_reduce;
+void __Broker::margin_on_reduce(Position &existing_position, double order_fill_price, double units){
+	double pct_reduce = abs(units/existing_position.units);
+	double collateral_free = existing_position.collateral*pct_reduce;
 	auto & account = this->accounts[existing_position.account_id];
 
 	//free the collateral from the position and remove the margin loan
@@ -201,7 +201,7 @@ void __Broker::margin_on_reduce(Position &existing_position, float order_fill_pr
 }
 
 void __Broker::open_position(std::unique_ptr<Order> &order) {
-	float order_fill_price = order->fill_price;
+	double order_fill_price = order->fill_price;
 
 	//build new position from the order informtion
 	Position new_position = Position{
@@ -247,7 +247,7 @@ void __Broker::open_position(std::unique_ptr<Order> &order) {
 	}
 }
 
-void __Broker::close_position(Position &existing_position, float order_fill_price, timeval order_fill_time) {
+void __Broker::close_position(Position &existing_position, double order_fill_price, timeval order_fill_time) {
 	//note: this function does not remove the position from the portfolio so this should not
 	//be called directly in order to close a position. Close position through a appropriate order.
 	
@@ -347,7 +347,7 @@ MARGIN_CHECK __Broker::check_margin() noexcept{
 		return VALID_ACCOUNT_STATUS;
 	}
 
-	float margin = 0;
+	double margin = 0;
 	for(const auto & pair : this->accounts){
 		margin += pair.second->net_liquidation_value;
 		//check to see if any account has negative cash balance
@@ -365,7 +365,7 @@ MARGIN_CHECK __Broker::check_margin() noexcept{
 #ifdef CHECK_ORDER
 
 ORDER_CHECK __Broker::check_position_open(const std::unique_ptr<Order>& new_order){
-	float new_position_units = new_order->units;
+	double new_position_units = new_order->units;
 	unsigned int new_position_asset_id = new_order->asset_id;
 
 	//check to see if this order will open a new position
@@ -431,12 +431,12 @@ ORDER_CHECK __Broker::check_market_order(const MarketOrder* market_order) {
 	}
 
 	unsigned int asset_id = market_order->asset_id;
-	float units = market_order->units;
+	double units = market_order->units;
 
 	__Exchange *exchange = this->exchanges[market_order->exchange_id];
 	auto &account = this->accounts[market_order->account_id];
 
-	float market_price = exchange->_get_market_price(asset_id);
+	double market_price = exchange->_get_market_price(asset_id);
 
 	if(!this->_position_exists(asset_id)){
 		auto & account = this->accounts[market_order->account_id];
@@ -517,7 +517,7 @@ void __Broker::send_order(std::unique_ptr<Order> new_order,OrderResponse *order_
 	this->order_counter++;
 	
 }
-void __Broker::_place_market_order(OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
+void __Broker::_place_market_order(OrderResponse *order_response, unsigned int asset_id, double units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
 	
 	if(this->debug){
 		printf("PLACING MARKER ORDER, ASSET_ID: %i TO EXCHANGE_ID: %i\n",asset_id, exchange_id);
@@ -544,7 +544,7 @@ void __Broker::_place_market_order(OrderResponse *order_response, unsigned int a
 #endif
 	this->send_order(std::move(order), order_response);
 }
-void __Broker::_place_limit_order(OrderResponse *order_response, unsigned int asset_id, float units, float limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
+void __Broker::_place_limit_order(OrderResponse *order_response, unsigned int asset_id, double units, double limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
 	std::unique_ptr<Order> order(new LimitOrder(
 		asset_id,
 		units,
@@ -629,7 +629,7 @@ bool __Broker::_position_exists(int asset_id, int account_id) {
 	}
 	return false;
 }
-void __Broker::set_cash(float cash, unsigned int account_id) {
+void __Broker::set_cash(double cash, unsigned int account_id) {
 	auto & account = this->accounts[account_id];
 	account->cash = cash;
 }
@@ -669,7 +669,7 @@ void build_broker(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->build();
 }
-void broker_set_commission(void* broker_ptr, float commission){
+void broker_set_commission(void* broker_ptr, double commission){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__broker_ref->set_commission(commission);
 }
@@ -683,10 +683,10 @@ void broker_register_account(void *broker_ptr, void * account_ptr){
 	__Account *__account_ref = static_cast<__Account *>(account_ptr);
 	__broker_ref->_broker_register_account(__account_ref);
 }
-float get_cash(void *broker_ptr, int account_id){
+double get_cash(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	if(account_id == -1){
-		float cash = 0;
+		double cash = 0;
 		for (const auto & pair : __broker_ref->accounts){
 			cash += pair.second->cash;
 		}
@@ -697,10 +697,10 @@ float get_cash(void *broker_ptr, int account_id){
 		return __broker_ref->accounts[uid]->cash;
 	}
 }
-float get_nlv(void *broker_ptr, int account_id){
+double get_nlv(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	if(account_id == -1){
-		float nlv = 0;
+		double nlv = 0;
 		for (const auto & pair : __broker_ref->accounts){
 			nlv += pair.second->net_liquidation_value;
 		}
@@ -711,10 +711,10 @@ float get_nlv(void *broker_ptr, int account_id){
 		return __broker_ref->accounts[uid]->net_liquidation_value;
 	}
 }
-float get_unrealized_pl(void *broker_ptr, int account_id){
+double get_unrealized_pl(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	if(account_id == -1){
-		float upl = 0;
+		double upl = 0;
 		for (const auto & pair : __broker_ref->accounts){
 			upl += pair.second->unrealized_pl;
 		}
@@ -725,10 +725,10 @@ float get_unrealized_pl(void *broker_ptr, int account_id){
 		return __broker_ref->accounts[uid]->unrealized_pl;
 	}
 }
-float get_realized_pl(void *broker_ptr, int account_id){
+double get_realized_pl(void *broker_ptr, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	if(account_id == -1){
-		float pl = 0;
+		double pl = 0;
 		for (const auto & pair : __broker_ref->accounts){
 			pl += pair.second->realized_pl;
 		}
@@ -759,7 +759,7 @@ bool position_exists(void *broker_ptr, unsigned int asset_id, int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->_position_exists(asset_id, account_id);
 }
-void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, float units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
+void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigned int asset_id, double units, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	try{
 		__broker_ref->_place_market_order(order_response, asset_id, units, cheat_on_close, exchange_id, strategy_id, account_id);
@@ -768,7 +768,7 @@ void place_market_order(void *broker_ptr, OrderResponse *order_response, unsigne
 		if(__broker_ref->debug){std::cerr << e.what() << std::endl;}
 	}
 }
-void place_limit_order(void *broker_ptr, OrderResponse *order_response,  unsigned int asset_id, float units, float limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id){
+void place_limit_order(void *broker_ptr, OrderResponse *order_response,  unsigned int asset_id, double units, double limit, bool cheat_on_close, unsigned int exchange_id, unsigned int strategy_id, unsigned int account_id){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	try{
 		__broker_ref->_place_limit_order(order_response, asset_id, units, limit, cheat_on_close, exchange_id, strategy_id, account_id);
@@ -777,14 +777,14 @@ void place_limit_order(void *broker_ptr, OrderResponse *order_response,  unsigne
 		if(__broker_ref->debug){std::cerr << e.what() << std::endl;}
 	}
 }
-void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void * position_ptr, float units, float stop_loss, bool cheat_on_close, bool limit_pct){
+void position_add_stoploss(void *broker_ptr, OrderResponse *order_response, void * position_ptr, double units, double stop_loss, bool cheat_on_close, bool limit_pct){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	Position * __position_ref = static_cast<Position *>(position_ptr);
 	__broker_ref->place_stoploss_order(
 		__position_ref, order_response, units, stop_loss, cheat_on_close, limit_pct
 	);
 }
-void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, float units, float stop_loss, bool cheat_on_clos, unsigned int exchange_id, bool limit_pct){
+void order_add_stoploss(void *broker_ptr, OrderResponse *order_response, unsigned int order_id, double units, double stop_loss, bool cheat_on_clos, unsigned int exchange_id, bool limit_pct){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	__Exchange *exchange = __broker_ref->exchanges[exchange_id];
 	for (auto& order : exchange->orders){
@@ -801,15 +801,15 @@ size_t broker_get_history_length(void *broker_ptr){
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->nlv_history.size();
 }
-float * broker_get_nlv_history(void *broker_ptr) {
+double * broker_get_nlv_history(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->nlv_history.data();
 }
-float * broker_get_cash_history(void *broker_ptr) {
+double * broker_get_cash_history(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->cash_history.data();
 }
-float * broker_get_margin_history(void *broker_ptr) {
+double * broker_get_margin_history(void *broker_ptr) {
 	__Broker * __broker_ref = static_cast<__Broker *>(broker_ptr);
 	return __broker_ref->margin_history.data();
 }

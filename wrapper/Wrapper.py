@@ -1,5 +1,5 @@
 import time
-from ctypes import c_void_p, c_uint, c_float, pointer, POINTER, Structure, c_long
+from ctypes import c_void_p, c_uint, c_double, pointer, POINTER, Structure, c_long
 from ctypes import c_bool, cast, c_size_t, c_int, c_char_p, cdll
 import os 
 import sys
@@ -52,8 +52,8 @@ class OrderStruct(Structure):
         ('asset_id',c_uint),
         ('strategy_id',c_uint),
         ('exchange_id',c_uint),
-        ('units',c_float),
-        ('fill_price',c_float),
+        ('units',c_double),
+        ('fill_price',c_double),
         ('order_create_time',c_long),
         ('order_fill_time',c_long)
     ]
@@ -102,9 +102,9 @@ class OrderHistoryStruct(Structure):
 class PositionStruct(Structure):
     
     _fields_ = [
-        ('average_price', c_float),
-        ('close_price', c_float),
-        ('units',c_float),
+        ('average_price', c_double),
+        ('close_price', c_double),
+        ('units',c_double),
         
         ('bars_held', c_uint),
         ('bars_since_change', c_uint),
@@ -118,8 +118,8 @@ class PositionStruct(Structure):
         ('position_create_time',c_long),
         ('position_close_time',c_long),
         
-        ('realized_pl', c_float),
-        ('unrealized_pl', c_float)
+        ('realized_pl', c_double),
+        ('unrealized_pl', c_double)
     ]
     
     asset_name = ""
@@ -241,7 +241,7 @@ _asset_from_csv = FastTest.load_from_csv
 _asset_from_csv.argtypes = [c_void_p,c_char_p]
 
 _asset_from_pointer = FastTest.load_from_pointer
-_asset_from_pointer.argtypes = [c_void_p, POINTER(c_long), POINTER(c_float), c_size_t, c_size_t]
+_asset_from_pointer.argtypes = [c_void_p, POINTER(c_long), POINTER(c_double), c_size_t, c_size_t]
 
 _register_header = FastTest.register_header
 _register_header.argtypes = [c_void_p, c_char_p, c_uint]
@@ -254,7 +254,7 @@ _columns.argtypes = [c_void_p]
 _columns.restype = c_size_t
 
 _set_asset_slippage = FastTest.set_asset_slippage
-_set_asset_slippage.argtypes = [c_void_p, c_float]
+_set_asset_slippage.argtypes = [c_void_p, c_double]
 
 _set_asset_warmup = FastTest.set_asset_warmup
 _set_asset_warmup.argtypes = [c_void_p, c_uint]
@@ -265,7 +265,7 @@ _get_asset_index.restype = POINTER(c_long)
 
 _get_asset_data = FastTest.get_asset_data
 _get_asset_data.argtypes = [c_void_p]
-_get_asset_data.restype = POINTER(c_float)
+_get_asset_data.restype = POINTER(c_double)
 
 """BROKER WRAPPER"""
 _new_broker_ptr = FastTest.CreateBrokerPtr
@@ -282,7 +282,7 @@ _build_broker = FastTest.build_broker
 _build_broker.argtypes = [c_void_p]
 
 _broker_set_commission = FastTest.broker_set_commission
-_broker_set_commission.argtypes = [c_void_p, c_float]
+_broker_set_commission.argtypes = [c_void_p, c_double]
 
 _broker_register_exchange = FastTest.broker_register_exchange
 _broker_register_exchange.argtypes = [c_void_p, c_void_p]
@@ -304,11 +304,11 @@ _get_open_position_count.restype = c_int
 
 _get_nlv = FastTest.get_nlv
 _get_nlv.argtypes = [c_void_p, c_int]
-_get_nlv.restype = c_float
+_get_nlv.restype = c_double
 
 _get_cash = FastTest.get_cash
 _get_cash.argtypes = [c_void_p, c_int]
-_get_cash.restype = c_float
+_get_cash.restype = c_double
 
 _position_exists = FastTest.position_exists
 _position_exists.argtypes = [c_void_p, c_uint, c_int]
@@ -320,15 +320,15 @@ _broker_get_history_length.restype = c_size_t
 
 _broker_get_nlv_history = FastTest.broker_get_nlv_history
 _broker_get_nlv_history.argtypes = [c_void_p]
-_broker_get_nlv_history.restype = POINTER(c_float)
+_broker_get_nlv_history.restype = POINTER(c_double)
 
 _broker_get_cash_history = FastTest.broker_get_cash_history
 _broker_get_cash_history.argtypes = [c_void_p]
-_broker_get_cash_history.restype = POINTER(c_float)
+_broker_get_cash_history.restype = POINTER(c_double)
 
 _broker_get_margin_history = FastTest.broker_get_margin_history
 _broker_get_margin_history.argtypes = [c_void_p]
-_broker_get_margin_history.restype = POINTER(c_float)
+_broker_get_margin_history.restype = POINTER(c_double)
 
 _get_order_history = FastTest.get_order_history
 _get_order_history.argtypes = [c_void_p,POINTER(OrderHistoryStruct)]
@@ -337,10 +337,10 @@ _get_position_history = FastTest.get_position_history
 _get_position_history.argtypes = [c_void_p,POINTER(PositionArrayStruct)]
 
 _place_market_order = FastTest.place_market_order
-_place_market_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_bool, c_uint, c_uint, c_uint]
+_place_market_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_double, c_bool, c_uint, c_uint, c_uint]
 
 _place_limit_order = FastTest.place_limit_order
-_place_limit_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_uint, c_uint, c_uint]
+_place_limit_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_double, c_double, c_bool, c_uint, c_uint, c_uint]
 
 _get_position_ptr = FastTest.get_position_ptr
 _get_position_ptr.argtypes = [c_void_p, c_uint, c_uint]
@@ -353,14 +353,14 @@ _get_position = FastTest.get_position
 _get_position.argtypes = [c_void_p,c_uint,POINTER(PositionStruct), c_uint]
 
 _position_place_stoploss_order = FastTest.position_add_stoploss
-_position_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_void_p, c_float, c_float, c_bool, c_bool]
+_position_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_void_p, c_double, c_double, c_bool, c_bool]
 
 _order_place_stoploss_order = FastTest.order_add_stoploss
-_order_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_float, c_float, c_bool, c_bool]
+_order_place_stoploss_order.argtypes = [c_void_p, POINTER(OrderResponse), c_uint, c_double, c_double, c_bool, c_bool]
 
 """ACCOUNT WRAPPER"""
 _new_account_ptr = FastTest.CreateAccountPtr
-_new_account_ptr.argtypes = [c_uint, c_float]
+_new_account_ptr.argtypes = [c_uint, c_double]
 _new_account_ptr.restype = c_void_p
 
 _free_account_ptr = FastTest.DeleteAccountPtr
@@ -375,11 +375,11 @@ _account_get_history_length.restype = c_size_t
 
 _account_get_nlv_history = FastTest.account_get_nlv_history
 _account_get_nlv_history.argtypes = [c_void_p]
-_account_get_nlv_history.restype = POINTER(c_float)
+_account_get_nlv_history.restype = POINTER(c_double)
 
 _account_get_cash_history = FastTest.account_get_cash_history
 _account_get_cash_history.argtypes = [c_void_p]
-_account_get_cash_history.restype = POINTER(c_float)
+_account_get_cash_history.restype = POINTER(c_double)
 
 """ORDER WRAPPER"""
 _order_type = FastTest.order_type
@@ -402,22 +402,22 @@ _exchange_is_registered.argtypes = [c_void_p]
 _exchange_is_registered.restype = c_bool
 
 _exchange_set_slippage = FastTest.set_slippage
-_exchange_set_slippage.argtypes = [c_void_p, c_float]
+_exchange_set_slippage.argtypes = [c_void_p, c_double]
 
 _register_asset = FastTest.register_asset 
 _register_asset.argtypes = [c_void_p,c_void_p]
 
 _get_market_price = FastTest.get_market_price
 _get_market_price.argtypes = [c_void_p,c_uint,c_bool]
-_get_market_price.restype = c_float
+_get_market_price.restype = c_double
 
 _get_market_feature = FastTest.get_market_feature
 _get_market_feature.argtypes = [c_void_p,c_uint,c_char_p, c_int]
-_get_market_feature.restype = c_float
+_get_market_feature.restype = c_double
 
 _get_id_max_market_feature = FastTest.get_id_max_market_feature
 _get_id_max_market_feature.argtypes = [c_void_p,c_char_p,POINTER(c_uint),c_uint,c_bool]
-_get_id_max_market_feature.restype = c_float
+_get_id_max_market_feature.restype = c_double
 
 _get_market_view = FastTest.get_market_view
 _get_market_view.argtypes = [c_void_p]

@@ -21,8 +21,8 @@ struct order_schedule {
 	OrderType order_type = MARKET_ORDER;
 	unsigned int asset_id;
 	int i;
-	float units;
-	float limit = 0;
+	double units;
+	double limit = 0;
 };
 
 class TestStrategy : public Strategy {

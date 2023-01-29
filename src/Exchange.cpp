@@ -121,19 +121,19 @@ void __Exchange::clean_up_market(std::vector<std::unique_ptr<Order>> & canceled_
 	this->asset_counter--;
 }
 
-void __Exchange::_set_slippage(float _slippage){
+void __Exchange::_set_slippage(double _slippage){
 	for(auto& pair : this->market){
 		pair.second.slippage = _slippage;
 	}
 	this->has_slippage = true;
 }
 
-float __Exchange::apply_slippage(unsigned int asset_id, float market_price, float units){
-	float asset_slippage = this->market[asset_id].slippage;
+double __Exchange::apply_slippage(unsigned int asset_id, double market_price, double units){
+	double asset_slippage = this->market[asset_id].slippage;
 	if(asset_slippage == 0){
 		return market_price;
 	}
-	float fill_price;
+	double fill_price;
 	if(units > 0){
 		fill_price = market_price * (1 + asset_slippage);
 		this->total_slippage += ((fill_price - market_price) * units);
@@ -147,7 +147,7 @@ float __Exchange::apply_slippage(unsigned int asset_id, float market_price, floa
 }
 
 void __Exchange::process_market_order(MarketOrder * const open_order) {
-	float market_price = _get_market_price(open_order->asset_id, open_order->cheat_on_close);
+	double market_price = _get_market_price(open_order->asset_id, open_order->cheat_on_close);
 	if (isnan(market_price)) { 
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
@@ -158,7 +158,7 @@ void __Exchange::process_market_order(MarketOrder * const open_order) {
 }
 
 void __Exchange::process_limit_order(LimitOrder *const open_order, bool on_close) {
-	float market_price = _get_market_price(open_order->asset_id, on_close);
+	double market_price = _get_market_price(open_order->asset_id, on_close);
 	if (isnan(market_price)) {
 		throw std::invalid_argument("recieved order for which asset has no market price");
 	}
@@ -173,7 +173,7 @@ void __Exchange::process_limit_order(LimitOrder *const open_order, bool on_close
 }
 
 void __Exchange::process_stoploss_order(StopLossOrder *const open_order, bool on_close){
-	float market_price = _get_market_price(open_order->asset_id, on_close);
+	double market_price = _get_market_price(open_order->asset_id, on_close);
 	if ((open_order->units < 0) & (market_price <= open_order->stop_loss)) {
 		if(this->has_slippage){market_price = this->apply_slippage(open_order->asset_id,market_price,open_order->units);}
 		open_order->fill(market_price, this->current_time);
@@ -328,7 +328,7 @@ bool _is_registered(void *exchange_ptr) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	return __exchange_ref->is_registered;
 }
-void set_slippage(void *exchange_ptr, float slippage) {
+void set_slippage(void *exchange_ptr, double slippage) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->_set_slippage(slippage);
 }
@@ -361,16 +361,16 @@ void get_market_view(void *exchange_ptr) {
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	__exchange_ref->_get_market_view();
 }
-float get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close) {
+double get_market_price(void *exchange_ptr, unsigned int asset_id, bool on_close) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
-	float price =  __exchange_ref->_get_market_price(asset_id, on_close);
+	double price =  __exchange_ref->_get_market_price(asset_id, on_close);
 	return price;
 }
 void* get_asset_ptr(void *exchange_ptr, unsigned int asset_id) {
 	__Exchange * __exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	return &__exchange_ref->market[asset_id];
 }
-float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index) {
+double get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *column, int index) {
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	std::string column_str(column);
 	return __exchange_ref->_get_market_feature(asset_id,column_str, index);
@@ -378,7 +378,7 @@ float get_market_feature(void *exchange_ptr, unsigned int asset_id, const char *
 void get_id_max_market_feature(void *exchange_ptr, const char *column, unsigned int *res_ids, unsigned int count, bool max){
 	__Exchange *__exchange_ref = static_cast<__Exchange *>(exchange_ptr);
 	std::string column_str(column);
-	std::map<unsigned int, float> id_feature_map;
+	std::map<unsigned int, double> id_feature_map;
 
 	for(auto const & pair : __exchange_ref->market_view){
 		unsigned int asset_id = pair.first;
