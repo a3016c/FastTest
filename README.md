@@ -12,7 +12,7 @@ cd build
 make
 ```
 
-Google Colab
+## Google Colab
 To avoid any build problems you can use Google Colab which has been tested. To install:
 ```bash
 !git clone https://github.com/ntorm1/FastTest.git
