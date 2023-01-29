@@ -131,11 +131,14 @@ class MA_Cross_Strategy(Strategy):
         self.position_size = .9 * (100000/asset_count)
         
     def next(self):
+        #pull in the data needed to calcuate moving average crossovers
         slow_ma_dict = {asset_name : self.exchange.get(asset_name, "slow_ma") for asset_name in self.asset_names}
         fast_ma_dict = {asset_name : self.exchange.get(asset_name, "fast_ma") for asset_name in self.asset_names}
 
         for key in slow_ma_dict:
+            #check to see if the asset is currently tradeable
             if not math.isnan(slow_ma_dict[key]):
+                #check to see if a position with the same asset currently exists
                 if not self.broker.position_exists(key,self.exchange.exchange_name):
                     
                     market_price = self.exchange.get_market_price(key)
@@ -147,6 +150,7 @@ class MA_Cross_Strategy(Strategy):
                     self.broker.place_market_order(key, units)
                     
                 else:
+                    #get the open position with the same asset name
                     position = self.broker.get_position(key, self.exchange.exchange_name)
                     fast = fast_ma_dict[key]
                     slow = slow_ma_dict[key]
@@ -175,6 +179,8 @@ class MA_Cross_Strategy(Strategy):
             
 if __name__ == "__main__":
     #-----------------------------------------------------------------------------
+    #----FASTTEST----
+    #-----------------------------------------------------------------------------
     st = time.time()
     ft = FastTest(logging=False, debug=False)
     exchange = Exchange()
@@ -196,7 +202,10 @@ if __name__ == "__main__":
     et = time.time()
     cps_ft = ma_cross_strategy.candle_count / (et-st)
     print(f"FastTest completed in {et-st:.6f} seconds")
-    print(f"FastTest candles per seconds: {cps_ft:.2f}\n")    
+    print(f"FastTest candles per seconds: {cps_ft:.2f}\n")  
+      
+    #-----------------------------------------------------------------------------
+    #----BACKTRADER----
     #-----------------------------------------------------------------------------
     st = time.time()
     cerebro = bt.Cerebro()
