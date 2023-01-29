@@ -322,8 +322,8 @@ class FastTest:
         
         if _from is not None:
             asset_df = asset_df[asset_df.index > _from]
-            asset_df = asset_df[asset_df.index > _from]
-            asset_df = asset_df[asset_df.index > _from]
+            opens = opens[opens.index > _from]
+            closes = closes[closes.index > _from]
         if _to is not None:
             asset_df = asset_df[asset_df.index < _to]
             opens = opens[opens.index < _to]
