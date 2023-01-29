@@ -37,14 +37,29 @@ class Exchange():
         
     # -----------------------------------------------------------------------------
     def is_registered(self):
+        #check if the exchange is registered to a fasttest object
         return Wrapper._exchange_is_registered(self.ptr)
     
     # -----------------------------------------------------------------------------
     def set_slippage(self, slippage : float):
+        """Set the slippage amount as a percentage of the asset's price
+        Ex: Stock market price is 100, slippage is .01 -> you can buy for 101 or sell for 99
+
+        Args:
+            slippage (float): % of slippage applied when exiting/entering a position
+        """
         Wrapper._exchange_set_slippage(self.ptr,slippage)
      
     # -----------------------------------------------------------------------------   
     def register_asset(self, asset):
+        """Register a asset to this exchange. A asset can only be registered to one exchange
+
+        Args:
+            asset (Asset): asset to register
+
+        Raises:
+            Exception: if the asset is already registered
+        """
         if self.asset_map.get(asset.asset_name) != None:
             raise Exception("Asset already exists on exchange")
         
@@ -56,24 +71,37 @@ class Exchange():
       
     # -----------------------------------------------------------------------------  
     def build(self):
+        #function to allow c++ object to build
         Wrapper._build_exchange(self.ptr)
         
     # -----------------------------------------------------------------------------
     def get_exchange_index_length(self):
+        #get the length of the datetime index of the entire test
         return Wrapper._get_exchange_index_length(self.ptr)
       
     # -----------------------------------------------------------------------------  
     def get_datetime_index(self):
+        #get the test datetime index, a union of each indivual asset's datetime index
         index_ptr = Wrapper._get_exchange_datetime_index(self.ptr)
         length = self.get_exchange_index_length()
         return np.ctypeslib.as_array(index_ptr, shape=(length,))
     
     # -----------------------------------------------------------------------------
     def get_asset_name(self, asset_id):
+        #asset_id -> asset_name
         return self.id_map[asset_id]
 
     # -----------------------------------------------------------------------------
     def get_market_price(self, asset_name : str, on_close = True):
+        """Get the current market price of an asset
+
+        Args:
+            asset_name (str): name of the asset for which to get the price
+            on_close (bool, optional): Get the current close price or open. Defaults to True.
+
+        Returns:
+            float : market price
+        """
         asset_id = self.asset_map[asset_name]
         return Wrapper._get_market_price(
             self.ptr, 
@@ -83,6 +111,17 @@ class Exchange():
        
     # ----------------------------------------------------------------------------- 
     def get(self, asset_name : str, column : str, index = 0):
+        """Get data for a specific asset and specific column
+
+        Args:
+            asset_name (str): name of the asset to query
+            column (str): which column to get 
+            index (int, optional): which row to get. Defaults to 0 (current data).
+
+        Returns:
+            float: current value of the column for the asset. Returns NAN if the asset is not currently 
+            in the market view
+        """
         asset_id = self.asset_map[asset_name]
         return Wrapper._get_market_feature(
             self.ptr, 
@@ -116,6 +155,7 @@ class Exchange():
 
     # -----------------------------------------------------------------------------
     def asset_count(self):
+        #get count of number of assets on the exchange
         return Wrapper._asset_count(self.ptr)
 
 class Asset():
@@ -133,6 +173,7 @@ class Asset():
         
     # -----------------------------------------------------------------------------
     def load_ptr(self):
+        #allocate c++ asset object 
         if self.asset_id == None:
             raise RuntimeError("Asset doest not have and ID")
         self.ptr = Wrapper._new_asset_ptr(self.asset_id, self.exchange_id)
@@ -147,6 +188,7 @@ class Asset():
         
     # -----------------------------------------------------------------------------
     def generate_random(self, step_size : int, num_steps : int):
+        #generate a asset's data with an arithmatic random walk
         steps = np.random.uniform(-step_size, step_size, num_steps)
         df = pd.DataFrame(
             data = 100 + np.cumsum(steps),
@@ -166,6 +208,16 @@ class Asset():
         
     # -----------------------------------------------------------------------------
     def load_from_df(self, df : pd.DataFrame, nano = False):
+        """Load a asset object from a pandas datafram. Note that the index must be a datetime index
+        that has a valid conversion to a float64 representation of epoch time.
+
+        Args:
+            df (pd.DataFrame): DataFrame to load into the asset
+            nano (bool, optional): wether or not to convert index from nanoseconds to seconds
+
+        Raises:
+            RuntimeError: _description_
+        """
         if not self.registered:
             raise RuntimeError("Asset must be registered before loading data")
         
@@ -242,6 +294,7 @@ class Asset():
         
     # -----------------------------------------------------------------------------
     def set_slippage(self, slippage : float):
+        #see exchange set_slippage. This allows for assets to have indivual slippage settings
         Wrapper._set_asset_slippage(self.ptr, slippage)
 
     # -----------------------------------------------------------------------------

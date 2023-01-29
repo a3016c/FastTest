@@ -65,14 +65,17 @@ class Broker():
     
     # -----------------------------------------------------------------------------                 
     def get_order_count(self):
+        #get total mumber of orders taken across the fasttest
         return Wrapper._get_order_count(self.ptr)
         
     # -----------------------------------------------------------------------------
     def get_total_position_count(self):
+        #get the total number positions taken across the fasttest
         return Wrapper._get_position_count(self.ptr)
     
     # -----------------------------------------------------------------------------
     def get_open_position_count(self):
+        #get the number of open positions currently
         return Wrapper._get_open_position_count(self.ptr)
     
     # -----------------------------------------------------------------------------
@@ -213,6 +216,7 @@ class Broker():
     
     # -----------------------------------------------------------------------------  
     def get_order_history(self):
+        #get a OrderHistoryStruct with information regarding all the orders placed
         order_count = self.get_order_count()
         order_history = Wrapper.OrderHistoryStruct(order_count)
         order_struct_pointer = pointer(order_history)
@@ -221,6 +225,7 @@ class Broker():
     
     # -----------------------------------------------------------------------------
     def get_position_history(self):
+        #get a PositionArrayStruct with information regarding all the positions taken
         position_count = self.get_total_position_count()
         position_history = Wrapper.PositionArrayStruct(position_count)
         position_struct_pointer = pointer(position_history)

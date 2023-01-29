@@ -371,7 +371,7 @@ class FastTest:
                 backtest_df[account_name] = account.get_nlv_history()
                 first = backtest_df[account_name].values[0]
                 backtest_df[account_name] = (backtest_df[account_name] - first) / first
-                ax2.plot(datetime_index, backtest_df[account_name], label = account_name, alpha = .6)
+                ax2.plot(datetime_index, backtest_df[account_name], label = f"{account_name} Strategy", alpha = .6)
         
         first = backtest_df["nlv"].values[0]
         ax2.plot(datetime_index, (backtest_df["nlv"] - first) / first, label = "Total NLV")
@@ -394,12 +394,12 @@ class FastTest:
                 rowvar = False)[0][1],3)
             
             metrics = f"Sharpe: {sharpe} \n Benchmark Corr: {corr}"
-            anchored_text = AnchoredText(metrics, loc=2)
+            anchored_text = AnchoredText(metrics, loc=4)
             ax2.add_artist(anchored_text)
             
         else:
             metrics = f"Sharpe: {sharpe}"
-            anchored_text = AnchoredText(metrics, loc=2)
+            anchored_text = AnchoredText(metrics, loc=4)
             ax2.add_artist(anchored_text)
                 
         plt.show()

@@ -136,4 +136,5 @@ if __name__ == "__main__":
     #print(ft.metrics.get_stats())
     
     #last_positions = ft.get_last_positions(to_df=True)
-    ft.plot(benchmark.df())
+    #ft.plot(benchmark.df())
+    ft.plot_asset("NVDA")
