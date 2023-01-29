@@ -23,13 +23,13 @@ To avoid any build problems you can use Google Colab which has been tested. To i
 ```
 
 Then you can access the Library as follows:
-'''python
+```python
 sys.path.append("/content/FastTest/wrapper")
 from Exchange import Exchange, Asset
 from Broker import Broker
 from Strategy import Strategy
 from FastTest import FastTest
-'''
+```
 
 ## Tests
 ```bash
